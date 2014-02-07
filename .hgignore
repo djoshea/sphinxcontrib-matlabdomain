@@ -20,3 +20,6 @@ syntax: glob
 .*.swp
 sphinxcontrib_matlabdomain.sublime-project
 sphinxcontrib_matlabdomain.sublime-workspace
+.project
+.pydevproject
+.settings/org.eclipse.core.resources.prefs
