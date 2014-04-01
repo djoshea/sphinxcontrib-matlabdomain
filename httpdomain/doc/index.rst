@@ -685,9 +685,12 @@ Changelog
 Version 1.2.1
 `````````````
 
-To be released.
+Released on March 31, 2014.
 
 - Fixed broken Python 2.6 compatibility.  [:pull:`41` by Kien Pham]
+- Added missing link to six_ dependency.
+
+.. _six: http://pythonhosted.org/six/
 
 
 Version 1.2.0
