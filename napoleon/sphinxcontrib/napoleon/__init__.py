@@ -31,8 +31,8 @@ class Config(object):
         napoleon_use_admonition_for_notes = False
         napoleon_use_admonition_for_references = False
         napoleon_use_ivar = False
-        napoleon_use_param = False
-        napoleon_use_rtype = False
+        napoleon_use_param = True
+        napoleon_use_rtype = True
 
     .. _Google style:
        http://google-styleguide.googlecode.com/svn/trunk/pyguide.html
@@ -148,7 +148,7 @@ class Config(object):
 
                Description of `attr1`
 
-    napoleon_use_param : bool, defaults to False
+    napoleon_use_param : bool, defaults to True
         True to use a ``:param:`` role for each function parameter. False to
         use a single ``:parameters:`` role for all the parameters.
 
@@ -175,7 +175,7 @@ class Config(object):
                          * **arg2** (*int, optional*) --
                            Description of `arg2`, defaults to 0
 
-    napoleon_use_rtype : bool, defaults to False
+    napoleon_use_rtype : bool, defaults to True
         True to use the ``:rtype:`` role for the return type. False to output
         the return type inline with the description.
 
@@ -205,8 +205,8 @@ class Config(object):
         'napoleon_use_admonition_for_notes': (False, 'env'),
         'napoleon_use_admonition_for_references': (False, 'env'),
         'napoleon_use_ivar': (False, 'env'),
-        'napoleon_use_param': (False, 'env'),
-        'napoleon_use_rtype': (False, 'env'),
+        'napoleon_use_param': (True, 'env'),
+        'napoleon_use_rtype': (True, 'env'),
     }
 
     def __init__(self, **settings):
@@ -340,22 +340,32 @@ def _skip_member(app, what, name, obj, skip, options):
     has_doc = getattr(obj, '__doc__', False)
     is_member = (what == 'class' or what == 'exception' or what == 'module')
     if name != '__weakref__' and name != '__init__' and has_doc and is_member:
+        cls_is_owner = False
         if what == 'class' or what == 'exception':
             if sys.version_info[0] < 3:
                 cls = getattr(obj, 'im_class', getattr(obj, '__objclass__',
                               None))
                 cls_is_owner = (cls and hasattr(cls, name) and
                                 name in cls.__dict__)
-            elif sys.version_info[1] >= 3 and hasattr(obj, '__qualname__'):
-                cls_path, _, _ = obj.__qualname__.rpartition('.')
+            elif sys.version_info[1] >= 3:
+                qualname = getattr(obj, '__qualname__', '')
+                cls_path, _, _ = qualname.rpartition('.')
                 if cls_path:
-                    import importlib
-                    import functools
+                    try:
+                        if '.' in cls_path:
+                            import importlib
+                            import functools
 
-                    mod = importlib.import_module(obj.__module__)
-                    cls = functools.reduce(getattr, cls_path.split('.'), mod)
-                    cls_is_owner = (cls and hasattr(cls, name) and
-                                    name in cls.__dict__)
+                            mod = importlib.import_module(obj.__module__)
+                            mod_path = cls_path.split('.')
+                            cls = functools.reduce(getattr, mod_path, mod)
+                        else:
+                            cls = obj.__globals__[cls_path]
+                    except:
+                        cls_is_owner = False
+                    else:
+                        cls_is_owner = (cls and hasattr(cls, name) and
+                                        name in cls.__dict__)
                 else:
                     cls_is_owner = False
             else:

@@ -681,13 +681,24 @@ __ https://bitbucket.org/birkenfeld/sphinx-contrib
 Changelog
 ---------
 
-
-Version 1.2.1
+Version 1.2.2
 `````````````
 
 To be released.
 
+- Fix Python 3 incompatibility of :mod:`autohttp.tornado`.
+  [:pull:`61` by Dave Shawley]
+
+
+Version 1.2.1
+`````````````
+
+Released on March 31, 2014.
+
 - Fixed broken Python 2.6 compatibility.  [:pull:`41` by Kien Pham]
+- Added missing link to six_ dependency.
+
+.. _six: http://pythonhosted.org/six/
 
 
 Version 1.2.0

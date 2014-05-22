@@ -11,11 +11,14 @@ You can find the documentation from the following URL:
 http://pythonhosted.org/sphinxcontrib-httpdomain/
 '''
 
-requires = ['Sphinx>=1.0']
+requires = [
+    'Sphinx >= 1.0',
+    'six'
+]
 
 setup(
     name='sphinxcontrib-httpdomain',
-    version='1.2.1',
+    version='1.2.2',
     url='http://bitbucket.org/birkenfeld/sphinx-contrib',
     download_url='http://pypi.python.org/pypi/sphinxcontrib-httpdomain',
     license='BSD',

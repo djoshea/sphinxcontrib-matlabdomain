@@ -37,12 +37,15 @@ class UmlDirective(Directive):
            Alice <- Bob: Hi
     """
     has_content = True
-    option_spec = {'alt': directives.unchanged}
+    option_spec = {'alt': directives.unchanged,
+                   # TODO: process the following options by html writer
+                   'height': directives.length_or_unitless,
+                   'width': directives.length_or_percentage_or_unitless,
+                   'scale': directives.percentage}
 
     def run(self):
-        node = plantuml()
+        node = plantuml(self.block_text, **self.options)
         node['uml'] = '\n'.join(self.content)
-        node['alt'] = self.options.get('alt', None)
         return [node]
 
 def generate_name(self, node, fileformat):
@@ -148,7 +151,7 @@ def html_visit_plantuml(self, node):
         raise nodes.SkipNode
 
     self.body.append(self.starttag(node, 'p', CLASS='plantuml'))
-    self.body.append(gettag(self, fnames, alt=node['alt'] or node['uml']))
+    self.body.append(gettag(self, fnames, alt=node.get('alt', node['uml'])))
     self.body.append('</p>\n')
     raise nodes.SkipNode
 
@@ -198,8 +201,16 @@ def latex_visit_plantuml(self, node):
     except PlantUmlError, err:
         self.builder.warn(str(err))
         raise nodes.SkipNode
-    self.body.append('\n\\includegraphics{%s}\n' % self.encode(refname))
-    raise nodes.SkipNode
+
+    # put node representing rendered image
+    img_node = nodes.image(uri=refname, **node.attributes)
+    img_node.delattr('uml')
+    if not img_node.hasattr('alt'):
+        img_node['alt'] = node['uml']
+    node.append(img_node)
+
+def latex_depart_plantuml(self, node):
+    pass
 
 def pdf_visit_plantuml(self, node):
     try:
@@ -208,13 +219,13 @@ def pdf_visit_plantuml(self, node):
     except PlantUmlError, err:
         self.builder.warn(str(err))
         raise nodes.SkipNode
-    rep = nodes.image(uri=outfname, alt=node['alt'] or node['uml'])
+    rep = nodes.image(uri=outfname, alt=node.get('alt', node['uml']))
     node.parent.replace(node, rep)
 
 def setup(app):
     app.add_node(plantuml,
                  html=(html_visit_plantuml, None),
-                 latex=(latex_visit_plantuml, None))
+                 latex=(latex_visit_plantuml, latex_depart_plantuml))
     app.add_directive('uml', UmlDirective)
     app.add_config_value('plantuml', 'plantuml', 'html')
     app.add_config_value('plantuml_output_format', 'png', 'html')
