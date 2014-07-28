@@ -2,6 +2,7 @@
 
 import re
 import urllib
+import regions
 from parser import parse_string
 
 
@@ -46,6 +47,8 @@ class GoogleChart(object):
             params = self._url_for_venndiagram(chart)
         elif chart.type in ('s'):
             params = self._url_for_spotchart(chart)
+        elif chart.type in ('map'):
+            params = self._url_for_mapchart(chart)
         else:
             params = {}
 
@@ -125,11 +128,6 @@ class GoogleChart(object):
 
         return dict(chd=data)
 
-    def _url_for_venndiagram(self, chart):
-        data = "t:" + ",".join(chart.items.next())
-
-        return dict(chd=data)
-
     def _url_for_spotchart(self, chart):
         data = "t:" + "|".join(",".join(n) for n in zip(*chart.items.next()))
 
@@ -151,6 +149,29 @@ class GoogleChart(object):
             params['chxl'] = axis_labels
 
         return params
+
+    def _url_for_mapchart(self, chart):
+        if 'data' in chart.labels:
+            labels = chart.get('data')
+            if 'colors' in chart.labels:
+                colors = chart.get('colors')
+            else:
+                colors = []
+            descriptions = []
+        else:
+            labels = chart.labels
+            colors = chart.colors
+            descriptions = chart.items
+
+        data = "|".join(regions.converter(s) for s in labels)
+        escaped = (",".join(desc).replace(',', '\,') for desc in descriptions)
+        markers = "|".join("f%s,000000,0,%d,10" % (desc, index) for index, desc in enumerate(escaped))
+        if len(labels) == len(colors):
+            colors = "|".join(["B3BCC0"] + colors)
+        else:
+            colors = "|".join(["B3BCC0"] + colors + ["FF0000"])
+
+        return dict(chld=data, chco=colors, chm=markers)
 
     def _url_for_graphviz(self):
         _type = self.options.get('type', 'dot')

@@ -120,6 +120,10 @@ class PlotChart(GoogleChartBase):
     codeheadings = 'plotchart'
 
 
+class MapChart(GoogleChartBase):
+    codeheadings = 'mapchart'
+
+
 # compatibility to sphinx 1.0 (ported from sphinx trunk)
 def relfn2path(env, filename, docname=None):
     if filename.startswith('/') or filename.startswith(os.sep):
@@ -236,3 +240,4 @@ def setup(app):
     app.add_directive('vertical_bargraph', VerticalBarGraph)
     app.add_directive('venndiagram', VennDiagram)
     app.add_directive('plotchart', PlotChart)
+    app.add_directive('mapchart', MapChart)

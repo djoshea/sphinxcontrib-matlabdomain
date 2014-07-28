@@ -345,6 +345,42 @@ Directive
       data.axis_label: (slow, fast), (low, high)
 
 
+.. describe:: .. mapchart::
+
+   This directive inserts a mapchart into the generated document.
+   mapchart direcrtive takes code block as a source script.
+
+   Examples::
+
+      .. mapchart::
+
+         data: CN, JP, KR
+         color: ff0000, 00ff00, 0000ff
+
+      .. mapchart::
+
+         CN: "People's Republic of China"
+         CN.color: ff0000
+         JP: Japan
+         JP.color: 00ff00
+         KR: "Republic of Korea"
+         KR.color: 0000ff
+
+   .. mapchart::
+
+      data: CN, JP, KR
+      color: ff0000, 00ff00, 0000ff
+
+   .. mapchart::
+
+      CN: "People's Republic of China"
+      CN.color: ff0000
+      JP: Japan
+      JP.color: 00ff00
+      KR: "Republic of Korea"
+      KR.color: 0000ff
+
+
 Graphviz charts on Google Chart
 ===============================
 

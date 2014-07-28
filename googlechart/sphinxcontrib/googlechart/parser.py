@@ -102,6 +102,7 @@ def parse(seq):
         | n('bvg') | n('vertical_bargraph')
         | n('v')   | n('venn')   | n('venndiagram')
         | n('s')   | n('plot')   | n('plotchart')
+        | n('map') | n('mapchart')
     )
     chart = (
         chart_type +
@@ -125,6 +126,7 @@ chart_types = dict(p='p',     pie='p',    piechart='p',
                    bvg='bvg', vertical_bargraph='bvg',
                    v='v',     venn='v',   venndiagram='v',
                    s='s',     plot='s',   plotchart='s',
+                   map='map', mapchart='map',
               )
 
 
@@ -145,6 +147,9 @@ class _Chart(object):
 
         if key not in self._order:
             self._order.append(key)
+
+    def get(self, name):
+        return self._items[name]
 
     @property
     def labels(self):

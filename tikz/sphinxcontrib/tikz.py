@@ -37,7 +37,7 @@
 
     Author: Christoph Reller <christoph.reller@gmail.com>
     Version: 0.4.1
-"""    
+"""
 
 import tempfile
 import posixpath
@@ -58,7 +58,7 @@ try:
     from sphinx.util.osutil import ensuredir, ENOENT, EPIPE
 except:
     from sphinx.util import ensuredir, ENOENT, EPIPE
-    
+
 from sphinx.util.compat import Directive
 
 class TikzExtError(SphinxError):
@@ -97,7 +97,7 @@ class TikzDirective(Directive):
         return [node]
 
 DOC_HEAD = r'''
-\documentclass[12pt]{article}
+\documentclass[12pt]{standalone}
 \usepackage[utf8]{inputenc}
 \usepackage{tikz}
 \usetikzlibrary{%s}
@@ -115,6 +115,9 @@ DOC_BODY = r'''
 def render_tikz(self,tikz,libs='',stringsubst=False):
     hashkey = tikz.encode('utf-8')
     fname = 'tikz-%s.png' % (sha(hashkey).hexdigest())
+    # if we're converting to svg, then we use a different extension
+    if 'svg' in self.builder.config.tikz_proc_suite:
+        fname = 'tikz-%s.svg' % (sha(hashkey).hexdigest())
     relfn = posixpath.join(self.builder.imgpath, fname)
     outfn = path.join(self.builder.outdir, '_images', fname)
 
@@ -123,7 +126,7 @@ def render_tikz(self,tikz,libs='',stringsubst=False):
 
     if hasattr(self.builder, '_tikz_warned'):
         return None
-    
+
     ensuredir(path.dirname(outfn))
     curdir = getcwd()
 
@@ -213,6 +216,26 @@ def render_tikz(self,tikz,libs='',stringsubst=False):
                                'error:\n[stderr]\n%s\n[stdout]\n%s'
                                % (stderr, stdout))
 
+    elif self.builder.config.tikz_proc_suite == 'pdf2svg':
+        try:
+            p1 = Popen(['pdf2svg', 'tikz.pdf', outfn],
+                       stdout=PIPE, stderr=PIPE)
+        except OSError, e:
+            if e.errno != ENOENT:   # No such file or directory
+                raise
+            self.builder.warn('pdf2svg command cannot be run')
+            self.builder.warn(err)
+            self.builder._tikz_warned = True
+            chdir(curdir)
+            return None
+        stdout, stderr = p1.communicate()
+        if p1.returncode != 0:
+            self.builder._tikz_warned = True
+            chdir(curdir)
+            raise TikzExtError('Error (tikz extension): pdf2svg exited with '
+                               'error:\n[stderr]\n%s\n[stdout]\n%s'
+                               % (stderr, stdout))
+
     elif self.builder.config.tikz_proc_suite == 'Netpbm':
         try:
             p1 = Popen(['pnmcrop', 'tikz-1.ppm'], stdout=PIPE, stderr=PIPE)
@@ -228,7 +251,7 @@ def render_tikz(self,tikz,libs='',stringsubst=False):
         pnm_args = []
         if self.builder.config.tikz_transparent:
             pnm_args = ['-transparent', 'white']
-    
+
         try:
             p2 = Popen(['pnmtopng'] + pnm_args, stdin=p1.stdout,
                        stdout=PIPE, stderr=PIPE)
@@ -240,7 +263,7 @@ def render_tikz(self,tikz,libs='',stringsubst=False):
             self.builder._tikz_warned = True
             chdir(curdir)
             return None
-    
+
         pngdata, stderr2 = p2.communicate()
         dummy, stderr1 = p1.communicate()
         if p1.returncode != 0:
@@ -352,6 +375,24 @@ def cleanup_tempdir(app, exc):
     except Exception:
         pass
 
+def which(program):
+    import os
+    def is_exe(fpath):
+        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+    fpath, fname = os.path.split(program)
+    if fpath:
+        if is_exe(program):
+            return program
+    else:
+        for path in os.environ["PATH"].split(os.pathsep):
+            path = path.strip('"')
+            exe_file = os.path.join(path, program)
+            if is_exe(exe_file):
+                return exe_file
+
+    return None
+
 def setup(app):
     app.add_node(tikz,
                  html=(html_visit_tikz, depart_tikz),
@@ -364,5 +405,12 @@ def setup(app):
     app.add_config_value('tikz_latex_preamble', '', 'html')
     app.add_config_value('tikz_tikzlibraries', '', 'html')
     app.add_config_value('tikz_transparent', True, 'html')
-    app.add_config_value('tikz_proc_suite', 'Netpbm', 'html')
+
+    # fallback to another value depending what is on the system
+    suite = 'pdf2svg'
+    if not which('pdf2svg'):
+        suite = 'Netpbm'
+        if not which('pnmcrop'):
+            suite = 'ImageMagick'
+    app.add_config_value('tikz_proc_suite', suite, 'html')
     app.connect('build-finished', cleanup_tempdir)
