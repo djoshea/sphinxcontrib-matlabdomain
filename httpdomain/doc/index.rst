@@ -35,19 +35,24 @@ In order to use it, add :mod:`sphinxcontrib.httpdomain` into
 Additional Configuration
 ------------------------
 
-- ``http_index_ignore_prefixes`` - strips the leading segments from the endpoint
-  paths by given list of prefixes::
+.. versionadded:: 1.3.0
 
-    http_index_ignore_prefixes = ["/internal", "/_proxy"]
+``http_index_ignore_prefixes``
+   Strips the leading segments from the endpoint paths by given list
+   of prefixes::
 
-- ``http_index_shortname`` - short name of the index which will appears on every
-  page::
+       http_index_ignore_prefixes = ['/internal', '/_proxy']
 
-    http_index_shortname = "api"
+``http_index_shortname``
+   Short name of the index which will appears on every page::
 
-- ``http_index_localname`` - full index name which is used on index page::
+       http_index_shortname = 'api'
 
-    http_index_shortname = "My Project HTTP API"
+``http_index_localname``
+   Full index name which is used on index page::
+
+       http_index_shortname = "My Project HTTP API"
+
 
 Basic usage
 -----------
@@ -213,6 +218,8 @@ Directives
    Describes a HTTP resource's :http:method:`COPY` method.
    It can also be referred by :rst:role:`http:copy` role.
 
+   .. versionadded:: 1.3.0
+
 .. rst:directive:: .. http:any:: path
 
    Describes a HTTP resource's which accepts requests with
@@ -220,31 +227,40 @@ Directives
    proxying the request to some other location keeping original request
    context. It can also be referred by :rst:role:`http:any` role.
 
+   .. versionadded:: 1.3.0
+
+
 Options
 ```````
 
+.. versionadded:: 1.3.0
+
 Additionally, you may specify custom options to the directives:
 
-- ``noindex`` - excludes specific directive from HTTP routing table
+``noindex``
+   Excludes specific directive from HTTP routing table.
 
-    .. sourcecode:: rst
+   .. sourcecode:: rst
 
-       .. http:get:`/users/(int:user_id)/posts/(tag)`
-          :noindex:
+      .. http:get:: /users/(int:user_id)/posts/(tag)
+         :noindex:
 
-- ``deprecated`` - marks the method as deprecated in HTTP routing table
+``deprecated``
+   Marks the method as deprecated in HTTP routing table.
 
-    .. sourcecode:: rst
+   .. sourcecode:: rst
 
-       .. http:get:`/users/(int:user_id)/tagged_posts`
-          :deprecated:
+      .. http:get:: /users/(int:user_id)/tagged_posts
+         :deprecated:
 
-- ``synopsis`` - adds short description for HTTP routing table
+``synopsis``
+   Adds short description for HTTP routing table.
 
-    .. sourcecode:: rst
+   .. sourcecode:: rst
 
-       .. http:get:`/users/(int:user_id)/posts/(tag)`
-          :synopsis: Returns posts by the specified tag for the user
+      .. http:get:: /users/(int:user_id)/posts/(tag)
+         :synopsis: Returns posts by the specified tag for the user
+
 
 .. _resource-fields:
 
@@ -283,6 +299,10 @@ nicely:
    Description of a parameter passed by request content body, encoded in
    :mimetype:`application/json`.
 
+   .. deprecated:: 1.3.0
+      Use ``reqjsonobj``/``reqjson``/``<jsonobj``/``<json`` and
+      ``reqjsonarr``/``<jsonarr`` instead.
+
    .. versionadded:: 1.1.8
 
    .. versionchanged:: 1.1.9
@@ -306,6 +326,8 @@ nicely:
       :<json string body: the post body
       :<json boolean sticky: whether it's sticky or not
 
+   .. versionadded:: 1.3.0
+
 ``resjsonobj``, ``resjson``, ``>jsonobj``, ``>json``
    Description of a single field of JSON object returned with response body,
    encoded in :mimetype:`application/json`.
@@ -313,6 +335,8 @@ nicely:
    .. sourcecode:: rst
 
       :>json boolean ok: Operation status
+
+   .. versionadded:: 1.3.0
 
 ``reqjsonarr``, ``<jsonarr``
 ``resjsonarr``, ``>jsonarr``
@@ -334,6 +358,8 @@ nicely:
       :>jsonarr string id: Object ID
       :>jsonarr string error: Error type
       :>jsonarr string reason: Error reason
+
+   .. versionadded:: 1.3.0
 
 .. sourcecode:: rst
 
@@ -454,6 +480,9 @@ Roles
        - :http:statuscode:`404`
        - :http:statuscode:`200 Oll Korrect`
 
+   .. versionchanged:: 1.3.0
+      It becomes to provide references to specification sections.
+
 .. rst:role:: http:method
 
    A reference to a HTTP method (also known as *verb*). In the HTML output,
@@ -476,7 +505,8 @@ Roles
 
 .. rst:role:: mailheader
 
-   .. deprecated:: X.X.X Use :rst:role:`http:header` instead.
+   .. deprecated:: 1.3.0
+      Use :rst:role:`http:header` instead.
 
 .. rst:role:: http:header
 
@@ -540,6 +570,8 @@ Roles
 
    If HTTP header is unknown, the build error will be raised unless header has
    ``X-`` prefix which marks him as custom one like :http:header:`X-Foo-Bar`.
+
+   .. versionadded:: 1.3.0
 
 
 .. module:: sphinxcontrib.autohttp.flask
@@ -848,12 +880,29 @@ __ https://bitbucket.org/birkenfeld/sphinx-contrib
 Changelog
 ---------
 
-Version 1.2.2
+Version 1.3.0
 `````````````
 
 To be released.
 
-- Fix Python 3 incompatibility of :mod:`autohttp.tornado`.
+- ``jsonparameter``/``jsonparam``/``json`` became deprecated and split
+  into ``reqjsonobj``/``reqjson``/``<jsonobj``/``<json`` and
+  ``reqjsonarr``/``<jsonarr``.
+  [:issue:`55`, :pull:`72` by Alexander Shorin]
+- Support synopsis (short description in HTTP index),
+  deprecation and noindex options for resources.
+  [:issue:`55`, :pull:`72` by Alexander Shorin]
+- Stabilize order of index items.
+  [:issue:`55`, :pull:`72` by Alexander Shorin]
+- Added :rst:directive:`http:any` directive and :rst:role:`http:any`
+  role for ``ANY`` method.  [:issue:`55`, :pull:`72` by Alexander Shorin]
+- Added :rst:directive:`http:copy` directive and :rst:role:`http:copy`
+  role for ``COPY`` method.  [:issue:`55`, :pull:`72` by Alexander Shorin]
+- Added :rst:role:`http:header` role that also creates reference to the
+  related specification.  [:issue:`55`, :pull:`72` by Alexander Shorin]
+- :rst:role:`http:statuscode` role became to provide references to
+  specification sections.  [:issue:`55`, :pull:`72` by Alexander Shorin]
+- Fixed Python 3 incompatibility of :mod:`autohttp.tornado`.
   [:pull:`61` by Dave Shawley]
 
 
