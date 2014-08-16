@@ -37,6 +37,11 @@ Additional Configuration
 
 .. versionadded:: 1.3.0
 
+``http_headers_ignore_prefixes``
+   List of HTTP header prefixes which should be ignored in strict mode::
+
+       http_headers_ignore_prefixes = ['X-']
+
 ``http_index_ignore_prefixes``
    Strips the leading segments from the endpoint paths by given list
    of prefixes::
@@ -52,6 +57,12 @@ Additional Configuration
    Full index name which is used on index page::
 
        http_index_shortname = "My Project HTTP API"
+
+``http_strict_mode``
+   When ``True`` (default) emits build errors when status codes, methods and
+   headers are looks non-standard::
+
+       http_strict_mode = True
 
 
 Basic usage
