@@ -51,8 +51,8 @@ class cacoo_image(nodes.General, nodes.Element):
                     fd.write(cacoo.get_image(self['diagramid']).read())
                 os.utime(path, (last_modified, last_modified))
         except Exception as exc:
-            raise
             builder.warn('Fail to download cacoo image: %s (check your cacoo_apikey or diagramid)' % exc)
+            return nodes.Text('')
 
         relfn = os.path.join(reldir, filename)
         image_node = nodes.image(candidates={'*': relfn}, **self.attributes)
