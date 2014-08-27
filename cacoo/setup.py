@@ -2,29 +2,19 @@
 
 from setuptools import setup, find_packages
 
-long_desc = '''
-This contrib extension, sphinxcontrib.httpdomain provides a Sphinx
-domain for describing RESTful HTTP APIs.
+long_desc = open('README.rst').read()
 
-You can find the documentation from the following URL:
-
-http://pythonhosted.org/sphinxcontrib-httpdomain/
-'''
-
-requires = [
-    'Sphinx >= 1.0',
-    'six'
-]
+requires = ['Sphinx>=0.6']
 
 setup(
-    name='sphinxcontrib-httpdomain',
-    version='1.3.1',
+    name='sphinxcontrib-cacoo',
+    version='0.1.1',
     url='http://bitbucket.org/birkenfeld/sphinx-contrib',
-    download_url='http://pypi.python.org/pypi/sphinxcontrib-httpdomain',
+    download_url='http://pypi.python.org/pypi/sphinxcontrib-cacoo',
     license='BSD',
-    author='Hong Minhee',
-    author_email='minhee@dahlia.kr',
-    description='Sphinx domain for HTTP APIs',
+    author='Takeshi KOMIYA',
+    author_email='i.tkomiya@gmail.com',
+    description='Sphinx "cacoo" extension; embed diagram from cacoo',
     long_description=long_desc,
     zip_safe=False,
     classifiers=[
