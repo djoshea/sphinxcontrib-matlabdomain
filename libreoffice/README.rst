@@ -37,33 +37,6 @@ Requirements
     LibreOffice 4.3 is known to **NOT** work. Use other versions instead.
 
 
-Installing
-----------
-
-pip
-+++
-
-Just type::
-
-    $ pip install sphinxcontrib-libreoffice
-
-github
-++++++
-
-Checkout sphinxcontrib-libreoffice::
-
-  $ git clone https://github.com/gerardmp/sphinxcontrib-libreoffice.git
-
-Change into the extension directory::
-
-  $ cd sphinxcontrib-libreoffice
-  
-Install the module::
-
-  $ python setup.py install
-
-
-
 Enabling the extension in Sphinx_
 ---------------------------------
 
