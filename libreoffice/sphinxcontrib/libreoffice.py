@@ -6,7 +6,7 @@
     Render LibreOffice drawings directly into your documentation
     
 
-    See the README file for details.
+    See the documentation file for details.
 
     :author: Gerard Marull-Paretas <gerardmarull@gmail.com>
     :license: BSD, see LICENSE for details
@@ -16,7 +16,6 @@
 
 import sys
 import os
-from os import path, environ
 import posixpath
 
 from glob import glob
@@ -33,23 +32,12 @@ from docutils.parsers.rst.directives.images import Figure
 from sphinx.util import ensuredir, relative_uri
 
 # Default output formats
-DEFAULT_FORMATS = dict(html='png', latex='pdf', text=None)
+DEFAULT_FORMATS = dict(html='png', latex='pdf')
 
 
 #-------------------------------------------------------------------------------
 # Utilities to find LibreOffice installation
 #-------------------------------------------------------------------------------
-
-def realpath(*args):
-    """
-    Custom realpath to solve MacOSX symlinks problem (program -> MacOSX)
-    """    
-    ret = ''
-    for arg in args:
-        ret = path.join(ret, arg)
-
-    return path.realpath(os.path.abspath(ret))
-
 
 def libreoffice_find():
     """
@@ -58,18 +46,18 @@ def libreoffice_find():
 
     extrapaths = []
 
-    if os.name in ('nt', 'os2'):
+    if os.name == 'nt':
         officebinary = 'soffice.exe'
 
-        if 'PROGRAMFILES' in environ.keys():
-            extrapaths += glob(environ['PROGRAMFILES'] + 
+        if 'PROGRAMFILES' in os.environ.keys():
+            extrapaths += glob(os.environ['PROGRAMFILES'] + 
                                 '\\LibreOffice*')
 
-        if 'PROGRAMFILES(X86)' in environ.keys():
-            extrapaths += glob(environ['PROGRAMFILES(X86)'] + 
+        if 'PROGRAMFILES(X86)' in os.environ.keys():
+            extrapaths += glob(os.environ['PROGRAMFILES(X86)'] + 
                                 '\\LibreOffice*')
 
-    elif os.name in ('mac', ) or sys.platform in ('darwin', ):
+    elif os.name == 'mac' or sys.platform == 'darwin':
         officebinary = 'soffice'
         extrapaths += ['/Applications/LibreOffice.app/Contents']
 
@@ -80,11 +68,10 @@ def libreoffice_find():
                       glob('/usr/local/libreoffice*') + \
                       glob('/usr/local/lib/libreoffice*')
 
-    for basepath in extrapaths:
-        for basis in ('basis-link', 'basis', '' ):
-            binary_path = realpath(basepath, basis, 'program', officebinary)
-            if os.path.isfile(binary_path):
-                return binary_path
+    for path in extrapaths:
+        binary_path = os.path.join(path, 'program', officebinary)
+        if os.path.isfile(binary_path):
+            return binary_path
 
     return None
 
@@ -158,22 +145,22 @@ def libreoffice_render(app, doctree):
         
         # Setup paths
         inp_fn_abs = app.builder.env.relfn2path(drawing)[1]
-        inp_fn_base, _ = path.splitext(path.basename(drawing)) 
+        inp_fn_base, _ = os.path.splitext(os.path.basename(drawing)) 
         out_fext = format_map[app.builder.format]        
         out_fn = '%s.%s' % (inp_fn_base, out_fext)
 
         if app.builder.format == 'html':    
             imgpath = relative_uri(app.builder.env.docname, '_images')
             out_fn_rel = posixpath.join(imgpath, out_fn)
-            out_dir = path.join(app.builder.outdir, '_images')
-            out_fn_abs = path.join(out_dir, out_fn)           
+            out_dir = os.path.join(app.builder.outdir, '_images')
+            out_fn_abs = os.path.join(out_dir, out_fn)           
         else:
             if app.builder.format != 'latex':
                 app.builder.warn('libreoffice: the builder format %s '
                     'is not officially supported.' % app.builder.format)
             out_fn_rel = out_fn
             out_dir = app.builder.outdir
-            out_fn_abs = path.join(out_dir, out_fn)
+            out_fn_abs = os.path.join(out_dir, out_fn)
         
         ensuredir(out_dir)
         
@@ -229,6 +216,6 @@ def setup(app):
 
     app.connect('doctree-read', libreoffice_render)
     
-    app.add_config_value('libreoffice_binary', libreoffice_find(), 'html')
-    app.add_config_value('libreoffice_format', DEFAULT_FORMATS, 'html')
+    app.add_config_value('libreoffice_binary', libreoffice_find(), 'env')
+    app.add_config_value('libreoffice_format', DEFAULT_FORMATS, 'env')
 

@@ -9,7 +9,7 @@ requires = ['Sphinx>=0.6', 'Pillow']
 
 setup(
     name='sphinxcontrib-libreoffice',
-    version='0.1',
+    version='0.2',
     url='http://pypi.python.org/pypi/sphinxcontrib-libreoffice',
     download_url='http://pypi.python.org/pypi/sphinxcontrib-libreoffice',
     license='BSD',
