@@ -28,7 +28,7 @@ You can install it from PyPI::
 Alternatively, you can grab it from the ``sphinx-contrib`` repository::
 
     $ hg clone https://bitbucket.org/birkenfeld/sphinx-contrib/
-    $ cd sphinx-contrib/gnuplot
+    $ cd sphinx-contrib/libreoffice
     $ python setup.py install
 
 
