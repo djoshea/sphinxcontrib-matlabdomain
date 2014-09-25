@@ -2,19 +2,23 @@
 
 from setuptools import setup, find_packages
 
-long_desc = open('README.rst').read()
+long_desc = '''
+This package contains the codeio Sphinx extension.
 
-requires = ['Sphinx>=1.0', 'Pillow']
+.. add description here ..
+'''
+
+requires = ['Sphinx>=0.6']
 
 setup(
-    name='sphinxcontrib-plantuml',
-    version='0.5',
-    url='https://bitbucket.org/birkenfeld/sphinx-contrib',
-    download_url='https://pypi.python.org/pypi/sphinxcontrib-plantuml',
+    name='sphinxcontrib-codeio',
+    version='0.1',
+    url='http://bitbucket.org/birkenfeld/sphinx-contrib',
+    download_url='http://pypi.python.org/pypi/sphinxcontrib-codeio',
     license='BSD',
-    author='Yuya Nishihara',
-    author_email='yuya@tcha.org',
-    description='Sphinx "plantuml" extension',
+    author='Thomas Leo',
+    author_email='tom@tomleo.com',
+    description='Sphinx "codeio" extension',
     long_description=long_desc,
     zip_safe=False,
     classifiers=[
@@ -33,5 +37,4 @@ setup(
     include_package_data=True,
     install_requires=requires,
     namespace_packages=['sphinxcontrib'],
-    use_2to3=True,
 )

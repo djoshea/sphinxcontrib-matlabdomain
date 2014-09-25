@@ -70,6 +70,7 @@ List of extensions
 - hyphenator: client-side hyphenation of HTML using hyphenator_
 - inlinesyntaxhighlight_: inline syntax highlighting
 - lassodomain: a domain for documenting Lasso_ source code
+- libreoffice: an extension to include any drawing supported by LibreOffice (e.g. odg, vsd...).
 - lilypond: an extension inserting music scripts from Lilypond_ in PNG format.
 - makedomain_: a domain for `GNU Make`_
 - matlabdomain_: document MATLAB_ and `GNU Octave`_ code.
@@ -206,4 +207,3 @@ When adding or updating your extension, please adhere to these guidelines:
   an ``ext/LICENSE`` file.
 * Each extension can maintain a changelog and readme file; these files should
   be called ``ext/CHANGES`` and ``ext/README.rst``, respectively.
-

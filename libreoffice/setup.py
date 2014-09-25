@@ -2,20 +2,21 @@
 
 from setuptools import setup, find_packages
 
-long_desc = open('README.rst').read()
+with open('README.rst') as file:
+    long_description = file.read()
 
-requires = ['Sphinx>=1.0', 'Pillow']
+requires = ['Sphinx>=0.6', 'Pillow']
 
 setup(
-    name='sphinxcontrib-plantuml',
-    version='0.5',
-    url='https://bitbucket.org/birkenfeld/sphinx-contrib',
-    download_url='https://pypi.python.org/pypi/sphinxcontrib-plantuml',
+    name='sphinxcontrib-libreoffice',
+    version='0.2',
+    url='http://pypi.python.org/pypi/sphinxcontrib-libreoffice',
+    download_url='http://pypi.python.org/pypi/sphinxcontrib-libreoffice',
     license='BSD',
-    author='Yuya Nishihara',
-    author_email='yuya@tcha.org',
-    description='Sphinx "plantuml" extension',
-    long_description=long_desc,
+    author='Gerard Marull-Paretas',
+    author_email='gerardmarull@gmail.com',
+    description='Sphinx "libreoffice" extension',
+    long_description=long_description,
     zip_safe=False,
     classifiers=[
         'Development Status :: 4 - Beta',
@@ -33,5 +34,4 @@ setup(
     include_package_data=True,
     install_requires=requires,
     namespace_packages=['sphinxcontrib'],
-    use_2to3=True,
 )
