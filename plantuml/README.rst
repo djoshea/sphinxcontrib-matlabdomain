@@ -30,6 +30,21 @@ Then, write PlantUML text under ``.. uml::`` directive::
        Alice -> Bob: Hi!
        Alice <- Bob: How are you?
 
+You can specify ``height``, ``width`` or ``scale``::
+
+    .. uml::
+       :scale: 50 %
+
+       Foo <|-- Bar
+
+You can specify a caption::
+
+    .. uml::
+       :caption: Caption with **bold** and *italic*
+       :width: 50mm
+
+       Foo <|-- Bar
+
 For details, please see PlantUML_ documentation.
 
 .. _PlantUML: http://plantuml.sourceforge.net/

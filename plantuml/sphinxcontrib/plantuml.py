@@ -13,6 +13,8 @@ try:
     from hashlib import sha1
 except ImportError:  # Python<2.5
     from sha import sha as sha1
+import re
+from PIL import Image
 from docutils import nodes
 from docutils.parsers.rst import directives
 from sphinx.errors import SphinxError
@@ -37,12 +39,26 @@ class UmlDirective(Directive):
            Alice <- Bob: Hi
     """
     has_content = True
-    option_spec = {'alt': directives.unchanged}
+    option_spec = {'alt': directives.unchanged,
+                   'caption': directives.unchanged,
+                   'height': directives.length_or_unitless,
+                   'width': directives.length_or_percentage_or_unitless,
+                   'scale': directives.percentage}
 
     def run(self):
-        node = plantuml()
+        node = plantuml(self.block_text, **self.options)
         node['uml'] = '\n'.join(self.content)
-        node['alt'] = self.options.get('alt', None)
+
+        # if a caption is defined, insert a 'figure' with this node and the caption
+        if 'caption' in self.options:
+            import docutils.statemachine
+            cnode = nodes.Element()          # anonymous container for parsing
+            sl = docutils.statemachine.StringList([self.options['caption']],source='')
+            self.state.nested_parse(sl,self.content_offset, cnode)
+            caption = nodes.caption(self.options['caption'], '', *cnode)
+            fig = nodes.figure('',node)
+            fig += caption
+            node = fig
         return [node]
 
 def generate_name(self, node, fileformat):
@@ -93,10 +109,55 @@ def render_plantuml(self, node, fileformat):
     finally:
         f.close()
 
-def _get_png_tag(self, fnames, alt):
+def _get_png_tag(self, fnames, alt, **attr):
     refname, _outfname = fnames['png']
-    return ('<img src="%s" alt="%s" />\n'
-            % (self.encode(refname), self.encode(alt)))
+
+    # Get sizes from the rendered image (defaults)
+    im = Image.open(_outfname)
+    im.load()
+    (fw, fh) = im.size
+    
+    # Regex to get value and units
+    vu = re.compile(r"(?P<value>\d+)\s*(?P<units>[a-zA-Z%]+)?")
+    
+    # Width
+    if 'width' in attr:
+        m = vu.match(attr['width'])
+        if not m:
+            raise PlantUmlError('Invalid width')
+        else:
+            m = m.groupdict()
+        w = int(m['value'])
+        wu = m['units'] if m['units'] else 'px'
+    else:
+        w = fw
+        wu = 'px'
+    
+    # Height
+    if 'height' in attr:
+        m = vu.match(attr['height'])
+        if not m:
+            raise PlantUmlError('Invalid height')
+        else:
+            m = m.groupdict()
+        h = int(m['value'])
+        hu = m['units'] if m['units'] else 'px'
+    else:
+        h = fh
+        hu = 'px'
+
+    # Scale
+    if 'scale' not in attr:
+        attr['scale'] = 100
+    
+    return ('<a href="%s"><img src="%s" alt="%s" width="%s%s" height="%s%s"/></a>\n'
+            % (self.encode(refname),
+               self.encode(refname), 
+               self.encode(alt),
+               self.encode(w * attr['scale'] / 100),
+               self.encode(wu),
+               self.encode(h * attr['scale'] / 100),
+               self.encode(hu)))
 
 def _get_svg_style(fname):
     f = open(fname)
@@ -148,7 +209,9 @@ def html_visit_plantuml(self, node):
         raise nodes.SkipNode
 
     self.body.append(self.starttag(node, 'p', CLASS='plantuml'))
-    self.body.append(gettag(self, fnames, alt=node['alt'] or node['uml']))
+    self.body.append(gettag(self, fnames, 
+                             alt=node.get('alt', node['uml']),
+                             **node.attributes))
     self.body.append('</p>\n')
     raise nodes.SkipNode
 
@@ -198,8 +261,16 @@ def latex_visit_plantuml(self, node):
     except PlantUmlError, err:
         self.builder.warn(str(err))
         raise nodes.SkipNode
-    self.body.append('\n\\includegraphics{%s}\n' % self.encode(refname))
-    raise nodes.SkipNode
+
+    # put node representing rendered image
+    img_node = nodes.image(uri=refname, **node.attributes)
+    img_node.delattr('uml')
+    if not img_node.hasattr('alt'):
+        img_node['alt'] = node['uml']
+    node.append(img_node)
+
+def latex_depart_plantuml(self, node):
+    pass
 
 def pdf_visit_plantuml(self, node):
     try:
@@ -208,13 +279,13 @@ def pdf_visit_plantuml(self, node):
     except PlantUmlError, err:
         self.builder.warn(str(err))
         raise nodes.SkipNode
-    rep = nodes.image(uri=outfname, alt=node['alt'] or node['uml'])
+    rep = nodes.image(uri=outfname, alt=node.get('alt', node['uml']))
     node.parent.replace(node, rep)
 
 def setup(app):
     app.add_node(plantuml,
                  html=(html_visit_plantuml, None),
-                 latex=(latex_visit_plantuml, None))
+                 latex=(latex_visit_plantuml, latex_depart_plantuml))
     app.add_directive('uml', UmlDirective)
     app.add_config_value('plantuml', 'plantuml', 'html')
     app.add_config_value('plantuml_output_format', 'png', 'html')

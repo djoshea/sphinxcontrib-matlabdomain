@@ -85,6 +85,12 @@ nicovideo:
 slide:
    Takeshi KOMIYA <i.tkomiya@gmail.com>
 
+cacoo:
+   Takeshi KOMIYA <i.tkomiya@gmail.com>
+
+astah:
+   Takeshi KOMIYA <i.tkomiya@gmail.com>
+
 requirements:
    Andrey Mikhaylenko <neithere@gmail.com>
 
@@ -135,3 +141,10 @@ lassodomain:
 
 py_directive:
    Bill Purcell <william@whpiv.net>
+
+autoprogram:
+   Hong Minhee <minhee@dahlia.kr>
+
+examplecode:
+    Serge Domkowski <sergedomk@gmail.com>
+
