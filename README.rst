@@ -42,6 +42,7 @@ List of extensions
 - adadomain: an extension for Ada support (Sphinx 1.0 needed)
 - ansi: parse ANSI color sequences inside documents
 - astah: embed diagram by using astah_
+- autoanysrc: Gather reST documentation from any source files
 - autoprogram_: documenting CLI programs
 - autorun: Execute code in a ``runblock`` directive.
 - blockdiag: embed block diagrams by using blockdiag_
