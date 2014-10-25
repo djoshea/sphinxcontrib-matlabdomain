@@ -12,7 +12,7 @@ In current state this extension will only insert reST docs from files to
 target documentation project without auto generation definitions
 and signatures.
 
-Bun it simple and clean to make documentation for API and store documentation
+But it simple and clean to make documentation for API and store documentation
 strings in the source code.
 
 Install
@@ -83,9 +83,7 @@ For example services.js::
 TODO
 ----
 
-- echo file names currently processing to stdout
 - encoding option
-- rebuild docs if source files was changed
 - allow internal indent in comment block
 - registering custom analyzers from settings
 - generate signatures like ext.autodoc...

@@ -2,6 +2,7 @@
 import glob
 import codecs
 
+from sphinx.util.console import bold
 from sphinx.ext.autodoc import Documenter
 
 
@@ -41,10 +42,17 @@ class AnySrcDocumenter(Documenter):
         """
         cls.analyzer_by_key[key] = analyzer_class
 
+    def info(self, msg):
+        self.directive.env.app.info('    <autoanysrc> %s' % msg)
+
     def process(self):
         """process files one by one with analyzer"""
 
         for filepath in self.options.src:
+
+            self.info('processing: ' + bold(filepath))
+            self.directive.env.note_dependency(filepath)
+
             with codecs.open(filepath, 'r', 'utf-8') as f:
                 content = f.read()
 
@@ -58,8 +66,8 @@ class AnySrcDocumenter(Documenter):
         # initialize analyzer
         analyzer_class = self.analyzer_by_key.get(self.options.analyzer)
         if not analyzer_class:
-            print(
-                '<autoanysrc> Analyzer not defined for: %s' % self.options.anaylyzer  # noqa
+            self.info(
+                'Analyzer not defined for: %s' % self.options.anaylyzer
             )
             return
         self.analyzer = analyzer_class(self)
