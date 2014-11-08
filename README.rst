@@ -47,6 +47,7 @@ List of extensions
 - autorun: Execute code in a ``runblock`` directive.
 - blockdiag: embed block diagrams by using blockdiag_
 - cacoo: embed diagram from Cacoo_
+- cheader: The missing ``c:header`` directive for Sphinx's built-in C domain.
 - cheeseshop: easily link to PyPI packages
 - clearquest: create tables from ClearQuest_ queries.
 - cmakedomain_: a domain for CMake_
