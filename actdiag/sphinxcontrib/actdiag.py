@@ -51,7 +51,8 @@ class actdiag_node(actdiag.utils.rst.nodes.actdiag):
         options = dict(antialias=builder.config.actdiag_antialias,
                        fontpath=builder.config.actdiag_fontpath,
                        fontmap=builder.config.actdiag_fontmap,
-                       format=image_format)
+                       format=image_format,
+                       transparency=builder.config.actdiag_transparency)
         outputdir = getattr(builder, 'imgpath', builder.outdir)
         return os.path.join(outputdir, self.get_path(**options))
 
@@ -59,7 +60,8 @@ class actdiag_node(actdiag.utils.rst.nodes.actdiag):
         options = dict(antialias=builder.config.actdiag_antialias,
                        fontpath=builder.config.actdiag_fontpath,
                        fontmap=builder.config.actdiag_fontmap,
-                       format=image_format)
+                       format=image_format,
+                       transparency=builder.config.actdiag_transparency)
 
         if hasattr(builder, 'imagedir'):  # Sphinx (>= 1.3.x)
             outputdir = os.path.join(builder.outdir, builder.imagedir)
