@@ -28,7 +28,7 @@ Usage
 
 Add autoanysrc to extensions list::
 
-    extenstion = ['sphinx.ext.autodoc', 'sphinxcontrib.autoanysrc', ]
+    extensions = ['sphinx.ext.autodoc', 'sphinxcontrib.autoanysrc', ]
 
 Example of usage::
 
