@@ -24,6 +24,10 @@ class AnySrcDocumenter(Documenter):
     analyzer_by_key = {}
 
     @classmethod
+    def can_document_member(cls, *args, **kwargs):
+        return False  # stop documenters chain
+
+    @classmethod
     def register_analyzer(cls, key, analyzer_class):
         """Register analyzer
 

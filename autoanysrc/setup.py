@@ -17,7 +17,7 @@ requires = [
 
 setup(
     name='sphinxcontrib-autoanysrc',
-    version='0.0.1',
+    version='0.0.2',
     url='',
     download_url='',
     license='BSD',

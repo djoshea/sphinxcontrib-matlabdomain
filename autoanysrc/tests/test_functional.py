@@ -51,7 +51,7 @@ def with_runsphinx(builder, confoverrides=None):
                 runsphinx(src, builder, confoverrides)
                 func()
             finally:
-                os.unlink(os.path.join(_srcdir, 'index.rst'))
+                # os.unlink(os.path.join(_srcdir, 'index.rst'))
                 shutil.rmtree(_outdir)
         test.__name__ = func.__name__
         return test
