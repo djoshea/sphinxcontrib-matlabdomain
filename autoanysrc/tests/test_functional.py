@@ -12,9 +12,10 @@ _tempdir = _srcdir = _outdir = None
 def setup():
     global _tempdir, _srcdir, _outdir
     _tempdir = tempfile.mkdtemp()
-    _srcdir = os.path.join(_tempdir, 'src')
+    # _srcdir = os.path.join(_tempdir, 'src')
+    _srcdir = os.path.join(os.path.dirname(__file__), 'fixture')
     _outdir = os.path.join(_tempdir, 'out')
-    os.mkdir(_srcdir)
+    # os.mkdir(_srcdir)
 
 
 def teardown():
@@ -62,7 +63,7 @@ def test_buildhtml_simple():
     """Generate simple
 
     .. autoanysrc:: services
-        :src: tests/fixture/**/*.js
+        :src: app/*.js
         :analyzer: js
     """
     content = readfile('index.html')

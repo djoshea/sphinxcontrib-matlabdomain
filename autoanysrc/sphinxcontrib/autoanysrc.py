@@ -1,21 +1,10 @@
 # -*- coding: utf-8 -*-
+import os
 import glob
 import codecs
 
 from sphinx.util.console import bold
 from sphinx.ext.autodoc import Documenter
-
-
-def src_option(arg):
-    if arg is None:
-        return []
-    return glob.glob(arg)
-
-
-def analyzer_option(arg):
-    if arg is None:
-        return None
-    return arg
 
 
 class AnySrcDocumenter(Documenter):
@@ -26,9 +15,10 @@ class AnySrcDocumenter(Documenter):
     content_indent = u''
     titles_allowed = True
 
+    # proxy directive paramenters only
     option_spec = {
-        'src': src_option,
-        'analyzer': analyzer_option,
+        'src': lambda x: x,
+        'analyzer': lambda x: x,
     }
 
     analyzer_by_key = {}
@@ -45,10 +35,22 @@ class AnySrcDocumenter(Documenter):
     def info(self, msg):
         self.directive.env.app.info('    <autoanysrc> %s' % msg)
 
+    def collect_files(self):
+        arg = self.options.src
+        if arg is None:
+            return []
+        if not os.path.isabs(arg):
+            arg = os.path.join(
+                self.directive.env.srcdir,
+                arg,
+            )
+        self.info('collect by: ' + bold(arg))
+        return glob.glob(arg)
+
     def process(self):
         """process files one by one with analyzer"""
 
-        for filepath in self.options.src:
+        for filepath in self.collect_files():
 
             self.info('processing: ' + bold(filepath))
             self.directive.env.note_dependency(filepath)
