@@ -4,6 +4,7 @@ import tempfile
 import shutil
 from sphinx.application import Sphinx
 
+
 _fixturedir = os.path.join(os.path.dirname(__file__), 'fixture')
 
 _tempdir = _srcdir = _outdir = None
@@ -77,3 +78,21 @@ def test_buildhtml_simple():
 
     # check param desc
     assert 'An URI to the location' in content
+
+
+@with_runsphinx('html', confoverrides={
+    'autoanysrc_analyzers': {
+        'js-custom': 'conf.JSCustomAnalyzer',
+    },
+})
+def test_custom_analyzer():
+    """Generate simple
+
+    .. autoanysrc:: services
+        :src: app/*.js
+        :analyzer: js-custom
+    """
+    content = readfile('index.html')
+
+    # check head
+    assert 'From custom analyzer' in content

@@ -28,17 +28,18 @@ Usage
 
 Add autoanysrc to extensions list::
 
-    extensions = ['sphinx.ext.autodoc', 'sphinxcontrib.autoanysrc', ]
+    extensions = ['sphinxcontrib.autoanysrc', ]
 
 Example of usage::
 
-    .. autoanysrc:: directives
+    .. autoanysrc:: blabla
         :src: app/**/*.js
         :analyzer: js
 
 .. note::
 
-    directive argument not used now, but it required...
+    directive argument 'blabla' not used now, but it required by autodoc
+    behaviour
 
 Where:
 
@@ -50,14 +51,60 @@ Directive will iterate over `app/**/*.js` files and process
 it line by line.
 
 
+Custom analyzer
+---------------
+
+autoanysrc allow define custom analyzers.
+
+Define custom analyzer (conf.py)::
+
+    # make conf.py importtable
+    sys.path.insert(0, os.path.abspath('.'))
+
+    from sphinxcontrib.autoanysrc import analyzers
+
+    class CustomAnalyzer(analyzers.BaseAnalyzer):
+
+        def process(self, content):
+            """
+            Must process content line by line
+
+            :param content: processing file content
+            :returns: generator of pairs docs line and line number
+            """
+            for lineno, srcline in enumerate(content.split('\n')):
+                yield 'some parsed doc line from content', lineno
+
+
+    # put analyzer to the autonaysrc setting
+    autoanysrc_analyzers = {
+        'my-custom': 'conf.CustomAnalyzer',
+    }
+
+
+And use it::
+
+    .. autoanysrc:: blabla
+        :src: ../src/*.js
+        :analyzer: my-custom
+
+
+Default analyzers
+-----------------
+
 JSAnalyzer
-----------
+``````````
 
 Search comments blocks starts by `/*"""` and ends by `*/`
 (inspired by `Nuulogic/sphinx-jsapidoc`_).
 
+::
 
-For example services.js::
+    .. autoanysrc:: directives
+        :src: app/services.js
+        :analyzer: js
+
+Where services.js::
 
     /*"""
     Services
@@ -79,13 +126,11 @@ For example services.js::
     };
 
 
-
 TODO
 ----
 
 - encoding option
 - allow internal indent in comment block
-- registering custom analyzers from settings
 - generate signatures like ext.autodoc...
 
 

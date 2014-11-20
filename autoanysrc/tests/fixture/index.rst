@@ -1,3 +1,3 @@
 .. autoanysrc:: services
     :src: app/*.js
-    :analyzer: js
+    :analyzer: js-custom

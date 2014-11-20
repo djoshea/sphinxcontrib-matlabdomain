@@ -6,7 +6,7 @@ import sys
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-sys.path.insert(0, os.path.abspath('app'))
+sys.path.insert(0, os.path.abspath('.'))
 
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -192,3 +192,12 @@ man_pages = [
     ('index', 'autoanysrc_fixture', 'autoanysrc_fixture Documentation',
      ['Evgeniy Tatarkin'], 1)
 ]
+
+
+from sphinxcontrib.autoanysrc import analyzers
+
+
+class JSCustomAnalyzer(analyzers.BaseAnalyzer):
+
+    def process(self, content):
+        yield 'From custom analyzer', 1
