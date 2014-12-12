@@ -79,6 +79,33 @@ Some edge cases that have ellipsis inside arrays.
     :show-inheritance:
     :members:
 
++myPackage
+++++++++++
+This is the test package
+
+.. automodule:: test_data.+myPackage
+
+packageFunc
+~~~~~~~~~~~
+
+.. autofunction:: packageFunc
+
+@myClassFolder
+++++++++++++++
+This is the test class folder
+
+.. automodule:: test_data.@myClassFolder
+
+myClassFolder
+~~~~~~~~~~~~~
+
+.. autoclass:: myClassFolder
+
+classMethod
+~~~~~~~~~~~
+
+.. autofunction:: classMethod
+
 Submodule
 +++++++++
 This is the test data module
@@ -108,6 +135,12 @@ Output with no commas
 Super from different module
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. autoclass:: super_from_diff_mod
+    :members:
+    :show-inheritance:
+
+TestFibonacci
+~~~~~~~~~~~~~
+.. autoclass:: TestFibonacci
     :members:
     :show-inheritance:
 

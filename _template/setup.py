@@ -29,6 +29,8 @@ setup(
         'License :: OSI Approved :: BSD License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
+        'Framework :: Sphinx :: Extension',
+        #'Framework :: Sphinx :: Theme',
         'Topic :: Documentation',
         'Topic :: Utilities',
     ],

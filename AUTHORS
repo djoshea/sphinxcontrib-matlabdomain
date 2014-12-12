@@ -6,6 +6,9 @@ aafig:
 autorun:
    Vadim Gubergrits <vadim.gubergrits@gmail.com>
 
+cheader:
+   Arto Bendiken <arto@bendiken.net>
+
 context:
    Wei-Wei Guo <wwguocn@gmail.com>
 
@@ -85,6 +88,12 @@ nicovideo:
 slide:
    Takeshi KOMIYA <i.tkomiya@gmail.com>
 
+cacoo:
+   Takeshi KOMIYA <i.tkomiya@gmail.com>
+
+astah:
+   Takeshi KOMIYA <i.tkomiya@gmail.com>
+
 requirements:
    Andrey Mikhaylenko <neithere@gmail.com>
 
@@ -142,3 +151,5 @@ autoprogram:
 examplecode:
     Serge Domkowski <sergedomk@gmail.com>
 
+autoanysrc:
+   Evgeniy Tatarkin <tatarkin.evg@gmail.com>

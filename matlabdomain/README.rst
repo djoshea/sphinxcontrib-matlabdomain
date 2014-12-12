@@ -163,3 +163,11 @@ http://bwanamarko.alwaysdata.net/matlabdomain/
     setter methods are documented like methods currently, but the dot is
     replaced by an underscore. Default values for properties are represented as
     unicode strings, therefore strings will be double quoted.
+
+Users
+-----
+
+* `Cantera <http://cantera.github.io/dev-docs/sphinx/html/compiling.html?highlight=matlabdomain#optional-programs>`_
+* `CoSMo MVPA <http://cosmomvpa.org/download.html?highlight=matlabdomain#developers>`_
+
+`Changes <https://bitbucket.org/bwanamarko/sphinxcontrib-matlabdomain/src/default/matlabdomain/CHANGES.rst>`_
