@@ -38,7 +38,7 @@ class SingleTypedField(Field):
 
     def __init__(self, name, names=(), typenames=(), label=None,
                  typerolename=None):
-        Field.__init__(self, name, names, label, False, None)
+        Field.__init__(self, name, names, label, False)
         self.typenames = typenames
         self.typerolename = typerolename
 
@@ -74,13 +74,13 @@ class LSObject(ObjectDescription):
         # :param typename name: description
         TypedField('parameter', names=('param', 'parameter'),
               typenames=('ptype', 'paramtype', 'type'),
-              label=l_('Parameters'), can_collapse=True),
+              label=l_('Parameters'), typerolename='type', can_collapse=True),
         # :return: description
         # :rtype: typename (optional)
         SingleTypedField('return', names=('return', 'returns'),
               typenames=('rtype', 'returntype'),
-              label=l_('Returns')),
-        # :author: name
+              label=l_('Returns'), typerolename='type'),
+        # :author: name <email>
         Field('author', names=('author', 'authors'),
               label=l_('Author'), has_arg=False),
         # :see: resource
@@ -88,10 +88,10 @@ class LSObject(ObjectDescription):
               label=l_('See also'), has_arg=False),
         # :parent: typename
         Field('parent', names=('parent', 'super'),
-              label=l_('Parent type'), has_arg=False),
+              label=l_('Parent type'), has_arg=False, bodyrolename='type'),
         # :import: trait_name
         Field('import', names=('import', 'imports'),
-              label=l_('Imports'), has_arg=False),
+              label=l_('Imports'), has_arg=False, bodyrolename='trait'),
     ]
 
     def needs_arglist(self):
