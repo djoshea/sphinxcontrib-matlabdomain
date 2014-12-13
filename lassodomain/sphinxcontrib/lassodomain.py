@@ -22,7 +22,40 @@ from sphinx.util.docfields import Field, TypedField
 from sphinx.util.nodes import make_refnode
 
 
-class SingleTypedField(Field):
+class SingleGroupedField(Field):
+    """A doc field that is grouped; i.e., all fields of that type will be
+    transformed into one field with its body being a comma-separated line.  It
+    does not have an argument.  Each item can be linked using the given
+    *bodyrolename*.  SingleGroupedField should be used for doc fields that can
+    occur more than once, but don't require a description.  If *can_collapse* is
+    true, this field will revert to a Field if only used once.
+
+    Example::
+
+       :import: trait_first
+       :import: trait_queriable
+    """
+    is_grouped = True
+
+    def __init__(self, name, names=(), label=None, bodyrolename=None,
+                 can_collapse=False):
+        Field.__init__(self, name, names, label, False, None, bodyrolename)
+        self.can_collapse = can_collapse
+
+    def make_field(self, types, domain, items):
+        fieldname = nodes.field_name('', self.label)
+        if len(items) == 1 and self.can_collapse:
+            return Field.make_field(self, types, domain, items[0])
+        bodynode = nodes.paragraph()
+        for i, (fieldarg, content) in enumerate(items):
+            bodynode += nodes.Text(', ') if i else None
+            bodynode += self.make_xref(self.bodyrolename, domain,
+                                       content[0].astext(), nodes.Text)
+        fieldbody = nodes.field_body('', bodynode)
+        return nodes.field('', fieldname, fieldbody)
+
+
+class SingleTypedField(SingleGroupedField):
     """A doc field that occurs once and can contain type information.  It does
     not have an argument.  The type can be linked using the given
     *typerolename*.  Used in this domain to describe return values and types,
@@ -37,12 +70,12 @@ class SingleTypedField(Field):
     is_typed = True
 
     def __init__(self, name, names=(), typenames=(), label=None,
-                 typerolename=None):
-        Field.__init__(self, name, names, label, False)
+                 typerolename=None, can_collapse=False):
+        SingleGroupedField.__init__(self, name, names, label, None, can_collapse)
         self.typenames = typenames
         self.typerolename = typerolename
 
-    def make_field(self, types, domain, item):
+    def make_field(self, types, domain, items):
         def handle_item(fieldarg, content):
             par = nodes.paragraph()
             if fieldarg in types:
@@ -58,7 +91,7 @@ class SingleTypedField(Field):
             return par
 
         fieldname = nodes.field_name('', self.label)
-        fieldarg, content = item
+        fieldarg, content = items[0]
         bodynode = handle_item(fieldarg, content)
         fieldbody = nodes.field_body('', bodynode)
         return nodes.field('', fieldname, fieldbody)
@@ -79,10 +112,10 @@ class LSObject(ObjectDescription):
         # :rtype: typename (optional)
         SingleTypedField('return', names=('return', 'returns'),
               typenames=('rtype', 'returntype'),
-              label=l_('Returns'), typerolename='type'),
+              label=l_('Returns'), typerolename='type', can_collapse=True),
         # :author: name <email>
-        Field('author', names=('author', 'authors'),
-              label=l_('Author'), has_arg=False),
+        SingleGroupedField('author', names=('author', 'authors'),
+              label=l_('Author'), can_collapse=True),
         # :see: resource
         Field('seealso', names=('see', 'url'),
               label=l_('See also'), has_arg=False),
@@ -90,8 +123,8 @@ class LSObject(ObjectDescription):
         Field('parent', names=('parent', 'super'),
               label=l_('Parent type'), has_arg=False, bodyrolename='type'),
         # :import: trait_name
-        Field('import', names=('import', 'imports'),
-              label=l_('Imports'), has_arg=False, bodyrolename='trait'),
+        SingleGroupedField('import', names=('import', 'imports'),
+              label=l_('Imports'), bodyrolename='trait', can_collapse=True),
     ]
 
     def needs_arglist(self):
