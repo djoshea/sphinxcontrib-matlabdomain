@@ -7,11 +7,11 @@ This package contains the lassodomain Sphinx extension, which adds
 support for the Lasso language to Sphinx.
 '''
 
-requires = ['Sphinx>=1.0']
+requires = ['Sphinx>=1.3']
 
 setup(
     name='sphinxcontrib-lassodomain',
-    version='0.2',
+    version='0.3',
     url='http://bitbucket.org/birkenfeld/sphinx-contrib',
     download_url='http://pypi.python.org/pypi/sphinxcontrib-lassodomain',
     license='BSD',

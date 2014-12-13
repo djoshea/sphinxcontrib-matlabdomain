@@ -1,3 +1,11 @@
+0.3 (2014-12)
+-------------
+
+*  Fixes for Python 3.
+*  Added linking of parameter and return type names using the ``:type:`` role
+   and trait names using the ``:trait:`` role.
+*  New ``SingleGroupedField`` field type for grouped fields without an argument.
+
 0.2 (2013-12)
 -------------
 

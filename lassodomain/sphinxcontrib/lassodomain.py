@@ -82,7 +82,7 @@ class SingleTypedField(SingleGroupedField):
                 par += nodes.Text(' (')
                 fieldtype = types.pop(fieldarg)
                 if len(fieldtype) == 1 and isinstance(fieldtype[0], nodes.Text):
-                    typename = u''.join(n.astext() for n in fieldtype)
+                    typename = ''.join(n.astext() for n in fieldtype)
                     par += self.make_xref(self.typerolename, domain, typename)
                 else:
                     par += fieldtype

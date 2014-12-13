@@ -94,8 +94,10 @@ Quick examples
 
       Description of the type
 
-      :parent: :ls:type:`mammal`
-      :import: :ls:trait:`trait_horned`
+      :parent: string
+      :import: trait_horned
+      :import: trait_herbivore
+      :import: trait_foreach
       :see: http://en.wikipedia.org/wiki/Rhinoceros
 
       .. ls:member:: numberOfHorns(species::string)::integer
@@ -104,14 +106,17 @@ Quick examples
 
          :param string species: Specifies the species name to look up
          :return: The number of horns
+         :rtype: integer
 
 
 .. ls:type:: rhino
 
    Description of the type
 
-   :parent: :ls:type:`mammal`
-   :import: :ls:trait:`trait_horned`
+   :parent: string
+   :import: trait_horned
+   :import: trait_herbivore
+   :import: trait_foreach
    :see: http://en.wikipedia.org/wiki/Rhinoceros
 
    .. ls:member:: numberOfHorns(species::string)::integer
@@ -120,6 +125,7 @@ Quick examples
 
       :param string species: Specifies the species name to look up
       :return: The number of horns
+      :rtype: integer
 
 
 Roles

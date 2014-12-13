@@ -64,7 +64,7 @@ The following source will generate the output below::
       :ls:type:`String <string>` data type or the ``string_...`` methods.
 
       :see:    http://lassoguide.com/operations/strings.html
-      :parent: :ls:type:`null`
+      :parent: null
 
       .. ls:member:: find(find, offset::integer[, -case::boolean=false])::integer
 
@@ -89,7 +89,7 @@ The following source will generate the output below::
 
       Provides iteration over a series of values.
 
-      :import: :ls:trait:`trait_decompose_assignment`
+      :import: trait_decompose_assignment
 
       .. ls:require:: forEach()
 
@@ -97,7 +97,7 @@ The following source will generate the output below::
 
          Allows the type to act as a generator.
 
-         :rtype: `trait_generator`
+         :rtype: trait_generator
 
 
 .. ls:method:: tag_exists(p0::string)
@@ -116,7 +116,7 @@ The following source will generate the output below::
    :ls:type:`String <string>` data type or the ``string_...`` methods.
 
    :see:    http://lassoguide.com/operations/strings.html
-   :parent: :ls:type:`null`
+   :parent: null
 
    .. ls:member:: find(find, offset::integer[, -case::boolean=false])::integer
 
@@ -141,7 +141,7 @@ The following source will generate the output below::
 
    Provides iteration over a series of values.
 
-   :import: :ls:trait:`trait_decompose_assignment`
+   :import: trait_decompose_assignment
 
    .. ls:require:: forEach()
 
@@ -149,7 +149,7 @@ The following source will generate the output below::
 
       Allows the type to act as a generator.
 
-      :rtype: `trait_generator`
+      :rtype: trait_generator
 
 
 Roles example
