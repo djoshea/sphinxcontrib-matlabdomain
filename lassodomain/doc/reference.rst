@@ -21,7 +21,8 @@ The following directives act as containers for Lasso method descriptions.
 Options for container directives include:
 
 *  ``import``, ``imports``:
-   A comma-separated list of imported trait names.
+   Name of an imported trait. Multiple entries are combined into a
+   comma-separated list.
 *  ``parent``, ``super``:
    The ``parent`` statement can appear in types and threads, which denotes
    the type that the current type is derived from.
@@ -134,8 +135,8 @@ Roles
 Cross-referencing is done with the same role syntax as other domains, except
 that member tag syntax is used to associate member methods with their containing
 type, trait, or thread using the arrow operator ``->``, such as
-``:meth:`bytes->getrange```. All other syntax follows what's described in the
-docs for `Sphinx domains`_.
+``:meth:`bytes->getrange```. References are made with case-insensitive matching.
+All other syntax follows what's described in the docs for `Sphinx domains`_.
 
 Use the following roles to link to definitions of each element:
 

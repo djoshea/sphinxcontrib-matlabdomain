@@ -85,7 +85,7 @@ The following source will generate the output below::
             or zero if the pattern cannot be found.
          :rtype: integer
 
-   .. ls:trait:: trait_foreach
+   .. ls:trait:: trait_forEach
 
       Provides iteration over a series of values.
 
@@ -137,7 +137,7 @@ The following source will generate the output below::
          or zero if the pattern cannot be found.
       :rtype: integer
 
-.. ls:trait:: trait_foreach
+.. ls:trait:: trait_forEach
 
    Provides iteration over a series of values.
 

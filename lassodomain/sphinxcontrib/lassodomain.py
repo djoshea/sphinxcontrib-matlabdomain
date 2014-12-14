@@ -197,27 +197,26 @@ class LSObject(ObjectDescription):
         return fullname, name_prefix
 
     def add_target_and_index(self, name_obj, sig, signode):
-        fullname = name_obj[0]
-        objectname = self.env.temp_data.get('ls:object')
-        if fullname not in self.state.document.ids:
-            signode['names'].append(fullname)
-            signode['ids'].append(fullname)
+        refname = name_obj[0].lower()
+        if refname not in self.state.document.ids:
+            signode['names'].append(name_obj[0])
+            signode['ids'].append(refname)
             signode['first'] = (not self.names)
             self.state.document.note_explicit_target(signode)
             objects = self.env.domaindata['ls']['objects']
-            if fullname in objects:
+            if refname in objects:
                 self.state_machine.reporter.warning(
-                    'duplicate object description of %s, ' % fullname +
+                    'duplicate object description of %s, ' % refname +
                     'other instance in ' +
-                    self.env.doc2path(objects[fullname][0]) +
+                    self.env.doc2path(objects[refname][0]) +
                     ', use :noindex: for one of them',
                     line=self.lineno)
-            objects[fullname] = self.env.docname, self.objtype
+            objects[refname] = self.env.docname, self.objtype
 
+        objectname = self.env.temp_data.get('ls:object')
         indextext = self.get_index_text(objectname, name_obj)
         if indextext:
-            self.indexnode['entries'].append(('single', indextext,
-                                              fullname, ''))
+            self.indexnode['entries'].append(('single', indextext, refname, ''))
 
     def before_content(self):
         # needed for automatic qualification of members (reset in subclasses)
@@ -356,7 +355,7 @@ class LassoDomain(Domain):
                      typ, target, node, contnode):
         objectname = node.get('ls:object')
         searchorder = node.hasattr('refspecific') and 1 or 0
-        name, obj = self.find_obj(env, objectname, target, typ, searchorder)
+        name, obj = self.find_obj(env, objectname, target.lower(), typ, searchorder)
         if not obj:
             return None
         return make_refnode(builder, fromdocname, obj[0], name, contnode, name)
