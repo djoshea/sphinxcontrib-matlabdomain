@@ -163,14 +163,15 @@ class LSObject(ObjectDescription):
             prefix = sig
             arglist = None
         if '->' in prefix:
-            name_prefix, name = prefix.rsplit('->', 1)
+            objectprefix, name = prefix.rsplit('->', 1)
+            objectprefix += '->'
         else:
-            name_prefix = None
+            objectprefix = None
             name = prefix
 
         objectname = self.env.temp_data.get('ls:object')
-        if name_prefix:
-            fullname = name_prefix + '->' + name
+        if objectprefix:
+            fullname = objectprefix + name
         elif objectname:
             fullname = objectname + '->' + name
         else:
@@ -183,18 +184,18 @@ class LSObject(ObjectDescription):
         sig_prefix = self.get_signature_prefix(sig)
         if sig_prefix:
             signode += addnodes.desc_annotation(sig_prefix, sig_prefix)
-        if name_prefix:
-            name_prefix += '->'
-            signode += addnodes.desc_addname(name_prefix, name_prefix)
+        if objectprefix:
+            signode += addnodes.desc_addname(objectprefix, objectprefix)
+
         signode += addnodes.desc_name(name, name)
         if self.needs_arglist():
-            if not arglist:
-                signode += addnodes.desc_parameterlist()
-            else:
+            if arglist:
                 _pseudo_parse_arglist(signode, arglist)
+            else:
+                signode += addnodes.desc_parameterlist()
             if returntype:
                 signode += addnodes.desc_returns(returntype, returntype)
-        return fullname, name_prefix
+        return fullname, objectprefix
 
     def add_target_and_index(self, name_obj, sig, signode):
         refname = name_obj[0].lower()
@@ -251,11 +252,11 @@ class LSTag(LSObject):
 
     def get_index_text(self, objectname, name_obj):
         name = name_obj[0].split('->')[-1]
-        if not (objectname or name_obj[1]):
-            return _('%s() (method)') % name
-        else:
+        if objectname or name_obj[1]:
             objectname = name_obj[0].split('->')[0]
-        return _('%s() (%s member)') % (name, objectname)
+            return _('%s() (%s member)') % (name, objectname)
+        else:
+            return _('%s() (method)') % name
 
 
 class LSTraitTag(LSTag):
@@ -347,18 +348,29 @@ class LassoDomain(Domain):
                 newname = obj + '->' + name
         return newname, objects.get(newname)
 
-    def get_objects(self):
-        for refname, (docname, type) in self.data['objects'].items():
-            yield (refname, refname, type, docname, refname, 1)
-
-    def resolve_xref(self, env, fromdocname, builder,
-                     typ, target, node, contnode):
+    def resolve_xref(self, env, fromdocname, builder, typ, target, node,
+                     contnode):
         objectname = node.get('ls:object')
         searchorder = node.hasattr('refspecific') and 1 or 0
-        name, obj = self.find_obj(env, objectname, target.lower(), typ, searchorder)
+        name, obj = self.find_obj(env, objectname, target.lower(), typ,
+                                  searchorder)
         if not obj:
             return None
         return make_refnode(builder, fromdocname, obj[0], name, contnode, name)
+
+    def resolve_any_xref(self, env, fromdocname, builder, target, node,
+                         contnode):
+        objectname = node.get('ls:object')
+        name, obj = self.find_obj(env, objectname, target.lower(), None, 1)
+        if not obj:
+            return []
+        return [('ls:' + self.role_for_objtype(obj[1]),
+                 make_refnode(builder, fromdocname, obj[0],
+                              name, contnode, name))]
+
+    def get_objects(self):
+        for refname, (docname, type) in self.data['objects'].items():
+            yield (refname, refname, type, docname, refname, 1)
 
 
 def setup(app):
