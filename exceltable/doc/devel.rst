@@ -11,22 +11,45 @@ Which is welcome, btw.
 
 .. index:: Building
 
+
+Getting started
+===============
+To get started with the development, follow the steps:
+
+- Install development-time dependencies::
+
+    pip install nose
+
+
 Building
 ========
-Project uses distribute Since the package already
-contains the dependencies to Paver, the basic building can be done as follows::
+Build project package with command::
 
-     python setup.py bdist_egg sdist_src
+     python setup.py sdist
 
-However, installation of the paver is strongly suggested. After installation,
-the documentation, building and packaging can be all in once::
+Releasing
+=========
+Steps to make a release:
 
-     paver package
+- Increase the version number (exceltable.py and CHANGES)
+- Run tox tests::
 
-To build just the documentation, run::
+    pip install tox
+    tox
 
-  paver doc
+- Build documentation::
 
+    # NOTE: Sphinx-pypi-upload runs only with Python 2
+    pip install sphinx-pypi-upload
+    python setup.py build_sphinx
+
+- Upload documentation
+
+    python setup.py upload_docs
+
+- Publish app
+
+    python setup.py sdist upload
 
 .. index:: Testing
 

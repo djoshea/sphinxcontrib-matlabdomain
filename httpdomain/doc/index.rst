@@ -677,6 +677,12 @@ will be rendered as:
 
       .. note::
 
+         It is worth noting that the names of endpoints that are applied to
+         blueprints are prefixed with the blueprint's name (e.g.
+         blueprint.endpoint).
+
+      .. note::
+
          While the `undoc-members`_ flag of :mod:`sphinx.ext.autodoc` extension
          includes members without docstrings, ``undoc-endpoints`` option has
          nothing to do with docstrings. It just excludes specified endpoints.
@@ -899,6 +905,15 @@ __ https://bitbucket.org/birkenfeld/sphinx-contrib
 
 Changelog
 ---------
+
+Version 1.3.1
+`````````````
+
+To be released.
+
+- Added :http:statuscode:`429 Too Many Requests` as a valid
+  :rst:role:`http:statuscode`.  [:pull:`81` by DDBReloaded]
+
 
 Version 1.3.0
 `````````````
