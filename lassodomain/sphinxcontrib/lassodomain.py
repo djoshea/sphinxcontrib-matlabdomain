@@ -169,7 +169,7 @@ class LSObject(ObjectDescription):
             objectprefix = None
             name = prefix
 
-        objectname = self.env.temp_data.get('ls:object')
+        objectname = self.env.ref_context.get('ls:object')
         if objectprefix:
             fullname = objectprefix + name
         elif objectname:
@@ -214,7 +214,7 @@ class LSObject(ObjectDescription):
                     line=self.lineno)
             objects[refname] = self.env.docname, self.objtype
 
-        objectname = self.env.temp_data.get('ls:object')
+        objectname = self.env.ref_context.get('ls:object')
         indextext = self.get_index_text(objectname, name_obj)
         if indextext:
             self.indexnode['entries'].append(('single', indextext, refname, ''))
@@ -225,7 +225,7 @@ class LSObject(ObjectDescription):
 
     def after_content(self):
         if self.objname_set:
-            self.env.temp_data['ls:object'] = None
+            self.env.ref_context['ls:object'] = None
 
 
 class LSDefinition(LSObject):
@@ -240,7 +240,7 @@ class LSDefinition(LSObject):
     def before_content(self):
         LSObject.before_content(self)
         if self.names:
-            self.env.temp_data['ls:object'] = self.names[0][0]
+            self.env.ref_context['ls:object'] = self.names[0][0]
             self.objname_set = True
 
 
@@ -274,7 +274,7 @@ class LSXRefRole(XRefRole):
     """Provides cross reference links for Lasso objects.
     """
     def process_link(self, env, refnode, has_explicit_title, title, target):
-        refnode['ls:object'] = env.temp_data.get('ls:object')
+        refnode['ls:object'] = env.ref_context.get('ls:object')
         if not has_explicit_title:
             title = title.lstrip('->')
             target = target.lstrip('~')
@@ -330,6 +330,12 @@ class LassoDomain(Domain):
         for fullname, (fn, _) in list(self.data['objects'].items()):
             if fn == docname:
                 del self.data['objects'][fullname]
+
+    def merge_domaindata(self, docnames, otherdata):
+        # XXX check duplicates
+        for fullname, (fn, objtype) in otherdata['objects'].items():
+            if fn in docnames:
+                self.data['objects'][fullname] = (fn, objtype)
 
     def find_obj(self, env, obj, name, typ, searchorder=0):
         if name[-2:] == '()':
