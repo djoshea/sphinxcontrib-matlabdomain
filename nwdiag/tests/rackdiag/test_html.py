@@ -385,3 +385,20 @@ class TestSphinxcontribRackdiagHTML(unittest.TestCase):
         else:
             self.assertNotRegex(source, '<a xlink:href="#hello-world">\\n\\s*<rect .*?>\\n\\s*</a>')
         self.assertIn('undefined label: unknown_target', warning.getvalue())
+
+    @with_svg_app
+    def test_attribute_plugin_should_not_effect_to_other_diagram(self, app, status, warning):
+        """
+        This testcase checks that attribute plugin is unloaded correctly (and it does not effect to other diagram).
+
+        .. rackdiag::
+
+           plugin attributes [property];
+           * A_foo [property = foo]
+
+        .. rackdiag::
+
+           * A_foo [property = foo]
+        """
+        app.builder.build_all()
+        self.assertIn('Unknown attribute: RackItem.property', warning.getvalue())

@@ -367,3 +367,23 @@ class TestSphinxcontribBlockdiagHTML(unittest.TestCase):
         else:
             self.assertNotRegex(source, '<a xlink:href="#hello-world">\\n\\s*<rect .*?>\\n\\s*</a>')
         self.assertIn('undefined label: unknown_target', warning.getvalue())
+
+    @with_svg_app
+    def test_autoclass_should_not_effect_to_other_diagram(self, app, status, warning):
+        """
+        This testcase checks that autoclass plugin is unloaded correctly (and it does not effect to other diagram).
+
+        .. blockdiag::
+
+           plugin autoclass;
+           class foo [color = red];
+           A_foo;
+
+        .. blockdiag::
+
+           class foo [color = red];
+           A_foo;
+        """
+        app.builder.build_all()
+        source = (app.outdir / 'index.html').read_text(encoding='utf-8')
+        self.assertRegexpMatches(source, '<text[^>]+>A_foo</text>')  # 2nd diagram has a node labeled 'A_foo'.

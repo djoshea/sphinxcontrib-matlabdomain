@@ -23,9 +23,10 @@ from sphinx.util.osutil import ensuredir
 
 import seqdiag.utils.rst.nodes
 import seqdiag.utils.rst.directives
-from blockdiag.utils.bootstrap import detectfont
+from blockdiag.utils.bootstrap import detectfont, Application
 from blockdiag.utils.compat import u, string_types
 from blockdiag.utils.fontmap import FontMap
+from blockdiag.utils.rst.directives import with_blockdiag
 
 # fontconfig; it will be initialized on `builder-inited` event.
 fontmap = None
@@ -193,6 +194,7 @@ def html_render_png(self, node):
     self.body.append(self.starttag(node, 'img', '', empty=True, **img_attr))
 
 
+@with_blockdiag
 def html_visit_seqdiag(self, node):
     try:
         image_format = get_image_format_for(self.builder)
@@ -289,14 +291,15 @@ def on_doctree_resolved(self, doctree, docname):
 
     for node in doctree.traverse(seqdiag_node):
         try:
-            relfn = node.get_relpath(image_format, self.builder)
-            image = node.to_drawer(image_format, self.builder)
-            if not os.path.isfile(image.filename):
-                image.draw()
-                image.save()
+            with Application():
+                relfn = node.get_relpath(image_format, self.builder)
+                image = node.to_drawer(image_format, self.builder)
+                if not os.path.isfile(image.filename):
+                    image.draw()
+                    image.save()
 
-            image = nodes.image(uri=image.filename, candidates={'*': relfn}, **node['options'])
-            node.parent.replace(node, image)
+                image = nodes.image(uri=relfn, candidates={'*': relfn}, **node['options'])
+                node.parent.replace(node, image)
         except Exception as exc:
             if self.builder.config.seqdiag_debug:
                 traceback.print_exc()
