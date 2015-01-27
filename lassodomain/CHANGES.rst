@@ -1,4 +1,4 @@
-0.3 (2014-12)
+0.3 (2015-01)
 -------------
 
 *  Fixes for Python 3.
@@ -6,6 +6,8 @@
    and trait names using the ``:trait:`` role.
 *  New ``SingleGroupedField`` field type for grouped fields without an argument.
 *  Made reference matching case-insensitive.
+*  Added support for the ``:any:`` role.
+*  Added basic support for parallel builds.
 
 0.2 (2013-12)
 -------------

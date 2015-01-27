@@ -61,7 +61,7 @@ The following source will generate the output below::
    .. ls:type:: string
 
       Text in Lasso is stored and manipulated using the
-      :ls:type:`String <string>` data type or the ``string_...`` methods.
+      :ls:type:`String` data type or the ``string_...`` methods.
 
       :see:    http://lassoguide.com/operations/strings.html
       :parent: null
@@ -113,7 +113,7 @@ The following source will generate the output below::
 .. ls:type:: string
 
    Text in Lasso is stored and manipulated using the
-   :ls:type:`String <string>` data type or the ``string_...`` methods.
+   :ls:type:`String` data type or the ``string_...`` methods.
 
    :see:    http://lassoguide.com/operations/strings.html
    :parent: null
