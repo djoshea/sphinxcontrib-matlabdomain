@@ -22,7 +22,40 @@ from sphinx.util.docfields import Field, TypedField
 from sphinx.util.nodes import make_refnode
 
 
-class SingleTypedField(Field):
+class SingleGroupedField(Field):
+    """A doc field that is grouped; i.e., all fields of that type will be
+    transformed into one field with its body being a comma-separated line.  It
+    does not have an argument.  Each item can be linked using the given
+    *bodyrolename*.  SingleGroupedField should be used for doc fields that can
+    occur more than once, but don't require a description.  If *can_collapse* is
+    true, this field will revert to a Field if only used once.
+
+    Example::
+
+       :import: trait_first
+       :import: trait_queriable
+    """
+    is_grouped = True
+
+    def __init__(self, name, names=(), label=None, bodyrolename=None,
+                 can_collapse=False):
+        Field.__init__(self, name, names, label, False, None, bodyrolename)
+        self.can_collapse = can_collapse
+
+    def make_field(self, types, domain, items):
+        fieldname = nodes.field_name('', self.label)
+        if len(items) == 1 and self.can_collapse:
+            return Field.make_field(self, types, domain, items[0])
+        bodynode = nodes.paragraph()
+        for i, (fieldarg, content) in enumerate(items):
+            bodynode += nodes.Text(', ') if i else None
+            bodynode += self.make_xref(self.bodyrolename, domain,
+                                       content[0].astext(), nodes.Text)
+        fieldbody = nodes.field_body('', bodynode)
+        return nodes.field('', fieldname, fieldbody)
+
+
+class SingleTypedField(SingleGroupedField):
     """A doc field that occurs once and can contain type information.  It does
     not have an argument.  The type can be linked using the given
     *typerolename*.  Used in this domain to describe return values and types,
@@ -37,19 +70,19 @@ class SingleTypedField(Field):
     is_typed = True
 
     def __init__(self, name, names=(), typenames=(), label=None,
-                 typerolename=None):
-        Field.__init__(self, name, names, label, False, None)
+                 typerolename=None, can_collapse=False):
+        SingleGroupedField.__init__(self, name, names, label, None, can_collapse)
         self.typenames = typenames
         self.typerolename = typerolename
 
-    def make_field(self, types, domain, item):
+    def make_field(self, types, domain, items):
         def handle_item(fieldarg, content):
             par = nodes.paragraph()
             if fieldarg in types:
                 par += nodes.Text(' (')
                 fieldtype = types.pop(fieldarg)
                 if len(fieldtype) == 1 and isinstance(fieldtype[0], nodes.Text):
-                    typename = u''.join(n.astext() for n in fieldtype)
+                    typename = ''.join(n.astext() for n in fieldtype)
                     par += self.make_xref(self.typerolename, domain, typename)
                 else:
                     par += fieldtype
@@ -58,7 +91,7 @@ class SingleTypedField(Field):
             return par
 
         fieldname = nodes.field_name('', self.label)
-        fieldarg, content = item
+        fieldarg, content = items[0]
         bodynode = handle_item(fieldarg, content)
         fieldbody = nodes.field_body('', bodynode)
         return nodes.field('', fieldname, fieldbody)
@@ -74,24 +107,24 @@ class LSObject(ObjectDescription):
         # :param typename name: description
         TypedField('parameter', names=('param', 'parameter'),
               typenames=('ptype', 'paramtype', 'type'),
-              label=l_('Parameters'), can_collapse=True),
+              label=l_('Parameters'), typerolename='type', can_collapse=True),
         # :return: description
         # :rtype: typename (optional)
         SingleTypedField('return', names=('return', 'returns'),
               typenames=('rtype', 'returntype'),
-              label=l_('Returns')),
-        # :author: name
-        Field('author', names=('author', 'authors'),
-              label=l_('Author'), has_arg=False),
+              label=l_('Returns'), typerolename='type', can_collapse=True),
+        # :author: name <email>
+        SingleGroupedField('author', names=('author', 'authors'),
+              label=l_('Author'), can_collapse=True),
         # :see: resource
         Field('seealso', names=('see', 'url'),
               label=l_('See also'), has_arg=False),
         # :parent: typename
         Field('parent', names=('parent', 'super'),
-              label=l_('Parent type'), has_arg=False),
+              label=l_('Parent type'), has_arg=False, bodyrolename='type'),
         # :import: trait_name
-        Field('import', names=('import', 'imports'),
-              label=l_('Imports'), has_arg=False),
+        SingleGroupedField('import', names=('import', 'imports'),
+              label=l_('Imports'), bodyrolename='trait', can_collapse=True),
     ]
 
     def needs_arglist(self):
@@ -130,14 +163,15 @@ class LSObject(ObjectDescription):
             prefix = sig
             arglist = None
         if '->' in prefix:
-            name_prefix, name = prefix.rsplit('->', 1)
+            objectprefix, name = prefix.rsplit('->', 1)
+            objectprefix += '->'
         else:
-            name_prefix = None
+            objectprefix = None
             name = prefix
 
-        objectname = self.env.temp_data.get('ls:object')
-        if name_prefix:
-            fullname = name_prefix + '->' + name
+        objectname = self.env.ref_context.get('ls:object')
+        if objectprefix:
+            fullname = objectprefix + name
         elif objectname:
             fullname = objectname + '->' + name
         else:
@@ -150,41 +184,40 @@ class LSObject(ObjectDescription):
         sig_prefix = self.get_signature_prefix(sig)
         if sig_prefix:
             signode += addnodes.desc_annotation(sig_prefix, sig_prefix)
-        if name_prefix:
-            name_prefix += '->'
-            signode += addnodes.desc_addname(name_prefix, name_prefix)
+        if objectprefix:
+            signode += addnodes.desc_addname(objectprefix, objectprefix)
+
         signode += addnodes.desc_name(name, name)
         if self.needs_arglist():
-            if not arglist:
-                signode += addnodes.desc_parameterlist()
-            else:
+            if arglist:
                 _pseudo_parse_arglist(signode, arglist)
+            else:
+                signode += addnodes.desc_parameterlist()
             if returntype:
                 signode += addnodes.desc_returns(returntype, returntype)
-        return fullname, name_prefix
+        return fullname, objectprefix
 
     def add_target_and_index(self, name_obj, sig, signode):
-        fullname = name_obj[0]
-        objectname = self.env.temp_data.get('ls:object')
-        if fullname not in self.state.document.ids:
-            signode['names'].append(fullname)
-            signode['ids'].append(fullname)
+        refname = name_obj[0].lower()
+        if refname not in self.state.document.ids:
+            signode['names'].append(name_obj[0])
+            signode['ids'].append(refname)
             signode['first'] = (not self.names)
             self.state.document.note_explicit_target(signode)
             objects = self.env.domaindata['ls']['objects']
-            if fullname in objects:
+            if refname in objects:
                 self.state_machine.reporter.warning(
-                    'duplicate object description of %s, ' % fullname +
+                    'duplicate object description of %s, ' % refname +
                     'other instance in ' +
-                    self.env.doc2path(objects[fullname][0]) +
+                    self.env.doc2path(objects[refname][0]) +
                     ', use :noindex: for one of them',
                     line=self.lineno)
-            objects[fullname] = self.env.docname, self.objtype
+            objects[refname] = self.env.docname, self.objtype
 
+        objectname = self.env.ref_context.get('ls:object')
         indextext = self.get_index_text(objectname, name_obj)
         if indextext:
-            self.indexnode['entries'].append(('single', indextext,
-                                              fullname, ''))
+            self.indexnode['entries'].append(('single', indextext, refname, ''))
 
     def before_content(self):
         # needed for automatic qualification of members (reset in subclasses)
@@ -192,7 +225,7 @@ class LSObject(ObjectDescription):
 
     def after_content(self):
         if self.objname_set:
-            self.env.temp_data['ls:object'] = None
+            self.env.ref_context['ls:object'] = None
 
 
 class LSDefinition(LSObject):
@@ -207,7 +240,7 @@ class LSDefinition(LSObject):
     def before_content(self):
         LSObject.before_content(self)
         if self.names:
-            self.env.temp_data['ls:object'] = self.names[0][0]
+            self.env.ref_context['ls:object'] = self.names[0][0]
             self.objname_set = True
 
 
@@ -219,11 +252,11 @@ class LSTag(LSObject):
 
     def get_index_text(self, objectname, name_obj):
         name = name_obj[0].split('->')[-1]
-        if not (objectname or name_obj[1]):
-            return _('%s() (method)') % name
-        else:
+        if objectname or name_obj[1]:
             objectname = name_obj[0].split('->')[0]
-        return _('%s() (%s member)') % (name, objectname)
+            return _('%s() (%s member)') % (name, objectname)
+        else:
+            return _('%s() (method)') % name
 
 
 class LSTraitTag(LSTag):
@@ -241,7 +274,7 @@ class LSXRefRole(XRefRole):
     """Provides cross reference links for Lasso objects.
     """
     def process_link(self, env, refnode, has_explicit_title, title, target):
-        refnode['ls:object'] = env.temp_data.get('ls:object')
+        refnode['ls:object'] = env.ref_context.get('ls:object')
         if not has_explicit_title:
             title = title.lstrip('->')
             target = target.lstrip('~')
@@ -294,9 +327,15 @@ class LassoDomain(Domain):
     }
 
     def clear_doc(self, docname):
-        for fullname, (fn, _) in self.data['objects'].items():
+        for fullname, (fn, _) in list(self.data['objects'].items()):
             if fn == docname:
                 del self.data['objects'][fullname]
+
+    def merge_domaindata(self, docnames, otherdata):
+        # XXX check duplicates
+        for fullname, (fn, objtype) in otherdata['objects'].items():
+            if fn in docnames:
+                self.data['objects'][fullname] = (fn, objtype)
 
     def find_obj(self, env, obj, name, typ, searchorder=0):
         if name[-2:] == '()':
@@ -315,18 +354,29 @@ class LassoDomain(Domain):
                 newname = obj + '->' + name
         return newname, objects.get(newname)
 
-    def get_objects(self):
-        for refname, (docname, type) in self.data['objects'].iteritems():
-            yield (refname, refname, type, docname, refname, 1)
-
-    def resolve_xref(self, env, fromdocname, builder,
-                     typ, target, node, contnode):
+    def resolve_xref(self, env, fromdocname, builder, typ, target, node,
+                     contnode):
         objectname = node.get('ls:object')
         searchorder = node.hasattr('refspecific') and 1 or 0
-        name, obj = self.find_obj(env, objectname, target, typ, searchorder)
+        name, obj = self.find_obj(env, objectname, target.lower(), typ,
+                                  searchorder)
         if not obj:
             return None
         return make_refnode(builder, fromdocname, obj[0], name, contnode, name)
+
+    def resolve_any_xref(self, env, fromdocname, builder, target, node,
+                         contnode):
+        objectname = node.get('ls:object')
+        name, obj = self.find_obj(env, objectname, target.lower(), None, 1)
+        if not obj:
+            return []
+        return [('ls:' + self.role_for_objtype(obj[1]),
+                 make_refnode(builder, fromdocname, obj[0],
+                              name, contnode, name))]
+
+    def get_objects(self):
+        for refname, (docname, type) in self.data['objects'].items():
+            yield (refname, refname, type, docname, refname, 1)
 
 
 def setup(app):

@@ -2,6 +2,36 @@
 
 This file describes user-visible changes between the extension versions.
 
+
+Version 0.3.1 (2015-02-19)
+--------------------------
+
+ * Removes 2to3 from setup.py
+ * Enables bdist_wheel distributions
+
+
+Version 0.3 (2015-02-19)
+------------------------
+
+* Adds six dependency
+* Adds pockets dependency
+* Removes iterators module (now found in pockets package)
+* Removes pavertasks module, deemed redundant as it simply called sphinx-apidoc
+
+
+Version 0.2.11 (2015-02-15)
+---------------------------
+
+* Fix Google Docstring argument regex. Argument types now more permissive,
+  allowing spaces and other special characters.
+
+
+Version 0.2.10 (2015-02-09)
+---------------------------
+
+* Adds "Yield" alias for "Yields" section
+
+
 Version 0.2.9 (2015-01-12)
 --------------------------
 

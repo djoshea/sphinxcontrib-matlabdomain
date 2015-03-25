@@ -1,40 +1,119 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+"""Helper script to create a new Sphinx extension in the sphinx-contrib
+project.
 
-import sys, os, re, string, shutil
+"""
+from __future__ import print_function, with_statement
 
-no_fn_re = re.compile(r'[^a-zA-Z0-9_-]')
+import argparse
+import os
+import re
+import shutil
+import string
+import sys
 
-def die(msg):
-    print msg
-    sys.exit(1)
 
-if not os.path.isdir('_template'):
-    die('Please run this script from its directory.')
+NOT_ALNUM_RE = re.compile(r'[^\w-]')
 
-print 'Creating a new sphinx-contrib package'
-name = raw_input('Name: ')
-author = raw_input('Author name: ')
-author_email = raw_input('E-mail: ')
+TEMPLATE_DIRNAME = '_template'
+TEMPLATE_FILES   = ('setup.py', 'README.rst')
 
-if not name or not author:
-    die('Please give name and author name.')
-if no_fn_re.sub('', name) != name:
-    die('Please only use alphanumerics, underscore and dash in the name.')
-if os.path.exists(name):
-    die('A subdirectory or file with that name already exists.')
 
-shutil.copytree('_template', name)
+def make_pkg(pkgname, context):
+    """Create a new extension package.
 
-def templated(filename):
-    fp = open(os.path.join('_template', filename), 'r')
-    tmp = string.Template(fp.read())
-    fp.close()
-    fp = open(os.path.join(name, filename), 'w')
-    fp.write(tmp.safe_substitute(**globals()))
-    fp.close()
+    :param pkgname: Name of the package to create.
 
-templated('setup.py')
-templated('README.rst')
+    :param context: Mapping with keys that match the placeholders in the
+                    templates.
 
-print 'Created new package in directory', name
+    :return: True if package creation succeeded or a tuple with False and an
+             error message in case the creation failed.
+
+    :rtype: Bool or Tuple
+
+    """
+    try:
+        shutil.copytree(TEMPLATE_DIRNAME, pkgname)
+    except (OSError, IOError, shutil.Error) as e:
+        return False, e.strerror
+
+    for f in TEMPLATE_FILES:
+        try:
+            write_template(pkgname, f, context)
+        except (OSError, IOError) as e:
+            return False, e.strerror
+    return True
+
+
+def write_template(root, filename, context):
+    """Write template file in given root directory.
+
+    :param root: Path to root folder where to put resulting file.
+
+    :param filename: Name of the template file relative to ``root``.
+
+    :param context: Mapping with keys that match the placeholders in the
+                    templates.
+
+    """
+    infile  = os.path.join(TEMPLATE_DIRNAME, filename)
+    outfile = os.path.join(root, filename)
+    with open(infile, 'r') as in_fp, open(outfile, 'w') as out_fp:
+        out_fp.write(string.Template(in_fp.read()).safe_substitute(context))
+
+
+def get_argparser():
+    """Generate argument parser for the script."""
+    parser = argparse.ArgumentParser(
+        description='Utility script to create a new sphinx-contrib package.'
+    )
+
+    parser.add_argument('pkgname', metavar='PKGNAME',nargs='+',
+                        help="name of the package to create")
+    parser.add_argument('-a', '--author',
+                        help="author name for the package")
+    parser.add_argument('-e', '--email',
+                        help="author's email address")
+
+    return parser
+
+
+if __name__ == '__main__':
+    if not os.path.isdir(TEMPLATE_DIRNAME):
+        sys.exit("Run this script from sphinx-contrib root directory.")
+
+    # Parsing arguments.
+    opts = get_argparser().parse_args(sys.argv[1:])
+    if not opts.author:
+        opts.author = raw_input("Author name: ")
+    if not opts.email:
+        opts.email = raw_input("E-mail: ")
+
+    # Creating each given packages.
+    # Exit value is the number of failed package creation.
+    failed = 0
+    for name in opts.pkgname:
+        context = {
+            'author': opts.author,
+            'author_email': opts.email,
+            'name': name,
+        }
+
+        name_out = "%s: " % name
+        if NOT_ALNUM_RE.search(name):
+            sys.stderr.write(
+                name_out + "IGNORE, non-alphanumeric package name!\n"
+            )
+            continue
+
+        try:
+            success, msg = make_pkg(name, context)
+        except TypeError:
+            sys.stdout.write(name_out + "OK\n")
+            continue
+        sys.stderr.write(name_out + "FAIL, %s!\n"%msg)
+        failed += 1
+
+    sys.exit(failed)

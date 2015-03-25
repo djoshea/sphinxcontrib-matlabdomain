@@ -187,8 +187,13 @@ Configuration
 Index
 =====
 .. toctree::
+   :maxdepth: 2
 
-    sphinxcontrib.napoleon
+   sphinxcontrib.napoleon
+
+
+* :ref:`example_google`
+* :ref:`example_numpy`
 
 * :ref:`genindex`
 * :ref:`modindex`
