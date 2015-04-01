@@ -150,14 +150,16 @@ def get_image_filename(self, code, options, prefix='graphviz'):
     """
     hashkey = code.encode('utf-8') + str(options)
     fname = '%s-%s.png' % (prefix, sha(hashkey).hexdigest())
-    if hasattr(self.builder, 'imgpath'):
-        # HTML
-        relfn = posixpath.join(self.builder.imgpath, fname)
-        outfn = os.path.join(self.builder.outdir, '_images', fname)
+    if hasattr(self.builder, 'imagedir'):  # Sphinx (>= 1.3.x)
+        outputdir = os.path.join(self.builder.outdir, self.builder.imagedir)
+    elif hasattr(self.builder, 'imgpath'):  # Sphinx (<= 1.2.x) and HTML writer
+        outputdir = os.path.join(self.builder.outdir, '_images')
     else:
-        # LaTeX
-        relfn = fname
-        outfn = os.path.join(self.builder.outdir, fname)
+        outputdir = self.builder.outdir
+
+    reldir = getattr(self.builder, 'imgpath', '')
+    relfn = os.path.join(reldir, fname)
+    outfn = os.path.join(outputdir, fname)
 
     if os.path.isfile(outfn):
         return relfn, outfn
