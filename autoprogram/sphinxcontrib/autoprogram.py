@@ -8,6 +8,7 @@
     :license: BSD, see LICENSE for details.
 
 """
+# pylint: disable=protected-access,missing-docstring
 import argparse
 import collections
 try:
@@ -48,7 +49,7 @@ def scan_programs(parser, command=[]):
                 names = list(arg.option_strings)
             desc = (arg.help or '') % {'default': arg.default}
             options.append((names, desc))
-    yield command, options, parser.description or ''
+    yield command, options, parser.description, parser.epilog or ''
     if parser._subparsers:
         choices = parser._subparsers._actions[-1].choices.items()
         if not (hasattr(collections, 'OrderedDict') and
@@ -80,10 +81,10 @@ class AutoprogramDirective(Directive):
     def make_rst(self):
         import_name, = self.arguments
         parser = import_object(import_name or '__undefined__')
-        prog = self.options.get('prog', parser.prog)
-        for commands, options, desc in scan_programs(parser):
+        parser.prog = self.options.get('prog', parser.prog)
+        for commands, options, desc, epilog in scan_programs(parser):
             command = ' '.join(commands)
-            title = '{0} {1}'.format(prog, command).rstrip()
+            title = '{0} {1}'.format(parser.prog, command).rstrip()
             yield ''
             yield '.. program:: ' + title
             yield ''
@@ -92,11 +93,16 @@ class AutoprogramDirective(Directive):
             yield ''
             yield desc
             yield ''
+            yield parser.format_usage()
+            yield ''
             for option_strings, help_ in options:
                 yield '.. option:: {0}'.format(', '.join(option_strings))
                 yield ''
                 yield '   ' + help_.replace('\n', '   \n')
                 yield ''
+            yield ''
+            for line in epilog.splitlines():
+                yield line
 
     def run(self):
         node = nodes.section()
