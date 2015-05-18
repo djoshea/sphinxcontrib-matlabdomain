@@ -18,8 +18,8 @@ syntax: glob
 .tox/
 .coverage/
 .*.swp
-sphinxcontrib_matlabdomain.sublime-project
-sphinxcontrib_matlabdomain.sublime-workspace
+sphinxcontrib-matlabdomain.sublime-project
+sphinxcontrib-matlabdomain.sublime-workspace
 .project
 .pydevproject
 .settings/org.eclipse.core.resources.prefs
