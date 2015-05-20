@@ -20,7 +20,7 @@ except ImportError:
     from sha import sha
 
 from docutils import nodes
-from docutils.parsers.rst import directives
+from docutils.parsers.rst.directives import images, nonnegative_int, flag
 
 from sphinx.errors import SphinxError
 from sphinx.util import ensuredir, relative_uri
@@ -55,7 +55,7 @@ class AafigError(SphinxError):
     category = 'aafig error'
 
 
-class AafigDirective(directives.images.Image):
+class AafigDirective(images.Image):
     """
     Directive to insert an ASCII art figure to be rendered by aafigure.
     """
@@ -66,11 +66,11 @@ class AafigDirective(directives.images.Image):
         background   = str,
         foreground   = str,
         fill         = str,
-        aspect       = directives.nonnegative_int,
-        textual      = directives.flag,
-        proportional = directives.flag,
+        aspect       = nonnegative_int,
+        textual      = flag,
+        proportional = flag,
     )
-    option_spec = directives.images.Image.option_spec.copy()
+    option_spec = images.Image.option_spec.copy()
     option_spec.update(own_option_spec)
 
     def run(self):
@@ -88,7 +88,7 @@ class AafigDirective(directives.images.Image):
                 aafig_options[k] = v
                 del self.options[k]
         self.arguments = ['']
-        (image_node,) = directives.images.Image.run(self)
+        (image_node,) = images.Image.run(self)
         if isinstance(image_node, nodes.system_message):
             return [image_node]
         text = '\n'.join(self.content)
