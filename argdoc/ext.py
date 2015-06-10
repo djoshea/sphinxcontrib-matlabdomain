@@ -33,6 +33,22 @@ patterns = { "section_title"      : r"^(\w+.*):$",
 
 patterns = { K : re.compile(V) for K,V in patterns.items() }  
 
+def noargdoc(func):
+    """Decorator that forces argdoc to skip processing of `func` 
+    
+    Parameters
+    ----------
+    func : function
+        `main` function of a command-line module
+    
+    Returns
+    -------
+    func
+        wrapped function
+    """
+    func.__dict__["noargdoc"] = True
+    return func
+
 def get_subcommand_header(name,indent_size=4):
     return "%s .. Rubric:: %s" % (indent_size,name)
 
@@ -253,11 +269,12 @@ def process_argparser_help(app,obj,help_lines,indent_size=4,section_head=False):
 
 def add_args_to_module_docstring(app,what,name,obj,options,lines):
     """Insert a table describing command-line parameters into the documentation
-    for the ``main`` method of a command-line script
+    for the `main` method of a command-line script. `main` methods decorated 
+    with the :func:`noargdoc` decorator will be skipped.
     
     Notes
     -----
-    Modifies ``lines`` in place.
+    Per the Sphinx spec, this function modifies `lines` in place.
     
     This will only work for command-line scripts using :py:mod:`argparse`
     
@@ -284,21 +301,22 @@ def add_args_to_module_docstring(app,what,name,obj,options,lines):
         List of strings the docstrings, after Sphinx processing
     """
     if what == "module" and obj.__dict__.get("main",None) is not None:
-        call = shlex.split("python -m %s --help" % obj.__name__)
-        try:
-            proc = subprocess.Popen(call,stdout=subprocess.PIPE)
-            help_lines = proc.communicate()[0].split("\n")
-        except subprocess.CalledProcessError as e:
-            out  = ("-"*75) + "\n" + e.output + "\n" + ("-"*75)
-            out += "Could not call module %s as '%s'. Output:\n"% (obj.__name__, e.cmd)
-            out += e.output
-            out += ("-"*75) + "\n"
-            app.warn(out)
-        try:
-            out_lines = process_argparser_help(app,obj,help_lines,indent_size=0,section_head=True)
-            lines.extend(out_lines)
-        except IndexError as e:
-            app.warn("Error processing argparser into docstring for module %s: " % obj.__name__)
+        if obj.__dict__.get("main").__dict__.get("noargdoc",False) != False:
+            call = shlex.split("python -m %s --help" % obj.__name__)
+            try:
+                proc = subprocess.Popen(call,stdout=subprocess.PIPE)
+                help_lines = proc.communicate()[0].split("\n")
+            except subprocess.CalledProcessError as e:
+                out  = ("-"*75) + "\n" + e.output + "\n" + ("-"*75)
+                out += "Could not call module %s as '%s'. Output:\n"% (obj.__name__, e.cmd)
+                out += e.output
+                out += ("-"*75) + "\n"
+                app.warn(out)
+            try:
+                out_lines = process_argparser_help(app,obj,help_lines,indent_size=0,section_head=True)
+                lines.extend(out_lines)
+            except IndexError as e:
+                app.warn("Error processing argparser into docstring for module %s: " % obj.__name__)
 
 def setup(app):
     """Set up :obj:`argdoc` extension and register with `Sphinx`_
