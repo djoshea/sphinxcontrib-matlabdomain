@@ -9,4 +9,4 @@ from argdoc.ext import setup
 
 __author__ = "Joshua Griffin Dunn"
 __date__ = "2015-06-09"
-__version__ = "0.0.1"
+__version__ = "0.0.2"
