@@ -9,7 +9,7 @@ import shlex
 import subprocess
 
 
-_SUBCOMMAND_HEADER = "%sSubcommands\n%s-----------\n"
+_SUBCOMMAND_HEADER = "%sSubcommand arguments\n%s--------------------\n"
 
 _REQUIRED = [
     'sphinx.ext.autodoc',
@@ -87,23 +87,25 @@ def process_subprogram_container(app,obj,help_lines,start_line,indent_size=4,sec
         List of strings encoding reStructuredText table of command-line arguments
     """
     out_lines = (_SUBCOMMAND_HEADER % (indent_size,indent_size)).split("\n")
-    for line in out_lines[start_line+1:]:
-        match = patterns["subcommand_names"].search(line) 
+    for line in help_lines[start_line+1:]:
+        match = patterns["subcommand_names"].search(line.strip("\n")) 
         if match is not None:
-            subcommands = match.groups(0).split(",")
+            subcommands = match.groups()[0].split(",")
             break
     
+    # FIXME
+    print(subcommands)
     for subcommand in subcommands:
         out_lines.append(get_subcommand_header(subcommand,indent_size=indent_size))
-        call = shlex.split("python -m %s %s --help" % (obj.__name__,subcommand))
+        call = shlex.split("python %s %s --help" % (obj.__name__,subcommand))
         try:
             proc = subprocess.Popen(call,stdout=subprocess.PIPE)
             sub_help_lines = proc.communicate()[0].split("\n")
-            out_lines.extend(process_argparser_help(app,
-                                                    obj,
-                                                    sub_help_lines,
-                                                    indent_size=indent_size+4,
-                                                    section_head=section_head))            
+            out_lines.extend(process_single_or_sub_program(app,
+                                                           obj,
+                                                           sub_help_lines,
+                                                           indent_size=indent_size,
+                                                           section_head=section_head))            
         except subprocess.CalledProcessError as e:
             out  = ("-"*75) + "\n" + e.output + "\n" + ("-"*75)
             out += "Could not call module %s as '%s'. Output:\n"% (obj.__name__, e.cmd)
@@ -301,8 +303,8 @@ def add_args_to_module_docstring(app,what,name,obj,options,lines):
         List of strings the docstrings, after Sphinx processing
     """
     if what == "module" and obj.__dict__.get("main",None) is not None:
-        if obj.__dict__.get("main").__dict__.get("noargdoc",False) != False:
-            call = shlex.split("python -m %s --help" % obj.__name__)
+        if obj.__dict__.get("main").__dict__.get("noargdoc",False) == False:
+            call = shlex.split("python %s --help" % obj.__name__)
             try:
                 proc = subprocess.Popen(call,stdout=subprocess.PIPE)
                 help_lines = proc.communicate()[0].split("\n")
