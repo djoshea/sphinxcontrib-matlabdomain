@@ -1,0 +1,7 @@
+.. Python/Sphinx links
+.. _Python: https://python.org
+.. _Sphinx: http://sphinx-doc.org
+.. _Autodoc: http://sphinx-doc.org/ext/autodoc.html
+
+
+.. Our links
