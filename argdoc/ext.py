@@ -1,12 +1,13 @@
 #!/usr/bin/env python
-'''
-Created on Jun 9, 2015
-
-@author: joshua
-'''
+"""Functions that constitute the `argdoc` plugin for `Sphinx`_.
+"""
 import re
 import shlex
 import subprocess
+
+#===============================================================================
+# INDEX: various constants
+#===============================================================================
 
 _SUBCOMMAND_HEADER = "%sSubcommand arguments\n%s--------------------\n"
 
@@ -15,7 +16,6 @@ _REQUIRED = [
     'sphinx.ext.autosummary',
 ]
 """Extensions required by :py:obj:`argdoc`"""
-
 
 patterns = { "section_title"      : r"^(\w+.*):$",
              "opt_only"           : r"^  (-?[^\s]+(,\s--[^\s]+)?)$",
@@ -32,6 +32,10 @@ patterns = { "section_title"      : r"^(\w+.*):$",
 
 patterns = { K : re.compile(V) for K,V in patterns.items() }  
 
+#===============================================================================
+# INDEX: function decorators
+#===============================================================================
+
 def noargdoc(func):
     """Decorator that forces argdoc to skip processing of `func` 
     
@@ -47,6 +51,10 @@ def noargdoc(func):
     """
     func.__dict__["noargdoc"] = True
     return func
+
+#===============================================================================
+# INDEX: docstring-processing functions
+#===============================================================================
 
 def process_subprogram_container(app,obj,help_lines,start_line,indent_size=4,section_head=False):
     """Processes help output from an :py:class:`argparse.ArgumentParser`
@@ -288,9 +296,10 @@ def add_args_to_module_docstring(app,what,name,obj,options,lines):
     
     Notes
     -----
-    Per the Sphinx spec, this function modifies `lines` in place.
+    Per the `Sphinx`_ spec, this function modifies `lines` in place.
     
-    This will only work for command-line scripts using :py:mod:`argparse`
+    This will only work for command-line scripts using :mod:`argparse`.
+    :mod:`optparse` is not supported.
     
     
     Parameters
@@ -332,6 +341,10 @@ def add_args_to_module_docstring(app,what,name,obj,options,lines):
                 lines.extend(out_lines)
             except IndexError as e:
                 app.warn("Error processing argparser into docstring for module %s: " % obj.__name__)
+
+#===============================================================================
+# INDEX: plugin setup
+#===============================================================================
 
 def setup(app):
     """Set up :obj:`argdoc` extension and register with `Sphinx`_
