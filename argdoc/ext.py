@@ -8,7 +8,6 @@ import re
 import shlex
 import subprocess
 
-
 _SUBCOMMAND_HEADER = "%sSubcommand arguments\n%s--------------------\n"
 
 _REQUIRED = [
@@ -49,12 +48,10 @@ def noargdoc(func):
     func.__dict__["noargdoc"] = True
     return func
 
-def get_subcommand_header(name,indent_size=4):
-    return "%s .. Rubric:: %s" % (indent_size,name)
-
 def process_subprogram_container(app,obj,help_lines,start_line,indent_size=4,section_head=False):
     """Processes help output from an :py:class:`argparse.ArgumentParser`
-    of subprograms, or of a program that has no subprograms
+    from a program that includes one or more subprograms.  Called by
+    :func:`process_argparser`
     
     Parameters
     ----------
@@ -62,7 +59,7 @@ def process_subprogram_container(app,obj,help_lines,start_line,indent_size=4,sec
         Sphinx application
             
     obj : module
-        Module containing `main` function
+        Module containing `main`-like function
             
     help_lines : list
         List of strings, each corresponding to a line of output from
@@ -84,20 +81,20 @@ def process_subprogram_container(app,obj,help_lines,start_line,indent_size=4,sec
     Returns
     -------
     list
-        List of strings encoding reStructuredText table of command-line arguments
+        List of strings encoding reStructuredText table of command-line
+        arguments for all subprograms in the containing argparser
     """
-    out_lines = (_SUBCOMMAND_HEADER % (indent_size,indent_size)).split("\n")
+    out_lines = (_SUBCOMMAND_HEADER % (" "*indent_size," "*indent_size)).split("\n")
     for line in help_lines[start_line+1:]:
         match = patterns["subcommand_names"].search(line.strip("\n")) 
         if match is not None:
             subcommands = match.groups()[0].split(",")
             break
     
-    # FIXME
-    print(subcommands)
+    app.debug("%s subcommands: %s" % (obj.__name__,", ".join(subcommands)))
     for subcommand in subcommands:
-        out_lines.append(get_subcommand_header(subcommand,indent_size=indent_size))
-        call = shlex.split("python %s %s --help" % (obj.__name__,subcommand))
+        #out_lines.append(get_subcommand_header(subcommand,indent_size=indent_size))
+        call = shlex.split("python -m %s %s --help" % (obj.__name__,subcommand))
         try:
             proc = subprocess.Popen(call,stdout=subprocess.PIPE)
             sub_help_lines = proc.communicate()[0].split("\n")
@@ -105,7 +102,8 @@ def process_subprogram_container(app,obj,help_lines,start_line,indent_size=4,sec
                                                            obj,
                                                            sub_help_lines,
                                                            indent_size=indent_size,
-                                                           section_head=section_head))            
+                                                           section_head=section_head,
+                                                           section_name="``%s`` subprogram" % subcommand))            
         except subprocess.CalledProcessError as e:
             out  = ("-"*75) + "\n" + e.output + "\n" + ("-"*75)
             out += "Could not call module %s as '%s'. Output:\n"% (obj.__name__, e.cmd)
@@ -115,9 +113,10 @@ def process_subprogram_container(app,obj,help_lines,start_line,indent_size=4,sec
 
     return out_lines
 
-def process_single_or_sub_program(app,obj,help_lines,indent_size=4,section_head=False):
+def process_single_or_sub_program(app,obj,help_lines,indent_size=4,section_head=False,section_name="Command-line arguments"):
     """Processes help output from an :py:class:`argparse.ArgumentParser`
-    of subprograms, or of a program that has no subprograms
+    of subprograms, or of a program that has no subprograms. Called by
+    :func:`process_argparser`
     
     Parameters
     ----------
@@ -125,7 +124,7 @@ def process_single_or_sub_program(app,obj,help_lines,indent_size=4,section_head=
         Sphinx application
         
     obj : module
-        Module containing `main` function
+        Module containing `main`-like function
             
     help_lines : list
         List of strings, each corresponding to a line of output from
@@ -144,7 +143,8 @@ def process_single_or_sub_program(app,obj,help_lines,indent_size=4,section_head=
     Returns
     -------
     list
-        List of strings encoding reStructuredText table of command-line arguments
+        List of strings encoding reStructuredText table of command-line
+        arguments for program or subprogram
     """
     started = False
 
@@ -181,15 +181,18 @@ def process_single_or_sub_program(app,obj,help_lines,indent_size=4,section_head=
                 col1 = []
                 col2 = []
             
-        #elif patterns["section_title"].search(line) is not None and not line.startswith("usage:"):
+        #elif patterns["section_title"].search(line):
         #FIXME: this is a kludge to deal with __doc__ lines that have trailing colons
+        #       and will not work if the first argument sectionis not one of the following:
         elif line.startswith("positional arguments:") or line.startswith("optional arguments:"):
             
             if started == False:
                 started = True
                 if section_head == True:
-                    out_lines.append(" "*indent_size + "Command-line arguments")
-                    out_lines.append(" "*indent_size + "----------------------")
+                    stmp1 = "%s%s" % (" "*indent_size,section_name)
+                    stmp2 = "%s%s" % (" "*indent_size,"-"*len(section_name))
+                    out_lines.append(stmp1)
+                    out_lines.append(stmp2)
             
             # start section
             match = patterns["section_title"].search(line)
@@ -201,7 +204,7 @@ def process_single_or_sub_program(app,obj,help_lines,indent_size=4,section_head=
             match = patterns["section_title"].search(line)
             
             section_title = ["%s%s" % (" "*indent_size,match.groups()[0].capitalize()),
-                             "%s%s" % (" "*indent_size,("."*len(match.groups()[0]))),
+                             "%s%s" % (" "*indent_size,("\""*len(match.groups()[0]))),
                             ]
         elif patterns["section_desc"].search(line) is not None and started == True:
             section_desc.append(line.strip())
@@ -226,9 +229,9 @@ def process_single_or_sub_program(app,obj,help_lines,indent_size=4,section_head=
     
     return out_lines
 
-def process_argparser_help(app,obj,help_lines,indent_size=4,section_head=False):
+def process_argparser(app,obj,help_lines,indent_size=4,section_head=False):
     """Processes help output from an :py:class:`argparse.ArgumentParser`
-    into a set of reStructuredText tables, probing subparsers as needed.
+    into a set of reStructuredText tables, probing subcommand parsers as needed.
     
     Parameters
     ----------
@@ -236,7 +239,7 @@ def process_argparser_help(app,obj,help_lines,indent_size=4,section_head=False):
         Sphinx application
     
     obj : module
-        Module containing `main` function
+        Module containing `main`-like function
     
     help_lines : list
         List of strings, each corresponding to a line of output from
@@ -255,24 +258,33 @@ def process_argparser_help(app,obj,help_lines,indent_size=4,section_head=False):
     Returns
     -------
     list
-        List of strings corresponding to reStructuredText table
+        List of strings corresponding to reStructuredText tables
     """
+    has_subcommands = False
     for n,line in enumerate(help_lines):
         if patterns["subcommands"].match(line.strip("\n")) is not None:
-            out_lines = process_subprogram_container(app,obj,help_lines,n,
-                                                     indent_size=indent_size,
-                                                     section_head=section_head)
-        else:
-            out_lines = process_single_or_sub_program(app,obj,help_lines,
-                                                      indent_size=indent_size,
-                                                      section_head=section_head)                                  
+            has_subcommands = True
+            break
+    if has_subcommands == True:
+        app.debug("%s has subcommands" % obj.__name__)        
+        out_lines = process_subprogram_container(app,obj,help_lines,n,
+                                                 indent_size=indent_size,
+                                                 section_head=section_head)
+
+    else:
+        app.debug("%s has no subcommands" % obj.__name__)
+        out_lines = process_single_or_sub_program(app,obj,help_lines,
+                                                  indent_size=indent_size,
+                                                  section_head=section_head)                                  
 
     return out_lines
 
 def add_args_to_module_docstring(app,what,name,obj,options,lines):
     """Insert a table describing command-line parameters into the documentation
-    for the `main` method of a command-line script. `main` methods decorated 
-    with the :func:`noargdoc` decorator will be skipped.
+    for the `main`-like method of a command-line script. `main`-like methods
+    decorated with the :func:`noargdoc` decorator will be skipped. `main`-like
+    functions are found by name, set by the configuration option ``argdoc_main_func``
+    in your ``conf.py``. The default value is `main`.
     
     Notes
     -----
@@ -300,11 +312,12 @@ def add_args_to_module_docstring(app,what,name,obj,options,lines):
         if their corresponding flag was given in the directive
 
     lines : list
-        List of strings the docstrings, after Sphinx processing
+        List of strings encoding the module docstrings after Sphinx processing
     """
-    if what == "module" and obj.__dict__.get("main",None) is not None:
-        if obj.__dict__.get("main").__dict__.get("noargdoc",False) == False:
-            call = shlex.split("python %s --help" % obj.__name__)
+    funcname = app.config.argdoc_main_func
+    if what == "module" and obj.__dict__.get(funcname,None) is not None:
+        if obj.__dict__.get(funcname).__dict__.get("noargdoc",False) == False:
+            call = shlex.split("python -m %s --help" % obj.__name__)
             try:
                 proc = subprocess.Popen(call,stdout=subprocess.PIPE)
                 help_lines = proc.communicate()[0].split("\n")
@@ -315,7 +328,7 @@ def add_args_to_module_docstring(app,what,name,obj,options,lines):
                 out += ("-"*75) + "\n"
                 app.warn(out)
             try:
-                out_lines = process_argparser_help(app,obj,help_lines,indent_size=0,section_head=True)
+                out_lines = process_argparser(app,obj,help_lines,indent_size=0,section_head=True)
                 lines.extend(out_lines)
             except IndexError as e:
                 app.warn("Error processing argparser into docstring for module %s: " % obj.__name__)
@@ -332,3 +345,4 @@ def setup(app):
         app.setup_extension(ext)
     
     app.connect("autodoc-process-docstring",add_args_to_module_docstring)
+    app.add_config_value("argdoc_main_func","main","env")
