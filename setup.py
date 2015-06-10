@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+"""Setup file for argdoc Sphinx extension"""
 from setuptools import setup, find_packages
 import argdoc
 
@@ -9,7 +10,6 @@ with open("README.md") as f:
 config_info = { "version"      : argdoc.__version__,
                 "packages"     : find_packages(),
               }
-
 
 setup(
     name = "argdoc",
