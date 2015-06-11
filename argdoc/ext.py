@@ -50,10 +50,10 @@ _REQUIRED = [
 """Other `Sphinx`_ extensions required by :py:obj:`argdoc`"""
 
 patterns = { "section_title"      : r"^(\w+.*):$",
-             "opt_only"           : r"^  (-?[^\s]+(,\s--[^\s]+)?)$",
-             "opt_plus_args"      : r"^  (-+[^\s]+(,\s--[^\s]+\s[^\s]+)?)(\s[^\s]+)+$",
+             "opt_only"           : r"^  (-?[^\s]+(, --[^\s]+)?)$",
+             "opt_plus_args"      : r"^  (-+[^\s]+)((?: [^-\s]+)+)(?:(?:, (--[^\s]+))((?: [^\s]+)+))?$",
              "opt_plus_desc"      : r"^  (?P<left>-?[^\s]+(,\s--[^\s]+)?)\s\s+(?P<right>.*)",
-             "opt_plus_args_desc" : r"^  (?P<left>(-?-[^\s]+)( [^\s]+)+( --[^\s]+( [^\s]+)+)?)  +(?P<right>.+)$",
+             "opt_plus_args_desc" : r"^  (?P<left>(-?-[^\s]+)( [^-\s]+)+( --[^\s]+( [^\s]+)+)?)  +(?P<right>\w+.*)$",
              "continue_desc"      : r"^ {24}(.*)",
              "section_desc"       : r"^ (\s[^- ]+)+$",
              "subcommands"        : r"^subcommands:$",
@@ -137,9 +137,7 @@ def process_subprogram_container(app,obj,help_lines,start_line,indent_size=4,sec
         try:
             proc = subprocess.Popen(call,stdout=subprocess.PIPE)
             sub_help_lines = proc.communicate()[0].split("\n")
-            out_lines.extend(process_single_or_sub_program(app,
-                                                           obj,
-                                                           sub_help_lines,
+            out_lines.extend(process_single_or_sub_program(sub_help_lines,
                                                            indent_size=indent_size,
                                                            section_head=section_head,
                                                            section_name="``%s`` subprogram" % subcommand))            
@@ -152,19 +150,13 @@ def process_subprogram_container(app,obj,help_lines,start_line,indent_size=4,sec
 
     return out_lines
 
-def process_single_or_sub_program(app,obj,help_lines,indent_size=4,section_head=False,section_name="Command-line arguments"):
+def process_single_or_sub_program(help_lines,indent_size=4,section_head=False,section_name="Command-line arguments"):
     """Processes help output from an :py:class:`argparse.ArgumentParser`
     of subprograms, or of a program that has no subprograms. Called by
     :func:`process_argparser`
     
     Parameters
     ----------
-    app
-        Sphinx application
-        
-    obj : module
-        Module containing `main`-like function
-            
     help_lines : list
         List of strings, each corresponding to a line of output from having
         passed ``--help`` as an argument to the `main`-like function
@@ -258,7 +250,6 @@ def process_single_or_sub_program(app,obj,help_lines,indent_size=4,section_head=
             col2[-1] += line.strip("\n")
         elif patterns["opt_plus_desc"].search(line) is not None and started == True:
             match = patterns["opt_plus_desc"].search(line).groupdict()
-            #assert len(col1) == len(col2)
             col1.append(match["left"])
             col2.append(match["right"])
         elif patterns["opt_plus_args_desc"].search(line) is not None and started == True:
@@ -312,7 +303,7 @@ def process_argparser(app,obj,help_lines,indent_size=4,section_head=False):
 
     else:
         app.debug("%s has no subcommands" % obj.__name__)
-        out_lines = process_single_or_sub_program(app,obj,help_lines,
+        out_lines = process_single_or_sub_program(help_lines,
                                                   indent_size=indent_size,
                                                   section_head=section_head)                                  
 
