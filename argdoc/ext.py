@@ -38,6 +38,9 @@ import subprocess
 # INDEX: various constants
 #===============================================================================
 
+_OTHER_HEADER_LINES = """Script contents
+---------------""".split("\n")
+
 _SUBCOMMAND_HEADER = "%sSubcommand arguments\n%s--------------------\n"
 
 _REQUIRED = [
@@ -368,6 +371,7 @@ def add_args_to_module_docstring(app,what,name,obj,options,lines):
             try:
                 out_lines = process_argparser(app,obj,help_lines,indent_size=0,section_head=True)
                 lines.extend(out_lines)
+                lines.extend(_OTHER_HEADER_LINES)
             except IndexError as e:
                 app.warn("Error processing argparser into docstring for module %s: " % obj.__name__)
 
