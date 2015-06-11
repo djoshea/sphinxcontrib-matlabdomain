@@ -1,7 +1,13 @@
-.. Python/Sphinx links
+.. Python/Sphinx/documentation/formatting
 .. _Python: https://python.org
 .. _Sphinx: http://sphinx-doc.org
 .. _Autodoc: http://sphinx-doc.org/ext/autodoc.html
+.. _sphinx-apidoc : http://sphinx-doc.org/man/sphinx-apidoc.html
+.. _numpy documentation guide: https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt 
+.. _reStructuredText: http://docutils.sourceforge.net/docs/user/rst/quickref.html
+.. _PEP8:   https://www.python.org/dev/peps/pep-0008
+.. _PEP257: https://www.python.org/dev/peps/pep-0257
+.. _directive: http://docutils.sourceforge.net/docs/ref/rst/directives.html
 
-
-.. Our links
+.. Other
+.. _bash: http://en.wikipedia.org/wiki/Bash_(Unix_shell) 
