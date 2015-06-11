@@ -12,8 +12,7 @@ __date__ = "2015-06-09"
 # INDEX: test cases
 #===============================================================================
 
-_SIMPLE_DESC1="""
-Simple help for an argparser test for :py:class:`argparse.ArgumentParser`.
+_SIMPLE_DESC1="""Simple help for an argparser test for :py:class:`argparse.ArgumentParser`.
 We'll put in all kinds of things that look like --options.
 
 Examples:
@@ -39,6 +38,7 @@ def get_simple_parser():
     parser.add_argument("--reallyreallyreallyreallylongoption",metavar="long_option_argument",help="This help should appear on the next line")
     return parser.format_help().split("\n")
 
+#TODO fill out
 def get_optiongroup_parser():
     parser = argparse.ArgumentParser(description=_SIMPLE_DESC1,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -242,6 +242,7 @@ class TestArgdoc():
                 yield self.check_match, name, patterns[name], inp, expected
 
     def test_process_single_or_sub_program(self):
+        # get argparsers of various complexity and check against answers
         assert False
 
     def test_process_subcommands(self):

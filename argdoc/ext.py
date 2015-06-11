@@ -4,7 +4,7 @@
 User-facing functions
 ---------------------
 :func:`noargdoc`
-    Decorator function that forces :obj:`argdoc` to skip a `main`-like function
+    Decorator function that forces :obj:`argdoc` to skip a ``main``-like function
     it would normally process
     
 Developer functions
@@ -73,7 +73,7 @@ def noargdoc(func):
     Parameters
     ----------
     func : function
-        `main` function of a command-line module
+        ``main``-lie function of a command-line module
     
     Returns
     -------
@@ -98,7 +98,7 @@ def process_subprogram_container(app,obj,help_lines,start_line,indent_size=4,sec
         Sphinx application
             
     obj : module
-        Module containing `main`-like function
+        Module containing ``main``-like function
             
     help_lines : list
         List of strings, each corresponding to a line of output from having
@@ -110,12 +110,12 @@ def process_subprogram_container(app,obj,help_lines,start_line,indent_size=4,sec
     indent_size : int, optional
         Number of spaces to prepend before output. This is significant,
         because whitespace is significant in reStructuredText, and 
-        incorrect indentation size will muddle the rendering. (Default: 4)
+        incorrect indentation size will muddle the rendering. (Default: `4`)
     
     section_head : bool, optional
-        If True, a section header for "Command-line arguments" will be included.
+        If `True`, a section header for "Command-line arguments" will be included.
         This messes up parsing for function docstrings, but is fine for module
-        docstrings (Default: False).
+        docstrings (Default: `False`).
     
     Returns
     -------
@@ -132,7 +132,6 @@ def process_subprogram_container(app,obj,help_lines,start_line,indent_size=4,sec
     
     app.debug("%s subcommands: %s" % (obj.__name__,", ".join(subcommands)))
     for subcommand in subcommands:
-        #out_lines.append(get_subcommand_header(subcommand,indent_size=indent_size))
         call = shlex.split("python -m %s %s --help" % (obj.__name__,subcommand))
         try:
             proc = subprocess.Popen(call,stdout=subprocess.PIPE)
@@ -159,17 +158,17 @@ def process_single_or_sub_program(help_lines,indent_size=4,section_head=False,se
     ----------
     help_lines : list
         List of strings, each corresponding to a line of output from having
-        passed ``--help`` as an argument to the `main`-like function
+        passed ``--help`` as an argument to the ``main``-like function
     
     indent_size : int, optional
         Number of spaces to prepend before output. This is significant,
         because whitespace is significant in reStructuredText, and 
-        incorrect indentation size will muddle the rendering. (Default: 4)
+        incorrect indentation size will muddle the rendering. (Default: `4`)
     
     section_head : bool, optional
-        If True, a section header for "Command-line arguments" will be included.
+        If `True`, a section header for "Command-line arguments" will be included.
         This messes up parsing for function docstrings, but is fine for module
-        docstrings (Default: False).
+        docstrings (Default: `False`).
     
     Returns
     -------
@@ -269,21 +268,21 @@ def process_argparser(app,obj,help_lines,indent_size=4,section_head=False):
         Sphinx application
     
     obj : module
-        Module containing `main`-like function
+        Module containing ``main``-like function
     
     help_lines : list
         List of strings, each corresponding to a line of output from having
-        passed ``--help`` as an argument to the `main`-like function
+        passed ``--help`` as an argument to the ``main``-like function
     
     indent_size : int, optional
         Number of spaces to prepend before output. This is significant,
         because whitespace is significant in reStructuredText, and 
-        incorrect indentation size will muddle the rendering. (Default: 4)
+        incorrect indentation size will muddle the rendering. (Default: `4`)
     
     section_head : bool, optional
-        If True, a section header for "Command-line arguments" will be included.
+        If `True`, a section header for "Command-line arguments" will be included.
         This messes up parsing for function docstrings, but is fine for module
-        docstrings (Default: False).
+        docstrings (Default: `False`).
     
     Returns
     -------
@@ -311,8 +310,8 @@ def process_argparser(app,obj,help_lines,indent_size=4,section_head=False):
 
 def add_args_to_module_docstring(app,what,name,obj,options,lines):
     """Insert a table describing command-line parameters into the documentation
-    for the `main`-like method of a command-line script. `main`-like methods
-    decorated with the :func:`noargdoc` decorator will be skipped. `main`-like
+    for the ``main``-like function of a command-line script. ``main``-like functions
+    decorated with the :func:`noargdoc` decorator will be skipped. ``main``-like
     functions are found by name, set by the configuration option ``argdoc_main_func``
     in your ``conf.py``. The default value is `main`.
     
@@ -321,7 +320,7 @@ def add_args_to_module_docstring(app,what,name,obj,options,lines):
     Per the `Sphinx`_ spec, this function modifies `lines` in place.
     
     This will only work for command-line scripts using :mod:`argparse`.
-    :mod:`optparse` is not supported.
+    :mod:`optparse` is deprecated and not supported.
     
     
     Parameters
@@ -339,11 +338,11 @@ def add_args_to_module_docstring(app,what,name,obj,options,lines):
         Object to skip or not
     
     options : object
-        Options given to the directive, whose boolean properties are set to True
+        Options given to the directive, whose boolean properties are set to `True`
         if their corresponding flag was given in the directive
 
     lines : list
-        List of strings encoding the module docstrings after Sphinx processing
+        List of strings encoding the module docstrings after `Sphinx`_ processing
     """
     funcname = app.config.argdoc_main_func
     if what == "module" and obj.__dict__.get(funcname,None) is not None:
