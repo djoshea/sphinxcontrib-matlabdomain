@@ -55,7 +55,7 @@ patterns = { "section_title"      : r"^(\w+.*):$",
              "opt_plus_desc"      : r"^  (?P<left>-?[^\s]+(,\s--[^\s]+)?)\s\s+(?P<right>.*)",
              "opt_plus_args_desc" : r"^  (?P<left>(-?-[^\s]+)( [^-\s]+)+( --[^\s]+( [^\s]+)+)?)  +(?P<right>\w+.*)$",
              "continue_desc"      : r"^ {24}(.*)",
-             "section_desc"       : r"^ (\s[^- ]+)+$",
+             "section_desc"       : r"^  ([^- ]+\s)+$",
              "subcommands"        : r"^subcommands:$",
              "subcommand_names"   : r"^  {((?:\w+)(?:(?:,(?:\w+))+)?)}$"             
             }
@@ -216,8 +216,7 @@ def process_single_or_subprogram(help_lines,indent_size=4,section_head=False,sec
         #FIXME: this is a kludge to deal with __doc__ lines that have trailing colons
         #       and will not work if the first argument section is not one of the following
         #       "positional arguments:" or "optional arguments:"
-        elif line.startswith("positional arguments:") or line.startswith("optional arguments:"):
-            
+        elif line.endswith("arguments:"):
             if started == False:
                 started = True
                 if section_head == True:
@@ -238,12 +237,13 @@ def process_single_or_subprogram(help_lines,indent_size=4,section_head=False,sec
             section_title = [u"%s%s" % (" "*indent_size,match.groups()[0].capitalize()),
                              u"%s%s" % (" "*indent_size,("\""*len(match.groups()[0]))),
                             ]
-        elif patterns["section_desc"].search(line) is not None and started == True:
-            section_desc.append(line.strip().decode("utf-8"))
-            
+        # opt_only MUST precede section_desc, because option-only lines will
+        # match the section description pattern, but not vice-versa
         elif patterns["opt_only"].search(line) is not None and started == True:
             col1.append(line.strip().decode("utf-8"))
             col2.append(u"")
+        elif patterns["section_desc"].search(line) is not None and started == True:
+            section_desc.append(line.strip().decode("utf-8"))
         elif patterns["opt_plus_args"].search(line) is not None and started == True:
             col1.append(line.strip().decode("utf-8"))
             col2.append(u"")
