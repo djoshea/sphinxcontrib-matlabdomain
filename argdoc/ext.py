@@ -38,7 +38,7 @@ import argdoc
 # INDEX: various constants
 #===============================================================================
 
-_OTHER_HEADER_LINES = """Script contents
+_OTHER_HEADER_LINES = u"""Script contents
 ---------------""".split("\n")
 
 _SUBCOMMAND_HEADER = "%sSubcommand arguments\n%s--------------------\n"
@@ -140,7 +140,7 @@ def process_subprogram_container(app,obj,help_lines,start_line,indent_size=4,sec
             out_lines.extend(process_single_or_subprogram(sub_help_lines,
                                                           indent_size=indent_size,
                                                           section_head=section_head,
-                                                          section_name="``%s`` subprogram" % subcommand))            
+                                                          section_name=u"``%s`` subprogram" % subcommand))            
         except subprocess.CalledProcessError as e:
             out  = ("-"*75) + "\n" + e.output + "\n" + ("-"*75)
             out += "Could not call module %s as '%s'. Output:\n"% (obj.__name__, e.cmd)
@@ -150,7 +150,7 @@ def process_subprogram_container(app,obj,help_lines,start_line,indent_size=4,sec
 
     return out_lines
 
-def process_single_or_subprogram(help_lines,indent_size=4,section_head=False,section_name="Command-line arguments"):
+def process_single_or_subprogram(help_lines,indent_size=4,section_head=False,section_name=u"Command-line arguments"):
     """Processes help output from an :py:class:`argparse.ArgumentParser`
     of subprograms, or of a program that has no subprograms. Called by
     :func:`process_argparser`
@@ -192,20 +192,20 @@ def process_single_or_subprogram(help_lines,indent_size=4,section_head=False,sec
             if len(col1) > 0 and len(col2) > 0:
                 col1_width = 1 + max([len(X) for X in col1]) + 4
                 col2_width = max([len(X) for X in col2])
-                out_lines.append("")
-                out_lines.append("")
+                out_lines.append(u"")
+                out_lines.append(u"")
                 out_lines.extend(section_title)
                 out_lines.extend(section_desc)
-                out_lines.append("")
-                out_lines.append( (" "*indent_size)+("="*col1_width) + " " + ("="*col2_width))# + "\n" )
-                out_lines.append( (" "*indent_size)+"*Option*" + " "*(1 + col1_width - 8) + "*Description*")# + "\n" )
-                out_lines.append( (" "*indent_size)+("="*col1_width) + " " + ("="*col2_width))# + "\n" )
+                out_lines.append(u"")
+                out_lines.append( (u" "*indent_size)+(u"="*col1_width) + u" " + (u"="*col2_width))# + "\n" )
+                out_lines.append( (u" "*indent_size)+u"*Option*" + u" "*(1 + col1_width - 8) + u"*Description*")# + "\n" )
+                out_lines.append( (u" "*indent_size)+(u"="*col1_width) + u" " + (u"="*col2_width))# + "\n" )
                  
                 for c1, c2 in zip(col1,col2):
-                    out_lines.append((" "*indent_size)+ "``" + c1 + "``" + (" "*(1+col1_width-len(c1))) + c2)# + "\n" )
+                    out_lines.append((u" "*indent_size)+ u"``" + c1 + u"``" + (u" "*(1+col1_width-len(c1))) + c2)# + "\n" )
      
-                out_lines.append( (" "*indent_size)+("="*col1_width) + " " + ("="*col2_width))#  + "\n"  )
-                out_lines.append("")
+                out_lines.append( (u" "*indent_size)+(u"="*col1_width) + u" " + (u"="*col2_width))#  + "\n"  )
+                out_lines.append(u"")
                 
                 section_title = []
                 section_desc  = []
@@ -221,42 +221,42 @@ def process_single_or_subprogram(help_lines,indent_size=4,section_head=False,sec
             if started == False:
                 started = True
                 if section_head == True:
-                    stmp1 = "%s%s" % (" "*indent_size,section_name)
-                    stmp2 = "%s%s" % (" "*indent_size,"-"*len(section_name))
+                    stmp1 = u"%s%s" % (" "*indent_size,section_name)
+                    stmp2 = u"%s%s" % (" "*indent_size,"-"*len(section_name))
                     out_lines.append(stmp1)
                     out_lines.append(stmp2)
             
             # start section
             match = patterns["section_title"].search(line)
             
-            section_title = ["%s%s" % (" "*indent_size,match.groups()[0].capitalize()),
-                             "%s%s" % (" "*indent_size,("."*len(match.groups()[0]))),
+            section_title = [u"%s%s" % (" "*indent_size,match.groups()[0].capitalize()),
+                             u"%s%s" % (" "*indent_size,("."*len(match.groups()[0]))),
                             ]
         elif patterns["section_title"].search(line) is not None and not line.startswith("usage:"):
             match = patterns["section_title"].search(line)
             
-            section_title = ["%s%s" % (" "*indent_size,match.groups()[0].capitalize()),
-                             "%s%s" % (" "*indent_size,("\""*len(match.groups()[0]))),
+            section_title = [u"%s%s" % (" "*indent_size,match.groups()[0].capitalize()),
+                             u"%s%s" % (" "*indent_size,("\""*len(match.groups()[0]))),
                             ]
         elif patterns["section_desc"].search(line) is not None and started == True:
-            section_desc.append(line.strip())
+            section_desc.append(line.strip().decode("utf-8"))
             
         elif patterns["opt_only"].search(line) is not None and started == True:
-            col1.append(line.strip())
-            col2.append("")
+            col1.append(line.strip().decode("utf-8"))
+            col2.append(u"")
         elif patterns["opt_plus_args"].search(line) is not None and started == True:
-            col1.append(line.strip())
-            col2.append("")
+            col1.append(line.strip().decode("utf-8"))
+            col2.append(u"")
         elif patterns["continue_desc"].search(line) is not None and started == True:
-            col2[-1] += line.strip("\n")
+            col2[-1] += line.strip("\n").decode("utf-8")
         elif patterns["opt_plus_desc"].search(line) is not None and started == True:
             match = patterns["opt_plus_desc"].search(line).groupdict()
-            col1.append(match["left"])
-            col2.append(match["right"])
+            col1.append(match["left"].decode("utf-8"))
+            col2.append(match["right"].decode("utf-8"))
         elif patterns["opt_plus_args_desc"].search(line) is not None and started == True:
             match = patterns["opt_plus_args_desc"].search(line).groupdict()
-            col1.append(match["left"])
-            col2.append(match["right"])
+            col1.append(match["left"].decode("utf-8"))
+            col2.append(match["right"].decode("utf-8"))
     
     return out_lines
 
@@ -399,6 +399,7 @@ def setup(app):
     
     app.connect("autodoc-process-docstring",add_args_to_module_docstring)
     app.add_config_value("argdoc_main_func","main","env")
+    app.add_config_value("argdoc_arg_prefix_char","-","env")
 
     if sphinx.version_info >= (1,3,0,'',0):
         return metadata

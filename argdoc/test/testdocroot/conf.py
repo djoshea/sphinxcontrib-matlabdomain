@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# coding: utf-8
 # basic conf.py for `argdoc` unit test suite
 import os
 import datetime
