@@ -1,63 +1,57 @@
 #!/usr/bin/env python
-"""Test suite for :obj:`argdoc`
+"""Test suite for :obj:`argdoc.ext`
+
+Argument-matching atterns in :mod:`argdoc.ext` are tested with a battery
+of unit tests.
+
+The docstring processing machinery is tested via a call to `sphinx-build`
+on executable scripts included as part of the test dataset. The output
+HTML files are compared against expectation. Admittedly, this is a fragile
+test.
 """
+__date__   = "2015-06-09"
+__author__ = "Joshua Griffin Dunn"
+
 import argparse
+import os
+import tempfile
+import shlex
+import shutil
+from pkg_resources import resource_filename, cleanup_resources
 from nose.tools import assert_equal, assert_true
+from nose.plugins.attrib import attr
+from sphinx import main as sphinxbuild
 from argdoc.ext import patterns
 
-__date__ = "2015-06-09"
-
-
-#===============================================================================
-# INDEX: test cases
-#===============================================================================
-
-_SIMPLE_DESC1="""Simple help for an argparser test for :py:class:`argparse.ArgumentParser`.
-We'll put in all kinds of things that look like --options.
-
-Examples:
-  --option 1      Some option description
-
-  -k, --key 2     Some other description
-"""
-
-def get_simple_parser():
-    parser = argparse.ArgumentParser(description=_SIMPLE_DESC1,
-                                     formater_class=argparse.RawDescriptionHelpFormatter)
-
-    parser.add_argument("positional1",help="First positional argument (really important)",type=str)
-    parser.add_argument("positional2",help="Second positional argument, -with hyphens --and things that look like them.",type=str)
-    parser.add_argument("positional3_no_desc")
-
-    parser.add_argument("-k",dest="keyword1",help="First kwarg",metavar="N")
-    parser.add_argument("--keyword2",dest="keyword2",help="Second kwarg",metavar="N")
-    parser.add_argument("--keyword3",help="Third kwarg (Default: M M)",nargs=2)
-    parser.add_argument("--keyword4_no_desc",type=str,metavar="X")
-    parser.add_argument("--choices1",choices=("c1","c2","c3"),help="Make hcoices")
-    parser.add_argument("--choices2",choices=("d2","d3"))
-    parser.add_argument("--reallyreallyreallyreallylongoption",metavar="long_option_argument",help="This help should appear on the next line")
-    return parser.format_help().split("\n")
-
-#TODO fill out
-def get_optiongroup_parser():
-    parser = argparse.ArgumentParser(description=_SIMPLE_DESC1,
-                                     formatter_class=argparse.RawDescriptionHelpFormatter)
-    return parser
 
 class TestArgdoc():
     """Test case for functions defined in :mod:`argdoc.ext`"""
 
     @classmethod
     def setUpClass(cls):
-        cls.test_cases = {}
-        cls.test_cases["section_title"] = [("optional arguments:", ("optional arguments",)),
+        # retain record indicating whether builder has been run,
+        # so we run it a maximum of once, and only if we decide to do 
+        # the expensive tests
+        cls.built = False
+
+        # options for sphinx-build runs
+        cls.optdict = { "sourcedir" : resource_filename("argdoc","test/testdocroot"),
+                          "conf"     : resource_filename("argdoc","test/testdocroot/conf.py"),
+                          "outdir"   : tempfile.mkdtemp(prefix="argdoc"),
+                       }
+
+        cls.sphinxopts = "-Q -b html %(sourcedir)s %(outdir)s" % cls.optdict
+
+        # test cases for patterns
+        cls.pattern_tests = {}
+        cls.pattern_tests["section_title"] = [("optional arguments:", ("optional arguments",)),
                                            ("optional arguments: ",None),
                                            (" optional arguments:",None),
                                            ("optional: arguments:",("optional: arguments",)),
                                            ("positional arguments:",("positional arguments",)),
                                            ("some long string (with parentheses):",("some long string (with parentheses)",)),
                                            ]
-        cls.test_cases["opt_only"] = [("  --help",    ('--help', None)),
+        cls.pattern_tests["opt_only"] = [("  --help",    ('--help', None)),
                                       ("  -h",        ('-h', None)),
                                       ("  -h, --help",('-h, --help', ', --help')),
                                       # opt + args + desc
@@ -85,7 +79,7 @@ class TestArgdoc():
                                       ("--ne M M", None),
                                       ("--ne M M M", None),
                                       ]
-        cls.test_cases["opt_plus_args"] = [("  -o FILENAME, --out FILENAME",('-o', ' FILENAME', '--out', ' FILENAME')),
+        cls.pattern_tests["opt_plus_args"] = [("  -o FILENAME, --out FILENAME",('-o', ' FILENAME', '--out', ' FILENAME')),
                                            ("  -o FILENAME",('-o', ' FILENAME', None, None)),
                                            ("  --out FILENAME",('--out', ' FILENAME', None, None)),
                                            ("-o FILENAME, --out FILENAME",None),
@@ -116,7 +110,7 @@ class TestArgdoc():
                                            ("  -h",     None),
                                            ("  -h, --help", None),
                                             ]
-        cls.test_cases["opt_plus_desc"] = [("  -h, --help            show this help message and exit",('-h, --help', ', --help', 'show this help message and exit')),
+        cls.pattern_tests["opt_plus_desc"] = [("  -h, --help            show this help message and exit",('-h, --help', ', --help', 'show this help message and exit')),
                                            ("  -h                    show this help message and exit",('-h',None, 'show this help message and exit')),
                                            ("  --help                show this help message and exit",('--help',None, 'show this help message and exit')),
                                            ("  -h, --help     show this help message and exit",('-h, --help', ', --help', 'show this help message and exit')),
@@ -150,7 +144,7 @@ class TestArgdoc():
                                            ("--ne M M", None),
                                            ("--ne M M M", None),
                                            ]
-        cls.test_cases["opt_plus_args_desc"] = [
+        cls.pattern_tests["opt_plus_args_desc"] = [
              ("  -n M, --ne M            some description", {"left" : "-n M, --ne M",         "right" : "some description"}),
              ("  -n M M, --ne M M        some description", {"left" : "-n M M, --ne M M",     "right" : "some description"}),
              ("  -n M M M, --ne M M M    some description", {"left" : "-n M M M, --ne M M M", "right" : "some description"}),
@@ -185,7 +179,7 @@ class TestArgdoc():
              ("  -h",     None),
              ("  -h, --help", None),
                                                 ]
-        cls.test_cases["subcommand_names"] = {("  {one,another,four,five}",("one,another,four,five",)),
+        cls.pattern_tests["subcommand_names"] = {("  {one,another,four,five}",("one,another,four,five",)),
                                               ("  {one,another,four}",("one,another,four",)),
                                               ("  {one,another}",("one,another",)),
                                               ("  {just_one}",("just_one",)),
@@ -194,8 +188,32 @@ class TestArgdoc():
                                               ("{one,another}",None),
                                               ("{just_one}",None),                                              
                                               }
-        cls.test_cases["continue_desc"] = []
-        cls.test_cases["section_desc"] = []
+        cls.pattern_tests["continue_desc"] = []
+        cls.pattern_tests["section_desc"] = []
+
+    @classmethod
+    def tearDownClass(cls):
+        """Clean up temp files after tests are complete"""
+        cleanup_resources()
+        shutil.rmtree(cls.optdict["outdir"])
+
+    @classmethod
+    def run_builder(cls):
+        """Run sphinx builder the first time it is called, only
+
+        Raises
+        ------
+        AssertionError
+            If builder exists with non-zero status
+        """
+        if cls.built == False:
+            try:
+                sphinxbuild(shlex.split(cls.sphinxopts))
+            except SystemExit as e:
+                if e.code != 0:
+                    raise AssertionError("Error running sphinx-build (exited with code %s)" % e.code)
+
+            cls.built = True
 
     @staticmethod
     def check_match(test_name,pat,inp,expected):
@@ -237,20 +255,25 @@ class TestArgdoc():
             assert_equal(expected,groups,msg)
     
     def test_patterns(self):
-        for name, cases in self.test_cases.items():
+        for name, cases in self.pattern_tests.items():
             for inp,expected in cases:
                 yield self.check_match, name, patterns[name], inp, expected
 
-    def test_process_single_or_sub_program(self):
-        # get argparsers of various complexity and check against answers
+    @attr(kind="functional")
+    def test_simple_parser(self):
+        self.run_builder()
         assert False
 
-    def test_process_subcommands(self):
+    @attr(kind="functional")
+    def test_optiongroup_parser(self):
+        self.run_builder()
+        assert False
+
+    @attr(kind="functional")
+    def test_with_subparsers(self):
+        self.run_builder()
         assert False
 
     def test_process_argparser_help(self):
         assert False
      
-    def test_add_args_to_module_docstring(self):
-        assert False
-
