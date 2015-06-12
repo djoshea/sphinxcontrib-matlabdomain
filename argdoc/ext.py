@@ -50,7 +50,7 @@ _REQUIRED = [
 """Other `Sphinx`_ extensions required by :py:obj:`argdoc`"""
 
 patterns = { "section_title"      : r"^(\w+.*):$",
-             "opt_only"           : r"^  (-?[^\s]+(, --[^\s]+)?)$",
+             "opt_only"           : r"^  (-?[^\s,]+)(?:, (--[^\s]+))?$",
              "opt_plus_args"      : r"^  (-+[^\s]+)((?: [^-\s]+)+)(?:(?:, (--[^\s]+))((?: [^\s]+)+))?$",
              "opt_plus_desc"      : r"^  (?P<left>-?[^\s]+(,\s--[^\s]+)?)\s\s+(?P<right>.*)",
              "opt_plus_args_desc" : r"^  (?P<left>(-?-[^\s]+)( [^-\s]+)+( --[^\s]+( [^\s]+)+)?)  +(?P<right>\w+.*)$",

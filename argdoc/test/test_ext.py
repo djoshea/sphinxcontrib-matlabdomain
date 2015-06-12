@@ -51,9 +51,13 @@ class TestArgdoc():
                                            ("positional arguments:",("positional arguments",)),
                                            ("some long string (with parentheses):",("some long string (with parentheses)",)),
                                            ]
-        cls.pattern_tests["opt_only"] = [("  --help",    ('--help', None)),
+        cls.pattern_tests["opt_only"] = [
+                                      ("  positional1",('positional1',None)),
+                                      ("  po3413134",('po3413134',None)),
+                                      ("  reallyreallyreallyreallyreallyreallyreallyreallylongpositional",("reallyreallyreallyreallyreallyreallyreallyreallylongpositional",None)),
+                                      ("  --help",    ('--help', None)),
                                       ("  -h",        ('-h', None)),
-                                      ("  -h, --help",('-h, --help', ', --help')),
+                                      ("  -h, --help",('-h', '--help')),
                                       # opt + args + desc
                                       ("  -n M, --ne M            some description", None),
                                       ("  -n M M, --ne M M        some description", None),
