@@ -3,12 +3,16 @@ Quickstart
 
 Installation
 ------------
-Install stable versions via `pip`_. For a single-user installation::
+Install stable versions via `pip`_. For a single-user installation:
+
+ .. code-block:: shell
 
     $ pip install --user argdoc
 
 
-For a system-wide installation::
+For a system-wide installation:
+
+ .. code-block:: shell
 
     $ sudo pip install argdoc
 
@@ -29,14 +33,18 @@ Setting up :obj:`argdoc` only takes a few steps:
         ]
 
  2. Generate document stubs for your package. It is easiest to use
-    `sphinx-apidoc`_::
+    `sphinx-apidoc`_:
      
+     .. code-block:: shell
+
         $ cd my_project_folder/my_package_folder
         $ sphinx-apidoc -e -o docs/source/generated my_package_name
   
     Or you can make your document stubs manually. Just make sure the
     final document stubs for your :term:`executable scripts` include the
-    ``.. automodule :`` `directive`_. For example::
+    ``.. automodule :`` `directive`_. For example:
+
+     .. code-block:: rest
 
          .. automodule:: some_package.some_module
             :members:

@@ -15,7 +15,7 @@ Glossary of terms
         immediately at the top of the module.
 
     executable scripts
-        Sripts that can be executed from a :term:`shell`, as opposed to
+        Scripts that can be executed from a :term:`shell`, as opposed to
         (or in addition to) inside the Python interpreter.
 
     module docstring
@@ -48,11 +48,7 @@ Glossary of terms
             if __name__ == "__main__":
                 main()
 
-        which are used because Python only sets the `__name__` attribute
-        to `__main__` if a script is executed from a :term:`shell`.
-
         :obj:`argdoc` detects :term:`main-like functions <main-like function>`
-        by scanning modules for functions named whatever the current
-        value of `argdoc_main_func` is set to in your `Sphinx`_
-        configuration file ``conf.py``. By default, the value of
-        `argdoc_main_func` is `main`.
+        by scanning modules for functions whose names match the current 
+        value of the configuration parameter `argdoc_main_func` (set
+        in ``conf.py``, with default value `'main'`).
