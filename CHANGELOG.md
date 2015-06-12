@@ -5,7 +5,18 @@ Version numbers follow the conventions described in
 [PEP440](https://www.python.org/dev/peps/pep-0440/) and
 [Semantic versioning](http://semver.org/).
 
-# [0.0.2] - 2015-06-09
+
+## Unreleased
+
+### Added
+- Quickstart, advanced usage, FAQ, glossary documentation, et c
+
+### Fixed
+- Can now handle option+argument+description lines that have
+  multiple arguments.
+
+
+## [0.0.2] - 2015-06-09
 
 ### Added
 - Now handles formatting of argparsers that have subcommands
@@ -14,10 +25,11 @@ Version numbers follow the conventions described in
 - added this changelog
 
 ### Changed
-- Lowered visual hierarchy of sections containing subcommands
+- Lowered visual hierarchy of section headers for subcommands
+  in processed rst output
 
 
 # [0.0.1]
 
 ### Changed
-- Converted to Sphinx plugin
+- Converted method from conf.py to a proper Sphinx extension
