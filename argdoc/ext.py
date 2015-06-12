@@ -4,19 +4,19 @@
 User-facing functions
 ---------------------
 :func:`noargdoc`
-    Decorator function that forces :obj:`argdoc` to skip a ``main``-like function
+    Decorator function that forces :obj:`argdoc` to skip a :term:`main-like function`
     it would normally process
     
 Developer functions
 -------------------
 :func:`process_subprogram_container`
     Extracts tables from all subprogram
-    :class:`ArgumentParsers <~argparse.ArgumentParser>`
+    :class:`ArgumentParsers <argparse.ArgumentParser>`
     contained by an :class:`~argparse.ArgumentParser`
 
 :func:`process_single_or_subprogram`
-    Extracts tables of command-line arguments from an
-    :class:`~argparse.ArgumentParser` that has no subprograms
+    Extracts tables of arguments from a :class:`~argparse.ArgumentParser`
+    that has no subprograms
 
 :func:`process_argparser`
     Delegate a given :class:`~argparse.ArgumentParser` to 
@@ -33,6 +33,8 @@ Developer functions
 import re
 import shlex
 import subprocess
+import sphinx
+import argdoc
 
 #===============================================================================
 # INDEX: various constants
@@ -73,7 +75,8 @@ def noargdoc(func):
     Parameters
     ----------
     func : function
-        ``main``-lie function of a command-line module
+        :term:`main-like function` of a script
+
     
     Returns
     -------
@@ -98,11 +101,11 @@ def process_subprogram_container(app,obj,help_lines,start_line,indent_size=4,sec
         Sphinx application
             
     obj : module
-        Module containing ``main``-like function
+        Module containing :term:`main-like function`
             
     help_lines : list
         List of strings, each corresponding to a line of output from having
-        passed ``--help`` as an argument to the `main`-like function
+        passed ``--help`` as an argument to the :term:`main-like function`
 
     start_line : int
         Line where token `'subcommands: '` was found in argparser output
@@ -136,10 +139,10 @@ def process_subprogram_container(app,obj,help_lines,start_line,indent_size=4,sec
         try:
             proc = subprocess.Popen(call,stdout=subprocess.PIPE)
             sub_help_lines = proc.communicate()[0].split("\n")
-            out_lines.extend(process_single_or_sub_program(sub_help_lines,
-                                                           indent_size=indent_size,
-                                                           section_head=section_head,
-                                                           section_name="``%s`` subprogram" % subcommand))            
+            out_lines.extend(process_single_or_subprogram(sub_help_lines,
+                                                          indent_size=indent_size,
+                                                          section_head=section_head,
+                                                          section_name="``%s`` subprogram" % subcommand))            
         except subprocess.CalledProcessError as e:
             out  = ("-"*75) + "\n" + e.output + "\n" + ("-"*75)
             out += "Could not call module %s as '%s'. Output:\n"% (obj.__name__, e.cmd)
@@ -149,7 +152,7 @@ def process_subprogram_container(app,obj,help_lines,start_line,indent_size=4,sec
 
     return out_lines
 
-def process_single_or_sub_program(help_lines,indent_size=4,section_head=False,section_name="Command-line arguments"):
+def process_single_or_subprogram(help_lines,indent_size=4,section_head=False,section_name="Command-line arguments"):
     """Processes help output from an :py:class:`argparse.ArgumentParser`
     of subprograms, or of a program that has no subprograms. Called by
     :func:`process_argparser`
@@ -158,7 +161,7 @@ def process_single_or_sub_program(help_lines,indent_size=4,section_head=False,se
     ----------
     help_lines : list
         List of strings, each corresponding to a line of output from having
-        passed ``--help`` as an argument to the ``main``-like function
+        passed ``--help`` as an argument to the :term:`main-like function`
     
     indent_size : int, optional
         Number of spaces to prepend before output. This is significant,
@@ -173,8 +176,8 @@ def process_single_or_sub_program(help_lines,indent_size=4,section_head=False,se
     Returns
     -------
     list
-        List of strings encoding reStructuredText table of command-line
-        arguments for program or subprogram
+        List of strings encoding reStructuredText table of arguments
+        for program or subprogram
     """
     started = False
 
@@ -213,7 +216,8 @@ def process_single_or_sub_program(help_lines,indent_size=4,section_head=False,se
             
         #elif patterns["section_title"].search(line):
         #FIXME: this is a kludge to deal with __doc__ lines that have trailing colons
-        #       and will not work if the first argument sectionis not one of the following:
+        #       and will not work if the first argument section is not one of the following
+        #       "positional arguments:" or "optional arguments:"
         elif line.startswith("positional arguments:") or line.startswith("optional arguments:"):
             
             if started == False:
@@ -268,11 +272,11 @@ def process_argparser(app,obj,help_lines,indent_size=4,section_head=False):
         Sphinx application
     
     obj : module
-        Module containing ``main``-like function
+        Module containing :term:`main-like function`
     
     help_lines : list
         List of strings, each corresponding to a line of output from having
-        passed ``--help`` as an argument to the ``main``-like function
+        passed ``--help`` as an argument to the :term:`main-like function`
     
     indent_size : int, optional
         Number of spaces to prepend before output. This is significant,
@@ -302,31 +306,34 @@ def process_argparser(app,obj,help_lines,indent_size=4,section_head=False):
 
     else:
         app.debug("%s has no subcommands" % obj.__name__)
-        out_lines = process_single_or_sub_program(help_lines,
-                                                  indent_size=indent_size,
-                                                  section_head=section_head)                                  
+        out_lines = process_single_or_subprogram(help_lines,
+                                                 indent_size=indent_size,
+                                                 section_head=section_head)                                  
 
     return out_lines
 
 def add_args_to_module_docstring(app,what,name,obj,options,lines):
-    """Insert a table describing command-line parameters into the documentation
-    for the ``main``-like function of a command-line script. ``main``-like functions
-    decorated with the :func:`noargdoc` decorator will be skipped. ``main``-like
-    functions are found by name, set by the configuration option ``argdoc_main_func``
-    in your ``conf.py``. The default value is `main`.
+    """Insert a table listing and describing an executable script's command-line
+    arguments into its ``:automodule:`` documentation.
+    
+    Any :term:`main-like function` decorated with the :func:`noargdoc` decorator
+    will be skipped. A function is determined to be a :term:`main-like function`
+    if its name matches the name set in the configuration option
+    ``argdoc_main_func`` inside ``conf.py``. The default value for
+    ``argdoc_main_func`` is `main`.
     
     Notes
     -----
     Per the `Sphinx`_ spec, this function modifies `lines` in place.
     
-    This will only work for command-line scripts using :mod:`argparse`.
-    :mod:`optparse` is deprecated and not supported.
+    This will only work for :term:`executable scripts` that use
+    :mod:`argparse`.
     
     
     Parameters
     ----------
     app
-        Sphinx application
+        Sphinx application instance
     
     what : str
         Type of object (e.g. "module", "function", "class")
@@ -343,8 +350,17 @@ def add_args_to_module_docstring(app,what,name,obj,options,lines):
 
     lines : list
         List of strings encoding the module docstrings after `Sphinx`_ processing
+
+    Raises
+    ------
+    ConfigError
+       If `argdoc_main_func` is defined in ``conf.py`` and is not a `str`
     """
     funcname = app.config.argdoc_main_func
+    if not isinstance(funcname,str):
+        message = "Incorrect type for `argdoc_main_func. Expected `str`, found, `%s` with value `%s`)" % (type(funcname),funcname)
+        raise ConfigError(message)
+
     if what == "module" and obj.__dict__.get(funcname,None) is not None:
         if obj.__dict__.get(funcname).__dict__.get("noargdoc",False) == False:
             call = shlex.split("python -m %s --help" % obj.__name__)
@@ -374,10 +390,17 @@ def setup(app):
     Parameters
     ----------
     app
-        Sphinx application
-    """    
+        Sphinx application instance
+    """
+
+    metadata = { "version" : argdoc.__version__
+               }
+
     for ext in _REQUIRED:
         app.setup_extension(ext)
     
     app.connect("autodoc-process-docstring",add_args_to_module_docstring)
     app.add_config_value("argdoc_main_func","main","env")
+
+    if sphinx.version_info >= (1,3,0,'',0):
+        return metadata

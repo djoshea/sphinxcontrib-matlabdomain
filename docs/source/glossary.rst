@@ -4,15 +4,36 @@ Glossary of terms
  .. glossary ::
     :sorted:
 
-    command line
-    command-line
-        A text-based prompt from which commands can be executed, for
-        example, in a terminal session.
+    argument
+        Terms or options that control or modify a function or script's behavior.
+
+    docstring
+        Documentation for a Python function, method, class, module, or object.
+        These must appear as triple-quoted strings immediately  below the `def`
+        line for functions and methods, and immediately below the `class`
+        line for classes. :term:`module docstrings <module docstring>` appear
+        immediately at the top of the module.
+
+    executable scripts
+        Sripts that can be executed from a :term:`shell`, as opposed to
+        (or in addition to) inside the Python interpreter.
+
+    module docstring
+        Documentation for a Python module, which appears as a triple-quoted
+        string starting on the first code line::
+
+            #!/usr/bin/env python
+            """This is the module docstring. It can be very long
+            and span multiple lines, contain tables, et c
+            """
+
+            import argparse
+            ...
 
     shell
-        An environment that executes commands. This could be a
-        :term:`command-line` environment like the `bash`_ prompt, or
-        a graphical environment like the OSX Finder.
+        An environment that executes commands. This could be a command-line
+        environment like the `bash`_ prompt, or a graphical environment like
+        the OSX Finder.
 
     main-like function
         A function that is called when a script is executed from a

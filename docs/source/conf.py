@@ -167,7 +167,7 @@ def setup(app):
 
 # intersphinx config ------------------------------------------------------------
 intersphinx_mapping = { "python" : ("http://docs.python.org",None),
-                        "pip"    : ("https://pip.pypa.io/en/stable",None),
+                        "nose"   : ("https://nose.readthedocs.org/en/latest/", None)
                         }
 
 # other -------------------------------------------------------------------------

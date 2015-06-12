@@ -3,7 +3,7 @@ Quickstart
 
 Installation
 ------------
-Install stable versions via via :obj:`pip`. For a single-user installation::
+Install stable versions via `pip`_. For a single-user installation::
 
     $ pip install --user argdoc
 
@@ -14,7 +14,7 @@ For a system-wide installation::
 
 
 Setting up :obj:`argdoc`
------------------------
+------------------------
 Setting up :obj:`argdoc` only takes a few steps:
 
  1. Find the `extensions` definition in your `Sphinx`_ configuration file,
@@ -35,17 +35,17 @@ Setting up :obj:`argdoc` only takes a few steps:
         $ sphinx-apidoc -e -o docs/source/generated my_package_name
   
     Or you can make your document stubs manually. Just make sure the
-    stubs for your command-line scripts final document includes the
+    final document stubs for your :term:`executable scripts` include the
     ``.. automodule :`` `directive`_. For example::
 
-         .. automodule:: crossgen.crossgen
+         .. automodule:: some_package.some_module
             :members:
             :undoc-members:
             :show-inheritance:
 
- 3. Make sure your command-line script uses :class:`argparse.ArgumentParser`
-    to parse its arguments, and defines a :term:`main-like function` that
-    is called when the script is executed from the command line.
+ 3. Make sure your :term:`executable scripts` use :class:`argparse.ArgumentParser`
+    to parse their arguments, and define a :term:`main-like function` that
+    is called when the script is executed from the :term:`shell`.
     
     If you want your documentation to be extra nice, write a user-friendly
     description of your script in its :term:`module docstring`, and pass
@@ -55,7 +55,7 @@ Setting up :obj:`argdoc` only takes a few steps:
         #!/usr/bin/env python
         """This is my module docstring, which describes what my script does
         at length, so that users can figure out what it does. Conveniently
-        this text is used both by argparse as command-line help text, and
+        this text is used both by argparse as help text in the shell, and
         by Sphinx when generating HTML documentation.
         """
         import argparse
@@ -81,4 +81,5 @@ Setting up :obj:`argdoc` only takes a few steps:
 
 
     That's it! There is nothing else you need to do. For further info
-    or configuration options, see :doc:`advanced`.
+    or configuration options, see :doc:`advanced`. For examples, see
+    :doc:`examples`.

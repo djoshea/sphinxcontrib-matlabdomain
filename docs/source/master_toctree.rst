@@ -11,6 +11,6 @@
     related
     contributing
     license
-    generated/modules
+    Technical documentation <generated/modules>
 
 

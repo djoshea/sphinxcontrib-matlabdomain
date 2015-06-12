@@ -6,7 +6,7 @@ now, we follow these conventions:
 
   1. *Testing:* This is a pretty low-key project, but we will not accept
      feature additions without companion tests. Tests should be written
-     using :obj:`nose` or Python's :mod:`unittest` framework. And, if
+     using `nose`_ or Python's :mod:`unittest` framework. And, if
      you submit patches without adding new features, please make sure
      all tests in the current test suite still pass.
     
