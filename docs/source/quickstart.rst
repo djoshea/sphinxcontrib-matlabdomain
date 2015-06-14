@@ -91,3 +91,9 @@ Setting up :obj:`argdoc` only takes a few steps:
     That's it! There is nothing else you need to do. For further info
     or configuration options, see :doc:`advanced`. For examples, see
     :doc:`examples`.
+
+ .. warning::
+    :obj:`argdoc` generates its documentation by calling your executable
+    scripts with the argument ``--help``. Therefore, any side effects
+    caused by executing your script will take effect during the documentation
+    build process.

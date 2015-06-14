@@ -26,9 +26,9 @@ use the :func:`~argdoc.ext.noargdoc` function decorator. For example::
 Processing a :term:`main-like function` that is not named `main`
 ----------------------------------------------------------------
 If your code conventions use a name different from `main` for
-:term:`main-like functions`, :obj:`argdoc` can still process these.
-Just set the value of the configuration parameter ``argdoc_main_func``
-to your function name in ``conf.py``::
+:term:`main-like functions <main-like function>`, :obj:`argdoc`
+can still process these. Just set the value of the configuration
+parameter ``argdoc_main_func`` to your function name in ``conf.py``::
 
     ...
 

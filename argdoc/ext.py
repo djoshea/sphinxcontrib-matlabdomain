@@ -217,7 +217,7 @@ def process_single_or_subprogram(help_lines,indent_size=4,section_head=False,sec
                 col1 = []
                 col2 = []
             
-        #elif patterns["section_title"].search(line) and not line.endswith("usage:"):
+        #elif patterns["section_title"].search(line) is not None and not line.endswith("usage:"):
         #FIXME: this is a kludge to deal with __doc__ lines that have trailing colons
         #       and will not work if the first argument section is not one of the following
         #       "positional arguments:" or "optional arguments:"
@@ -233,7 +233,6 @@ def process_single_or_subprogram(help_lines,indent_size=4,section_head=False,sec
             
             # Create paragraph header for this section
             match = patterns["section_title"].search(line)
-            
             section_title = [u"%s%s" % (" "*indent_size,match.groups()[0].capitalize()),
                              u"%s%s" % (" "*indent_size,("."*len(match.groups()[0]))),
                             ]
@@ -241,45 +240,43 @@ def process_single_or_subprogram(help_lines,indent_size=4,section_head=False,sec
             # Found section section of arguments.
             # Create paragraph header
             match = patterns["section_title"].search(line)
-            
             section_title = [u"%s%s" % (" "*indent_size,match.groups()[0].capitalize()),
                              u"%s%s" % (" "*indent_size,("\""*len(match.groups()[0]))),
                             ]
         elif started == True:
             # arg_only MUST precede section_desc, because option-only lines will
             # match the section description pattern, but not vice-versa
-            #for pat in ["arg_only","section_desc","arg_plus_val","continue_desc","arg_plus_desc","arg_plus_val_desc"]:
-            if patterns["arg_only"].search(line) is not None:
-                # argument-only line. put argument in left column, blank in right
-                match = patterns["arg_only"].search(line).groupdict()
-                col1.append(get_col1_text(match))
-                col2.append(u"")
-            elif patterns["section_desc"].search(line) is not None:
-                # continued description of current argument group. save it for later
-                section_desc.append(line.strip())
-            elif patterns["arg_plus_val"].search(line) is not None:
-                # argument-plus-value line. put this in left column, blank in right
-                match = patterns["arg_plus_val"].search(line).groupdict()
-                col1.append(get_col1_text(match))
-                col2.append(u"")
-            elif patterns["continue_desc"].search(line) is not None:
-                # continued description of argument. append it to last row of column 2
-                col2[-1] += line.strip("\n")
-            elif patterns["arg_plus_desc"].search(line) is not None:
-                # argument-plus-description line. put argument in left column, description in right
-                match = patterns["arg_plus_desc"].search(line).groupdict()
-                col1.append(get_col1_text(match))
-                col2.append(match["desc"])
-            elif patterns["arg_plus_val_desc"].search(line) is not None:
-                # argument-plus-value-plus-description line.
-                # put argument & value in left column, description in right
-                match = patterns["arg_plus_val_desc"].search(line).groupdict()
-                col1.append(get_col1_text(match))
-                col2.append(match["desc"])
-       
+            for pat in ["arg_only",
+                        "section_desc",
+                        "arg_plus_val",
+                        "continue_desc",
+                        "arg_plus_desc",
+                        "arg_plus_val_desc"]:
+                match = patterns[pat].search(line)
+                if match is not None:
+                    if pat == "continue_desc":
+                        col2[-1] += line.strip("\n")
+                        break
+                    else:
+                        matchdict = match.groupdict()
+                        col1.append(get_col1_text(matchdict))
+                        col2.append(get_col2_text(matchdict))
+                        break
+      
     return out_lines
 
 def get_col1_text(matchdict):
+    """Format argument name(s) and value(s) for column 1 of argument table
+
+    Parameters
+    ----------
+    matchdict : dict
+        Dictionary of values
+
+    Returns
+    -------
+    str
+    """
     if "val1" in matchdict:
         tmpstr = "``%s %s``" % (matchdict["arg1"],matchdict["val1"])
         if matchdict.get("arg2") is not None:
@@ -290,6 +287,20 @@ def get_col1_text(matchdict):
             tmpstr += (", ``%s``" % matchdict["arg2"])
 
     return tmpstr
+
+def get_col2_text(matchdict):
+    """Format argument descriptions, if present, for column 2 of argument table
+
+    Parameters
+    ----------
+    matchdict : dict
+        Dictionary of values
+
+    Returns
+    -------
+    str
+    """
+    return matchdict.get("desc","")
 
 def process_argparser(app,obj,help_lines,indent_size=4,section_head=False):
     """Processes help output from an :py:class:`argparse.ArgumentParser`
