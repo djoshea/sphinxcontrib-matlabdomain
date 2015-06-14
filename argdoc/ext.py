@@ -50,10 +50,10 @@ _REQUIRED = [
 """Other `Sphinx`_ extensions required by :py:obj:`argdoc`"""
 
 patterns = { "section_title"      : r"^(\w+.*):$",
-             "opt_only"           : r"^  (-?[^\s,]+)(?:, (--[^\s]+))?$",
-             "opt_plus_args"      : r"^  (-+[^\s]+)((?: [^-\s]+)+)(?:(?:, (--[^\s]+))((?: [^\s]+)+))?$",
-             "opt_plus_desc"      : r"^  (?P<left>-?[^\s]+(,\s--[^\s]+)?)\s\s+(?P<right>.*)",
-             "opt_plus_args_desc" : r"^  (?P<left>(-?-[^\s]+)( [^-\s]+)+( --[^\s]+( [^\s]+)+)?)  +(?P<right>\w+.*)$",
+             "arg_only"           : r"^  (?P<arg1>-?[^\s,]+)(?:, (?P<arg2>--[^\s]+))?$",
+             "arg_plus_val"       : r"^  (?P<arg1>-+[^\s]+)(?P<val1>(?: [^-\s]+)+)(?:(?:, (?P<arg2>--[^\s]+))(?P<val2>(?: [^\s]+)+))?$",
+             "arg_plus_desc"      : r"^  (?P<arg1>-?[^\s]+)(?:,\s(?P<arg2>--[^\s]+))?\s\s+(?P<desc>.*)",
+             "arg_plus_val_desc"  : r"^  (?P<arg1>-+[^\s]+)(?P<val1>(?: [^-\s]+)+)(?:(?:, (?P<arg2>--[^\s]+))(?P<val2>(?: [^\s]+)+))?  +(?P<desc>\w+.*)$",
              "continue_desc"      : r"^ {24}(.*)",
              "section_desc"       : r"^  ([^- ]+\s)+$",
              "subcommands"        : r"^subcommands:$",
@@ -179,44 +179,50 @@ def process_single_or_subprogram(help_lines,indent_size=4,section_head=False,sec
     """
     started = False
 
-    out_lines = []
-    col1      = []
-    col2      = []
-    section_title = []
-    section_desc  = []
+    out_lines = []  # lines we will output
+
+    # the following are wiped & re-initialized for each section
+    col1      = []  # holder for column 1 contents: argument names
+    col2      = []  # holder for column 2 contents: argument descriptions
+    section_title = [] # title of current section
+    section_desc  = [] # description of current section
     
     for line in help_lines:
         line = line.rstrip()
         if len(line.strip()) == 0 and started == True:
-            # close table and write out previous section
+            # if current argument group is finished, format table of arguments for export
+            # and append it to `out_lines`
             if len(col1) > 0 and len(col2) > 0:
-                col1_width = 1 + max([len(X) for X in col1]) + 4
+                col1_width = 1 + max([len(X) for X in col1])
                 col2_width = max([len(X) for X in col2])
+                table_header = (u" "*indent_size)+(u"="*col1_width) + u" " + (u"="*col2_width)
                 out_lines.append(u"")
                 out_lines.append(u"")
                 out_lines.extend(section_title)
                 out_lines.extend(section_desc)
                 out_lines.append(u"")
-                out_lines.append( (u" "*indent_size)+(u"="*col1_width) + u" " + (u"="*col2_width))# + "\n" )
-                out_lines.append( (u" "*indent_size)+u"*Option*" + u" "*(1 + col1_width - 8) + u"*Description*")# + "\n" )
-                out_lines.append( (u" "*indent_size)+(u"="*col1_width) + u" " + (u"="*col2_width))# + "\n" )
+                out_lines.append(table_header)
+                out_lines.append( (u" "*indent_size)+u"*Option*" + u" "*(1 + col1_width - 8) + u"*Description*")
+                out_lines.append(table_header.replace("=","-"))
                  
                 for c1, c2 in zip(col1,col2):
-                    out_lines.append((u" "*indent_size)+ u"``" + c1 + u"``" + (u" "*(1+col1_width-len(c1))) + c2)# + "\n" )
+                    out_lines.append((u" "*indent_size)+ c1.decode("utf-8") + (u" "*(1+col1_width-len(c1))) + c2.decode("utf-8"))
      
-                out_lines.append( (u" "*indent_size)+(u"="*col1_width) + u" " + (u"="*col2_width))#  + "\n"  )
+                out_lines.append(table_header)
                 out_lines.append(u"")
                 
+                # reset section-specific variables
                 section_title = []
                 section_desc  = []
                 col1 = []
                 col2 = []
             
-        #elif patterns["section_title"].search(line):
+        #elif patterns["section_title"].search(line) and not line.endswith("usage:"):
         #FIXME: this is a kludge to deal with __doc__ lines that have trailing colons
         #       and will not work if the first argument section is not one of the following
         #       "positional arguments:" or "optional arguments:"
         elif line.endswith("arguments:"):
+            # Found first argument section. Create command-line argument heading
             if started == False:
                 started = True
                 if section_head == True:
@@ -225,40 +231,65 @@ def process_single_or_subprogram(help_lines,indent_size=4,section_head=False,sec
                     out_lines.append(stmp1)
                     out_lines.append(stmp2)
             
-            # start section
+            # Create paragraph header for this section
             match = patterns["section_title"].search(line)
             
             section_title = [u"%s%s" % (" "*indent_size,match.groups()[0].capitalize()),
                              u"%s%s" % (" "*indent_size,("."*len(match.groups()[0]))),
                             ]
         elif patterns["section_title"].search(line) is not None and not line.startswith("usage:"):
+            # Found section section of arguments.
+            # Create paragraph header
             match = patterns["section_title"].search(line)
             
             section_title = [u"%s%s" % (" "*indent_size,match.groups()[0].capitalize()),
                              u"%s%s" % (" "*indent_size,("\""*len(match.groups()[0]))),
                             ]
-        # opt_only MUST precede section_desc, because option-only lines will
-        # match the section description pattern, but not vice-versa
-        elif patterns["opt_only"].search(line) is not None and started == True:
-            col1.append(line.strip().decode("utf-8"))
-            col2.append(u"")
-        elif patterns["section_desc"].search(line) is not None and started == True:
-            section_desc.append(line.strip().decode("utf-8"))
-        elif patterns["opt_plus_args"].search(line) is not None and started == True:
-            col1.append(line.strip().decode("utf-8"))
-            col2.append(u"")
-        elif patterns["continue_desc"].search(line) is not None and started == True:
-            col2[-1] += line.strip("\n").decode("utf-8")
-        elif patterns["opt_plus_desc"].search(line) is not None and started == True:
-            match = patterns["opt_plus_desc"].search(line).groupdict()
-            col1.append(match["left"].decode("utf-8"))
-            col2.append(match["right"].decode("utf-8"))
-        elif patterns["opt_plus_args_desc"].search(line) is not None and started == True:
-            match = patterns["opt_plus_args_desc"].search(line).groupdict()
-            col1.append(match["left"].decode("utf-8"))
-            col2.append(match["right"].decode("utf-8"))
-    
+        elif started == True:
+            # arg_only MUST precede section_desc, because option-only lines will
+            # match the section description pattern, but not vice-versa
+            #for pat in ["arg_only","section_desc","arg_plus_val","continue_desc","arg_plus_desc","arg_plus_val_desc"]:
+            if patterns["arg_only"].search(line) is not None:
+                # argument-only line. put argument in left column, blank in right
+                match = patterns["arg_only"].search(line).groupdict()
+                col1.append(get_col1_text(match))
+                col2.append(u"")
+            elif patterns["section_desc"].search(line) is not None:
+                # continued description of current argument group. save it for later
+                section_desc.append(line.strip())
+            elif patterns["arg_plus_val"].search(line) is not None:
+                # argument-plus-value line. put this in left column, blank in right
+                match = patterns["arg_plus_val"].search(line).groupdict()
+                col1.append(get_col1_text(match))
+                col2.append(u"")
+            elif patterns["continue_desc"].search(line) is not None:
+                # continued description of argument. append it to last row of column 2
+                col2[-1] += line.strip("\n")
+            elif patterns["arg_plus_desc"].search(line) is not None:
+                # argument-plus-description line. put argument in left column, description in right
+                match = patterns["arg_plus_desc"].search(line).groupdict()
+                col1.append(get_col1_text(match))
+                col2.append(match["desc"])
+            elif patterns["arg_plus_val_desc"].search(line) is not None:
+                # argument-plus-value-plus-description line.
+                # put argument & value in left column, description in right
+                match = patterns["arg_plus_val_desc"].search(line).groupdict()
+                col1.append(get_col1_text(match))
+                col2.append(match["desc"])
+       
     return out_lines
+
+def get_col1_text(matchdict):
+    if "val1" in matchdict:
+        tmpstr = "``%s %s``" % (matchdict["arg1"],matchdict["val1"])
+        if matchdict.get("arg2") is not None:
+            tmpstr += (", ``%s %s``" % (matchdict["arg2"],matchdict["val2"]))
+    else:
+        tmpstr = "``%s``" % matchdict["arg1"]
+        if matchdict.get("arg2") is not None:
+            tmpstr += (", ``%s``" % matchdict["arg2"])
+
+    return tmpstr
 
 def process_argparser(app,obj,help_lines,indent_size=4,section_head=False):
     """Processes help output from an :py:class:`argparse.ArgumentParser`

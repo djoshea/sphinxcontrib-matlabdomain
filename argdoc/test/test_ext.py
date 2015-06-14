@@ -18,7 +18,7 @@ import tempfile
 import shlex
 import shutil
 from pkg_resources import resource_filename, cleanup_resources
-from nose.tools import assert_equal, assert_true
+from nose.tools import assert_equal, assert_true, assert_dict_equal
 from nose.plugins.attrib import attr
 from sphinx import main as sphinxbuild
 from argdoc.ext import patterns
@@ -51,14 +51,14 @@ class TestArgdoc():
                                            ("positional arguments:",("positional arguments",)),
                                            ("some long string (with parentheses):",("some long string (with parentheses)",)),
                                            ]
-        cls.pattern_tests["opt_only"] = [
+        cls.pattern_tests["arg_only"] = [
                                       ("  positional1",('positional1',None)),
                                       ("  po3413134",('po3413134',None)),
                                       ("  reallyreallyreallyreallyreallyreallyreallyreallylongpositional",("reallyreallyreallyreallyreallyreallyreallyreallylongpositional",None)),
                                       ("  --help",    ('--help', None)),
                                       ("  -h",        ('-h', None)),
                                       ("  -h, --help",('-h', '--help')),
-                                      # opt + args + desc
+                                      # arg + valss + desc
                                       ("  -n M, --ne M            some description", None),
                                       ("  -n M M, --ne M M        some description", None),
                                       ("  -n M M M, --ne M M M    some description", None),
@@ -68,11 +68,11 @@ class TestArgdoc():
                                       ("  --ne M                  some description", None),
                                       ("  --ne M M                some description", None),
                                       ("  --ne M M M              some description", None),
-                                      # opt + desc
+                                      # arg + desc
                                       ("  -n, --ne                some description", None),
                                       ("  -n                      some description", None),
                                       ("  --ne                    some description", None),
-                                      # opt + args
+                                      # arg + vals
                                       ("-n M, --ne M", None),
                                       ("-n M M, --ne M M", None),
                                       ("-n M M M, --ne M M M", None),
@@ -83,7 +83,7 @@ class TestArgdoc():
                                       ("--ne M M", None),
                                       ("--ne M M M", None),
                                       ]
-        cls.pattern_tests["opt_plus_args"] = [("  -o FILENAME, --out FILENAME",('-o', ' FILENAME', '--out', ' FILENAME')),
+        cls.pattern_tests["arg_plus_val"] = [("  -o FILENAME, --out FILENAME",('-o', ' FILENAME', '--out', ' FILENAME')),
                                            ("  -o FILENAME",('-o', ' FILENAME', None, None)),
                                            ("  --out FILENAME",('--out', ' FILENAME', None, None)),
                                            ("-o FILENAME, --out FILENAME",None),
@@ -95,7 +95,7 @@ class TestArgdoc():
                                            ("-n M M, --num M M",None),
                                            ("-n M M",None),
                                            ("--num M M",None),
-                                           # opt + args + desc
+                                           # arg + vals + desc
                                            ("  -n M, --ne M            some description", None),
                                            ("  -n M M, --ne M M        some description", None),
                                            ("  -n M M M, --ne M M M    some description", None),
@@ -105,29 +105,29 @@ class TestArgdoc():
                                            ("  --ne M                  some description", None),
                                            ("  --ne M M                some description", None),
                                            ("  --ne M M M              some description", None),
-                                           # opt + desc
+                                           # arg + desc
                                            ("  -n, --ne                some description", None),
                                            ("  -n                      some description", None),
                                            ("  --ne                    some description", None),
-                                           # opt only
+                                           # arg only
                                            ("  --help", None),    
                                            ("  -h",     None),
                                            ("  -h, --help", None),
                                             ]
-        cls.pattern_tests["opt_plus_desc"] = [("  -h, --help            show this help message and exit",('-h, --help', ', --help', 'show this help message and exit')),
+        cls.pattern_tests["arg_plus_desc"] = [("  -h, --help            show this help message and exit",('-h','--help','show this help message and exit')),
                                            ("  -h                    show this help message and exit",('-h',None, 'show this help message and exit')),
                                            ("  --help                show this help message and exit",('--help',None, 'show this help message and exit')),
-                                           ("  -h, --help     show this help message and exit",('-h, --help', ', --help', 'show this help message and exit')),
+                                           ("  -h, --help     show this help message and exit",('-h','--help','show this help message and exit')),
                                            ("  -h             show this help message and exit",('-h',None, 'show this help message and exit')),
                                            ("  --help         show this help message and exit",('--help',None, 'show this help message and exit')),
                                            ("-h, --help     show this help message and exit",None),
                                            ("-h             show this help message and exit",None),
                                            ("--help         show this help message and exit",None),
-                                           # opt only
+                                           # arg only
                                            ("  --help",    None),
                                            ("  -h",        None),
                                            ("  -h, --help",None),
-                                           # opt + args + desc
+                                           # arg + vals + desc
                                            ("  -n M, --ne M            some description", None),
                                            ("  -n M M, --ne M M        some description", None),
                                            ("  -n M M M, --ne M M M    some description", None),
@@ -137,7 +137,7 @@ class TestArgdoc():
                                            ("  --ne M                  some description", None),
                                            ("  --ne M M                some description", None),
                                            ("  --ne M M M              some description", None),
-                                           # opt + args
+                                           # arg + vals
                                            ("-n M, --ne M", None),
                                            ("-n M M, --ne M M", None),
                                            ("-n M M M, --ne M M M", None),
@@ -148,17 +148,17 @@ class TestArgdoc():
                                            ("--ne M M", None),
                                            ("--ne M M M", None),
                                            ]
-        cls.pattern_tests["opt_plus_args_desc"] = [
-             ("  -n M, --ne M            some description", {"left" : "-n M, --ne M",         "right" : "some description"}),
-             ("  -n M M, --ne M M        some description", {"left" : "-n M M, --ne M M",     "right" : "some description"}),
-             ("  -n M M M, --ne M M M    some description", {"left" : "-n M M M, --ne M M M", "right" : "some description"}),
-             ("  -n M                    some description", {"left" : "-n M",       "right" : "some description"}),
-             ("  -n M M                  some description", {"left" : "-n M M",     "right" : "some description"}),
-             ("  -n M M M                some description", {"left" : "-n M M M",   "right" : "some description"}),
-             ("  --ne M                  some description", {"left" : "--ne M",     "right" : "some description"}),
-             ("  --ne M M                some description", {"left" : "--ne M M",   "right" : "some description"}),
-             ("  --ne M M M              some description", {"left" : "--ne M M M", "right" : "some description"}),
-             # opt + args
+        cls.pattern_tests["arg_plus_val_desc"] = [
+             ("  -n M, --ne M            some description", {"arg1" : "-n", "val1" : " M",    "arg2" : "--ne", "val2" : " M",     "desc" : "some description"}),
+             ("  -n M M, --ne M M        some description", {"arg1" : "-n", "val1" : " M M",  "arg2" : "--ne", "val2" : " M M",   "desc" : "some description"}),
+             ("  -n M M M, --ne M M M    some description", {"arg1" : "-n", "val1" : " M M M","arg2" : "--ne", "val2" : " M M M", "desc" : "some description"}),
+             ("  -n M                    some description", {"arg1" : "-n", "val1" : " M",    "arg2" : None,   "val2" : None,     "desc" : "some description"}),
+             ("  -n M M                  some description", {"arg1" : "-n", "val1" : " M M",  "arg2" : None,   "val2" : None,     "desc" : "some description"}),
+             ("  -n M M M                some description", {"arg1" : "-n", "val1" : " M M M","arg2" : None,   "val2" : None,     "desc" : "some description"}),
+             ("  --ne M                  some description", {"arg1" : "--ne", "val1" : " M",     "arg2" : None,   "val2" : None, "desc" : "some description"}),
+             ("  --ne M M                some description", {"arg1" : "--ne", "val1" : " M M",   "arg2" : None,   "val2" : None, "desc" : "some description"}),
+             ("  --ne M M M              some description", {"arg1" : "--ne", "val1" : " M M M", "arg2" : None,   "val2" : None, "desc" : "some description"}),
+             # arg + vals
              ("  -n M, --ne M            ", None),
              ("  -n M M, --ne M M        ", None),
              ("  -n M M M, --ne M M M    ", None),
@@ -168,7 +168,7 @@ class TestArgdoc():
              ("  --ne M                  ", None),
              ("  --ne M M                ", None),
              ("  --ne M M M              ", None),
-             # opt + desc
+             # arg + vals
              ("  -n , --ne             some description", None),
              ("  -n  , --ne          some description", None),
              ("  -n   , --ne       some description", None),
@@ -178,7 +178,7 @@ class TestArgdoc():
              ("  --ne                   some description", None),
              ("  --ne                  some description", None),
              ("  --ne                 some description", None),
-             # opt only
+             # arg only
              ("  --help", None),    
              ("  -h",     None),
              ("  -h, --help", None),
@@ -249,14 +249,16 @@ class TestArgdoc():
         else:
             if isinstance(expected,dict):
                 groups = pat.match(inp).groupdict()
+                fn = assert_dict_equal
             else:
                 groups = pat.match(inp).groups()
+                fn = assert_equal
             msg = "For test '%s', pattern %s' input '%s': expected %s, got %s " % (test_name,
                                                                                    pat.pattern,
                                                                                    inp,
                                                                                    expected,
                                                                                    groups)
-            assert_equal(expected,groups,msg)
+            fn(expected,groups,msg)
     
     def test_patterns(self):
         for name, cases in self.pattern_tests.items():
