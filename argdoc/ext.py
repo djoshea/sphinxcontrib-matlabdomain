@@ -58,10 +58,10 @@ patterns = { "section_title"      : r"^(\w+.*):$",
 patterns = { K : re.compile(V) for K,V in patterns.items() }  
 
 headers = "=-~._\"'^;"
-indent_size = 4
+_INDENT_SIZE = 4
 
 
-separator = "\n------------\n\n".split("\n")
+_SEPARATOR = "\n------------\n\n".split("\n")
 
 def get_subcommand_header(name,header_level):
     stmp = "%s\n%s\n" % (name,headers[header_level]*len(name))
@@ -196,17 +196,17 @@ def process_single_or_subprogram(app,obj,help_lines,
             if len(col1) > 0 and len(col2) > 0:
                 col1_width = 1 + max([len(X) for X in col1])
                 col2_width = max([len(X) for X in col2])
-                table_header = (u" "*(indent_size))+(u"="*col1_width) + u" " + (u"="*col2_width)
+                table_header = (u" "*(_INDENT_SIZE))+(u"="*col1_width) + u" " + (u"="*col2_width)
                 out_lines.append(u"")
                 out_lines.extend(section_title)
                 out_lines.extend(section_desc)
                 out_lines.append(u"")
                 out_lines.append(table_header)
-                out_lines.append( (u" "*(indent_size))+u"*Option*" + u" "*(1 + col1_width - 8) + u"*Description*")
+                out_lines.append( (u" "*(_INDENT_SIZE))+u"*Option*" + u" "*(1 + col1_width - 8) + u"*Description*")
                 out_lines.append(table_header.replace("=","-"))
                  
                 for c1, c2 in zip(col1,col2):
-                    out_lines.append((u" "*(indent_size))+ c1.decode("utf-8") + (u" "*(1+col1_width-len(c1))) + c2.decode("utf-8"))
+                    out_lines.append((u" "*(_INDENT_SIZE))+ c1.decode("utf-8") + (u" "*(1+col1_width-len(c1))) + c2.decode("utf-8"))
      
                 out_lines.append(table_header)
                 out_lines.append(u"")
@@ -228,7 +228,7 @@ def process_single_or_subprogram(app,obj,help_lines,
                 if section_head == True:
                     stmp1 = section_name
                     stmp2 = headers[header_level]*len(section_name)
-                    out_lines.extend(separator)
+                    out_lines.extend(_SEPARATOR)
                     out_lines.append(stmp1)
                     out_lines.append(stmp2)
             
@@ -388,7 +388,7 @@ def add_args_to_module_docstring(app,what,name,obj,options,lines):
                 app.warn(out)
             try:
                 out_lines = process_single_or_subprogram(app,obj,help_lines,section_head=True,header_level=1)
-                out_lines += separator
+                out_lines += _SEPARATOR
                 lines.extend(out_lines)
                 lines.extend(_OTHER_HEADER_LINES)
                 app.emit("argdoc-process-docstring",what,name,obj,options,lines)

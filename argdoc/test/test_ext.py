@@ -48,6 +48,26 @@ class TestArgdoc():
 
         # test cases for patterns
         cls.pattern_tests = {}
+        cls.pattern_tests["positional_arg"] = [("  arg1",{"arg1":"arg1","desc":None}),
+                                               ("  some_arg         some_description with lots of words",
+                                                { "arg1" : "some_arg",
+                                                  "desc" : "some_description with lots of words"
+                                                }
+                                               ),
+                                               ("optional arguments:",None),
+                                               ("  --kwarg M",None),
+                                               ("  -k M",None),
+                                               ("  -k",None),
+                                               ("  --kwarg",None),
+                                               ("  -k, --kwarg",None),
+                                               ("  -k M, --kwarg M",None),
+                                               ("  -k             some_description with lots of words",None),
+                                               ("  --kwarg        some_description with lots of words",None),
+                                               ("  -k, --kwarg    some_description with lots of words",None),
+                                               ("  -k M           some_description with lots of words",None),
+                                               ("  --kwarg M      some_description with lots of words",None),
+                                               ("  -k M, --kwarg M   some_description with lots of words",None),
+                ]
         cls.pattern_tests["section_title"] = [("optional arguments:", ("optional arguments",)),
                                            ("optional arguments: ",None),
                                            (" optional arguments:",None),
@@ -354,7 +374,10 @@ class TestArgdoc():
             idx = 80
         else:
             idx = None
-        message = "Expected '%s', found '%s'" % (expected[:idx],found[:idx])
+
+        ellip = "..." if len(expected) > idx else ""
+
+        message = "Expected '%s%s', found '%s%s'" % (expected[:idx],ellip,found[:idx],ellip)
         if casename != "":
             message = "test '%s': %s" % (casename,message)
 
@@ -389,6 +412,7 @@ class TestArgdoc():
     def test_process_single_or_subprogram(self):
         test_keys = ["simple_parser","optiongroup_parser"] # altprefix
         # look at output & test against known RST
+        app = FakeApp()
         for k in test_keys:
             mod, expected, _ = self.test_cases[k]
             app = FakeApp()
@@ -410,7 +434,7 @@ class TestArgdoc():
             buf.seek(0)
             lines = buf.read().split("\n")
 
-            found_lines = process_single_or_subprogram(lines)
+            found_lines = process_single_or_subprogram(app,mod,lines)
             yield self.check_equal, expected_lines[n:], found_lines, k
 
     @attr(kind="functional")
