@@ -27,9 +27,9 @@ docs/build/html : docs/source/class_substitutions.txt | docs/source/generated
 	$(MAKE) html -C docs
 
 docs/source/generated :
-	sphinx-apidoc -e -o docs/source/generated argdoc
+	sphinx-apidoc -M -e -o docs/source/generated argdoc
 	#rm docs/source/generated/argdoc.test*rst
-	fix_package_template -e test argdoc docs/source/generated
+	#fix_package_template -e test argdoc docs/source/generated
 
 docs : | docs/build/html docs/source/generated
 
