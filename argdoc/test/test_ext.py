@@ -1,13 +1,6 @@
 #!/usr/bin/env python
 """Test suite for :obj:`argdoc.ext`
 
-Argument-matching atterns in :mod:`argdoc.ext` are tested with a battery
-of unit tests.
-
-The docstring processing machinery is tested via a call to `sphinx-build`
-on executable scripts included as part of the test dataset. The output
-HTML files are compared against expectation. Admittedly, this is a fragile
-test.
 """
 __date__   = "2015-06-09"
 __author__ = "Joshua Griffin Dunn"
@@ -17,11 +10,22 @@ import os
 import tempfile
 import shlex
 import shutil
+import cStringIO
+import importlib
+import argdoc
+import argdoc.test.cases
+
+
+from modulefinder import ModuleFinder
 from pkg_resources import resource_filename, cleanup_resources
 from nose.tools import assert_equal, assert_true, assert_dict_equal
 from nose.plugins.attrib import attr
 from sphinx import main as sphinxbuild
-from argdoc.ext import patterns, get_col1_text, get_col2_text, noargdoc
+from argdoc.ext import patterns, get_col1_text, get_col2_text, noargdoc,\
+                       add_args_to_module_docstring,\
+                       process_single_or_subprogram
+
+
 
 
 class TestArgdoc():
@@ -36,8 +40,8 @@ class TestArgdoc():
 
         # options for sphinx-build runs
         cls.optdict = { "sourcedir" : resource_filename("argdoc","test/testdocroot"),
-                          "conf"     : resource_filename("argdoc","test/testdocroot/conf.py"),
-                          "outdir"   : tempfile.mkdtemp(prefix="argdoc"),
+                        "conf"      : resource_filename("argdoc","test/testdocroot/conf.py"),
+                        "outdir"    : tempfile.mkdtemp(prefix="argdoc"),
                        }
 
         cls.sphinxopts = "-Q -b html %(sourcedir)s %(outdir)s" % cls.optdict
@@ -258,24 +262,28 @@ class TestArgdoc():
 
                 ]
 
-    # test case names to (input, output rst)
-    cls.test_cases = {
-            "noargdoc"        : ("","")
-            "simple"          : ("",""),
-#            "altprefix"       : ("",""),
-            "optiongroup"     : ("",""),
-            "with_subparsers" : ("",""),
-            }
+        # automatically load test cases
+        # testcase names mapped to (module, expected rst output, built rst output)
+        cls.test_cases = {}
+        mf = ModuleFinder()
+        for modname in mf.find_all_submodules(argdoc.test.cases):
+            if modname not in (__name__,"__init__"):
+                mod = importlib.import_module("argdoc.test.cases.%s" % modname)
+                basename = "argdoc.test.cases.%s_docstring.rst" % modname
+                tup = (mod,
+                       resource_filename("argdoc","test/testbuild/%s" % basename),
+                       os.path.join(cls.optdict["outdir"],basename))
+                cls.test_cases[modname] = tup
  
     @classmethod
     def tearDownClass(cls):
         """Clean up temp files after tests are complete"""
-        cleanup_resources()
-        shutil.rmtree(cls.optdict["outdir"])
+        #cleanup_resources()
+        #shutil.rmtree(cls.optdict["outdir"])
 
     @classmethod
     def run_builder(cls):
-        """Run sphinx builder the first time it is called, only
+        """Run sphinx builder only the first time it is needed
 
         Raises
         ------
@@ -338,10 +346,19 @@ class TestArgdoc():
                 yield self.check_match, name, patterns[name], inp, expected
 
     @staticmethod
-    def check_equal(expected,found):
+    def check_equal(expected,found,casename=""):
         """Helper method just to allow us to use test generators in other tests"""
-        message = "Expected '%s', found '%s'" % (expected,found)
-        assert_equal(expected,found)
+        if isinstance(expected,list):
+            idx = 2
+        elif isinstance(expected,str):
+            idx = 80
+        else:
+            idx = None
+        message = "Expected '%s', found '%s'" % (expected[:idx],found[:idx])
+        if casename != "":
+            message = "test '%s': %s" % (casename,message)
+
+        assert_equal(expected,found,message)
 
     def test_get_col1_text(self):
         for my_dict in self.match_dicts:
@@ -360,20 +377,90 @@ class TestArgdoc():
 
     @attr(kind="functional")
     def test_noargdoc_prevents_argdoc(self):
-        inp, outp_ = self.test_cases["noargdoc"]
+        self.run_builder()
+        inp, expected, built = self.test_cases["noargdoc"]
         assert False
 
     def test_process_subprogram_container(self):
-        inp, outp = self.test_cases["with_suparsers"]
+        inp, expected, built = self.test_cases["with_subparsers"]
         # look at output & test against known RST
         assert False
 
     def test_process_single_or_subprogram(self):
-        test_keys = ["simple","optiongroup"] # altprefix
+        test_keys = ["simple_parser","optiongroup_parser"] # altprefix
         # look at output & test against known RST
-        assert False
+        for k in test_keys:
+            mod, expected, _ = self.test_cases[k]
+            app = FakeApp()
+            with open(expected) as f:
+                expected_lines = f.read().split("\n")
+            f.close()
+
+            for n, line in enumerate(expected_lines):
+                if line.startswith("Command-line arguments"):
+                    break
+
+            buf = cStringIO.StringIO()
+            try:
+                with buf as sys.stdout:
+                    mod.main(["--help"])
+            except AttributeError:
+                pass
+            
+            buf.seek(0)
+            lines = buf.read().split("\n")
+
+            found_lines = process_single_or_subprogram(lines)
+            yield self.check_equal, expected_lines[n:], found_lines, k
 
     @attr(kind="functional")
     def test_add_args_to_module_docstring(self):
-        for name, (inp,outp) in self.test_cases.items["pass"]
-            assert False
+        self.run_builder()
+        options = {}
+        for k, (mod,expected,built) in self.test_cases.items():
+            if k == "noargdoc":
+                continue
+            app = FakeApp()
+            with open(expected) as f:
+                expected_lines = f.read().split("\n")
+
+            with open(built) as f:
+                built_lines = f.read().split("\n")
+
+            yield self.check_equal, expected_lines, built_lines, k
+
+    def test_add_args_to_module_docstring_emits_event(self):
+        for k, (mod,_,_) in self.test_cases.items():
+            if k != "noargdoc":
+                expected = ["argdoc-process-docstring"]
+            else:
+                expected = []
+            app = FakeApp()
+            options = {}
+            found = add_args_to_module_docstring(app,"module",mod.__name__,mod,options,[])
+            yield self.check_equal, expected, app.emitted, k
+
+class Record(object):
+    """Proxy object that allows addition of arbitrary properties"""
+    def __init__(self):
+        pass
+
+class FakeApp(object):
+    """Proxy for a Sphinx application object. Implements minimial methods
+    required for us to test functions in :mod:`argdoc.ext` that require
+    a Sphinx application instance
+    """
+    def __init__(self,argdoc_main_func="main"):
+        self.config = Record()
+        self.config.argdoc_main_func = argdoc_main_func
+        self.emitted = []
+
+    def warn(self,*args,**kwargs):
+        pass
+
+    def debug(self,*args,**kwargs):
+        pass
+
+    def emit(self,*args,**kwargs):
+        """Simulate `emit` method. Save event name in `self.emitted` at each call"""
+        self.emitted.append(args[0])

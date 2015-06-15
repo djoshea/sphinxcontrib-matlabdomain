@@ -50,6 +50,8 @@ Here is another item
     To show that our test works
 """
 import argparse
+import sys
+from argdoc.ext import noargdoc
 
 helptext = {
     "short" : "one-line help text",
@@ -61,7 +63,8 @@ choices = {
     "multi"  : ["one","two","three","four"],
 }
 
-def main():
+@noargdoc
+def main(argv=sys.argv[1:]):
     """Command-line program for `simple_parser`"""
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -192,7 +195,7 @@ def main():
     parser.add_argument("-Ã","--reallyreallyreallyreallyreallyreallylong_combo20",help=helptext["short"],choices=choices["multi"],)
     parser.add_argument("-Ä","--reallyreallyreallyreallyreallyreallylong_combo21",help=helptext["long"],choices=choices["multi"],)
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
 if __name__ == "__main__":
     main()
