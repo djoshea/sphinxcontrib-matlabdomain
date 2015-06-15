@@ -18,10 +18,6 @@ Developer functions
     Extract tables of arguments from an :class:`~argparse.ArgumentParser`
     that has no subprograms
 
-:func:`process_argparser`
-    Delegate a given :class:`~argparse.ArgumentParser` to 
-    :func:`process_subprogram_container` or :func:`process_single_or_subprogram`
-
 :func:`add_args_to_module_docstring`
     Event handler called by `Sphinx`_ upon `autodoc-process-docstring` events
 
@@ -40,8 +36,6 @@ import argdoc
 
 _OTHER_HEADER_LINES = u"""Script contents
 ---------------""".split("\n")
-
-_SUBCOMMAND_HEADER = "%sSubcommand arguments\n%s--------------------\n"
 
 _REQUIRED = [
     'sphinx.ext.autodoc',
@@ -62,6 +56,16 @@ patterns = { "section_title"      : r"^(\w+.*):$",
 """Regular expressions describing components of docstrings created by :py:mod:`argparse`"""
 
 patterns = { K : re.compile(V) for K,V in patterns.items() }  
+
+headers = "=-~._\"'^;"
+indent_size = 4
+
+
+separator = "\n------------\n\n".split("\n")
+
+def get_subcommand_header(name,header_level):
+    stmp = "%s\n%s\n" % (name,headers[header_level]*len(name))
+    return stmp.split("\n")
 
 #===============================================================================
 # INDEX: function decorators
@@ -88,7 +92,7 @@ def noargdoc(func):
 # INDEX: docstring-processing functions
 #===============================================================================
 
-def process_subprogram_container(app,obj,help_lines,start_line,indent_size=4,section_head=True,pre_args=0):
+def process_subprogram_container(app,obj,help_lines,start_line,section_head=True,pre_args=0,header_level=1):
     """Processes help output from an :py:class:`argparse.ArgumentParser`
     from a program that includes one or more subprograms.  Called by
     :func:`process_argparser`
@@ -108,11 +112,6 @@ def process_subprogram_container(app,obj,help_lines,start_line,indent_size=4,sec
     start_line : int
         Line where token `'subcommands: '` was found in argparser output
     
-    indent_size : int, optional
-        Number of spaces to prepend before output. This is significant,
-        because whitespace is significant in reStructuredText, and 
-        incorrect indentation size will muddle the rendering. (Default: `4`)
-    
     section_head : bool, optional
         If `True`, a section header for "Command-line arguments" will be included.
         This messes up parsing for function docstrings, but is fine for module
@@ -124,7 +123,7 @@ def process_subprogram_container(app,obj,help_lines,start_line,indent_size=4,sec
         List of strings encoding reStructuredText table of command-line
         arguments for all subprograms in the containing argparser
     """
-    out_lines = (_SUBCOMMAND_HEADER % (" "*indent_size," "*indent_size)).split("\n")
+    out_lines = []
     for line in help_lines[start_line:]:
         match = patterns["subcommand_names"].search(line.strip("\n")) 
         if match is not None:
@@ -134,7 +133,7 @@ def process_subprogram_container(app,obj,help_lines,start_line,indent_size=4,sec
     app.debug("%s subcommands: %s" % (obj.__name__,", ".join(subcommands)))
     prearg_text = " ".join(["X"]*pre_args)
     for subcommand in subcommands:
-        app.warn("Testing %s with %s preargs" % (subcommand,pre_args))
+        app.debug("Testing subcommand %s with %s preargs" % (subcommand,pre_args))
         call = shlex.split("python -m %s %s %s --help" % (obj.__name__,prearg_text,subcommand))
         try:
             proc = subprocess.Popen(call,stdout=subprocess.PIPE)
@@ -142,9 +141,9 @@ def process_subprogram_container(app,obj,help_lines,start_line,indent_size=4,sec
             out_lines.extend(process_single_or_subprogram(app,
                                                           obj,
                                                           sub_help_lines,
-                                                          indent_size=indent_size,
                                                           section_head=section_head,
-                                                          section_name=u"``%s`` subprogram" % subcommand))            
+                                                          header_level=header_level+1,
+                                                          section_name=u"``%s`` subcommand arguments" % subcommand)) 
         except subprocess.CalledProcessError as e:
             out  = ("-"*75) + "\n" + e.output + "\n" + ("-"*75)
             out += "Could not call module %s as '%s'. Output:\n"% (obj.__name__, e.cmd)
@@ -155,7 +154,8 @@ def process_subprogram_container(app,obj,help_lines,start_line,indent_size=4,sec
     return out_lines
 
 def process_single_or_subprogram(app,obj,help_lines,
-                                 indent_size=4,section_head=True,section_name=u"Command-line arguments"):
+                                 section_head=True,section_name=u"Command-line arguments",
+                                 header_level=1):
     """Processes help output from an :py:class:`argparse.ArgumentParser`
     of subprograms, or of a program that has no subprograms. Called by
     :func:`process_argparser`
@@ -165,11 +165,6 @@ def process_single_or_subprogram(app,obj,help_lines,
     help_lines : list
         List of strings, each corresponding to a line of output from having
         passed ``--help`` as an argument to the :term:`main-like function`
-    
-    indent_size : int, optional
-        Number of spaces to prepend before output. This is significant,
-        because whitespace is significant in reStructuredText, and 
-        incorrect indentation size will muddle the rendering. (Default: `4`)
     
     section_head : bool, optional
         If `True`, a section header for "Command-line arguments" will be included.
@@ -203,7 +198,6 @@ def process_single_or_subprogram(app,obj,help_lines,
                 col2_width = max([len(X) for X in col2])
                 table_header = (u" "*(indent_size))+(u"="*col1_width) + u" " + (u"="*col2_width)
                 out_lines.append(u"")
-                out_lines.append(u"")
                 out_lines.extend(section_title)
                 out_lines.extend(section_desc)
                 out_lines.append(u"")
@@ -232,22 +226,23 @@ def process_single_or_subprogram(app,obj,help_lines,
             if started == False:
                 started = True
                 if section_head == True:
-                    stmp1 = u"%s%s" % (" "*(indent_size),section_name)
-                    stmp2 = u"%s%s" % (" "*(indent_size),"-"*len(section_name))
+                    stmp1 = section_name
+                    stmp2 = headers[header_level]*len(section_name)
+                    out_lines.extend(separator)
                     out_lines.append(stmp1)
                     out_lines.append(stmp2)
             
             # Create paragraph header for this section
             match = patterns["section_title"].search(line)
-            section_title = [u"%s%s" % (" "*(indent_size),match.groups()[0].capitalize()),
-                             u"%s%s" % (" "*(indent_size),("."*len(match.groups()[0]))),
+            section_title = [match.groups()[0].capitalize(),
+                             headers[header_level+1]*len(match.groups()[0]),
                             ]
         elif patterns["section_title"].search(line) is not None and not line.startswith("usage:"):
             # Found section section of arguments.
             # Create paragraph header
             match = patterns["section_title"].search(line)
-            section_title = [u"%s%s" % (" "*(indent_size),match.groups()[0].capitalize()),
-                             u"%s%s" % (" "*(indent_size),("\""*len(match.groups()[0]))),
+            section_title = [match.groups()[0].capitalize(),
+                             headers[header_level+1]*len(match.groups()[0]),
                             ]
         elif started == True:
             matchdict = None
@@ -279,8 +274,8 @@ def process_single_or_subprogram(app,obj,help_lines,
                                                                  obj,
                                                                  help_lines,
                                                                  n,
-                                                                 indent_size=indent_size,
                                                                  section_head=section_head,
+                                                                 header_level=header_level+2,
                                                                  pre_args=positional_args)
                         out_lines.extend(new_lines)
                         break
@@ -329,55 +324,6 @@ def get_col2_text(matchdict):
     """
     return matchdict.get("desc","") if matchdict.get("desc") is not None else ""
 
-def process_argparser(app,obj,help_lines,indent_size=4,section_head=False):
-    """Processes help output from an :py:class:`argparse.ArgumentParser`
-    into a set of reStructuredText tables, probing subcommand parsers as needed.
-    
-    Parameters
-    ----------
-    app
-        Sphinx application
-    
-    obj : module
-        Module containing :term:`main-like function`
-    
-    help_lines : list
-        List of strings, each corresponding to a line of output from having
-        passed ``--help`` as an argument to the :term:`main-like function`
-    
-    indent_size : int, optional
-        Number of spaces to prepend before output. This is significant,
-        because whitespace is significant in reStructuredText, and 
-        incorrect indentation size will muddle the rendering. (Default: `4`)
-    
-    section_head : bool, optional
-        If `True`, a section header for "Command-line arguments" will be included.
-        This messes up parsing for function docstrings, but is fine for module
-        docstrings (Default: `False`).
-    
-    Returns
-    -------
-    list
-        List of strings corresponding to reStructuredText tables
-    """
-#     has_subcommands = False
-#     for n,line in enumerate(help_lines):
-#         if patterns["subcommand_names"].match(line.strip("\n")) is not None:
-#             has_subcommands = True
-#             break
-#     if has_subcommands == True:
-#         app.debug("%s has subcommands" % obj.__name__)        
-#         out_lines = process_subprogram_container(app,obj,help_lines,n-1,
-#                                                  indent_size=indent_size,
-#                                                  section_head=section_head)
-# 
-#     else:
-#         app.debug("%s has no subcommands" % obj.__name__)
-    out_lines = process_single_or_subprogram(app,obj,help_lines,
-                                             indent_size=indent_size,
-                                             section_head=section_head)                                  
-
-    return out_lines
 
 def add_args_to_module_docstring(app,what,name,obj,options,lines):
     """Insert a table listing and describing an executable script's command-line
@@ -441,7 +387,8 @@ def add_args_to_module_docstring(app,what,name,obj,options,lines):
                 out += ("-"*75) + "\n"
                 app.warn(out)
             try:
-                out_lines = process_argparser(app,obj,help_lines,indent_size=0,section_head=True)
+                out_lines = process_single_or_subprogram(app,obj,help_lines,section_head=True,header_level=1)
+                out_lines += separator
                 lines.extend(out_lines)
                 lines.extend(_OTHER_HEADER_LINES)
                 app.emit("argdoc-process-docstring",what,name,obj,options,lines)
