@@ -14,6 +14,8 @@ bar_desc = """This is the long description for the `bar` subprogram."""
 
 def main(argv=sys.argv[1:]):
     parser = argparse.ArgumentParser()
+    parser.add_argument("mainarg1")
+    parser.add_argument("mainarg2",help="main positional argument #2")
     subparsers = parser.add_subparsers(title="subcommands",
                                        description="choose one of the following:",
                                        dest="program")
