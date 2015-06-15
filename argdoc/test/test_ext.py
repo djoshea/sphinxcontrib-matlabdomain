@@ -22,8 +22,8 @@ from nose.tools import assert_equal, assert_true, assert_dict_equal
 from nose.plugins.attrib import attr
 from sphinx import main as sphinxbuild
 from argdoc.ext import patterns, get_col1_text, get_col2_text, noargdoc,\
-                       add_args_to_module_docstring,\
-                       process_single_or_subprogram
+                       post_process_automodule,\
+                       format_argparser_to_docstring
 
 
 
@@ -404,12 +404,12 @@ class TestArgdoc():
         inp, expected, built = self.test_cases["noargdoc"]
         assert False
 
-    def test_process_subprogram_container(self):
+    def test_get_subcommand_tables(self):
         inp, expected, built = self.test_cases["with_subparsers"]
         # look at output & test against known RST
         assert False
 
-    def test_process_single_or_subprogram(self):
+    def test_format_argparser_to_docstring(self):
         test_keys = ["simple_parser","optiongroup_parser"] # altprefix
         # look at output & test against known RST
         app = FakeApp()
@@ -434,11 +434,11 @@ class TestArgdoc():
             buf.seek(0)
             lines = buf.read().split("\n")
 
-            found_lines = process_single_or_subprogram(app,mod,lines)
+            found_lines = format_argparser_to_docstring(app,mod,lines)
             yield self.check_equal, expected_lines[n:], found_lines, k
 
     @attr(kind="functional")
-    def test_add_args_to_module_docstring(self):
+    def test_post_process_automodule(self):
         self.run_builder()
         options = {}
         for k, (mod,expected,built) in self.test_cases.items():
@@ -453,7 +453,7 @@ class TestArgdoc():
 
             yield self.check_equal, expected_lines, built_lines, k
 
-    def test_add_args_to_module_docstring_emits_event(self):
+    def test_post_process_automodule_emits_event(self):
         for k, (mod,_,_) in self.test_cases.items():
             if k != "noargdoc":
                 expected = ["argdoc-process-docstring"]
@@ -461,7 +461,7 @@ class TestArgdoc():
                 expected = []
             app = FakeApp()
             options = {}
-            found = add_args_to_module_docstring(app,"module",mod.__name__,mod,options,[])
+            found = post_process_automodule(app,"module",mod.__name__,mod,options,[])
             yield self.check_equal, expected, app.emitted, k
 
 class Record(object):

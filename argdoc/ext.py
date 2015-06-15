@@ -9,17 +9,18 @@ User functions
     
 Developer functions
 -------------------
-:func:`process_subprogram_container`
-    Extract tables from all subprogram
+:func:`get_subcommand_tables`
+    Extract tables from all subcommands
     :class:`ArgumentParsers <argparse.ArgumentParser>`
     contained by an enclosing :class:`~argparse.ArgumentParser`
 
-:func:`process_single_or_subprogram`
+:func:`format_argparser_to_docstring`
     Extract tables of arguments from an :class:`~argparse.ArgumentParser`
-    that has no subprograms
+    and from all of its subprograms, and format their descriptions &
+    help text.
 
-:func:`add_args_to_module_docstring`
-    Event handler called by `Sphinx`_ upon `autodoc-process-docstring` events
+:func:`post_process_automodule`
+    Event handler to activate argdoc upon `autodoc-process-docstring` events
 
 :func:`setup`
     Register the extension with the running `Sphinx`_ instance
@@ -57,15 +58,54 @@ patterns = { "section_title"      : r"^(\w+.*):$",
 
 patterns = { K : re.compile(V) for K,V in patterns.items() }  
 
-headers = "=-~._\"'^;"
+_HEADERS = "=-~._\"'^;"
 _INDENT_SIZE = 4
-
-
 _SEPARATOR = "\n------------\n\n".split("\n")
 
+#===============================================================================
+# INDEX: string formatting functions 
+#===============================================================================
+
 def get_subcommand_header(name,header_level):
-    stmp = "%s\n%s\n" % (name,headers[header_level]*len(name))
+    stmp = "%s\n%s\n" % (name,_HEADERS[header_level]*len(name))
     return stmp.split("\n")
+
+def get_col1_text(matchdict):
+    """Format argument name(s) and value(s) for column 1 of argument table
+
+    Parameters
+    ----------
+    matchdict : dict
+        Dictionary of values
+
+    Returns
+    -------
+    str
+    """
+    if "val1" in matchdict:
+        tmpstr = "``%s %s``" % (matchdict["arg1"],matchdict["val1"])
+        if matchdict.get("arg2") is not None:
+            tmpstr += (", ``%s %s``" % (matchdict["arg2"],matchdict["val2"]))
+    else:
+        tmpstr = "``%s``" % matchdict["arg1"]
+        if matchdict.get("arg2") is not None:
+            tmpstr += (", ``%s``" % matchdict["arg2"])
+
+    return tmpstr
+
+def get_col2_text(matchdict):
+    """Format argument descriptions, if present, for column 2 of argument table
+
+    Parameters
+    ----------
+    matchdict : dict
+        Dictionary of values
+
+    Returns
+    -------
+    str
+    """
+    return matchdict.get("desc","") if matchdict.get("desc") is not None else ""
 
 #===============================================================================
 # INDEX: function decorators
@@ -92,7 +132,7 @@ def noargdoc(func):
 # INDEX: docstring-processing functions
 #===============================================================================
 
-def process_subprogram_container(app,obj,help_lines,start_line,section_head=True,pre_args=0,header_level=1):
+def get_subcommand_tables(app,obj,help_lines,start_line,section_head=True,pre_args=0,header_level=1):
     """Processes help output from an :py:class:`argparse.ArgumentParser`
     from a program that includes one or more subprograms.  Called by
     :func:`process_argparser`
@@ -138,7 +178,7 @@ def process_subprogram_container(app,obj,help_lines,start_line,section_head=True
         try:
             proc = subprocess.Popen(call,stdout=subprocess.PIPE)
             sub_help_lines = proc.communicate()[0].split("\n")
-            out_lines.extend(process_single_or_subprogram(app,
+            out_lines.extend(format_argparser_to_docstring(app,
                                                           obj,
                                                           sub_help_lines,
                                                           section_head=section_head,
@@ -153,7 +193,7 @@ def process_subprogram_container(app,obj,help_lines,start_line,section_head=True
 
     return out_lines
 
-def process_single_or_subprogram(app,obj,help_lines,
+def format_argparser_to_docstring(app,obj,help_lines,
                                  section_head=True,section_name=u"Command-line arguments",
                                  header_level=1):
     """Processes help output from an :py:class:`argparse.ArgumentParser`
@@ -227,7 +267,7 @@ def process_single_or_subprogram(app,obj,help_lines,
                 started = True
                 if section_head == True:
                     stmp1 = section_name
-                    stmp2 = headers[header_level]*len(section_name)
+                    stmp2 = _HEADERS[header_level]*len(section_name)
                     out_lines.extend(_SEPARATOR)
                     out_lines.append(stmp1)
                     out_lines.append(stmp2)
@@ -235,14 +275,14 @@ def process_single_or_subprogram(app,obj,help_lines,
             # Create paragraph header for this section
             match = patterns["section_title"].search(line)
             section_title = [match.groups()[0].capitalize(),
-                             headers[header_level+1]*len(match.groups()[0]),
+                             _HEADERS[header_level+1]*len(match.groups()[0]),
                             ]
         elif patterns["section_title"].search(line) is not None and not line.startswith("usage:"):
             # Found section section of arguments.
             # Create paragraph header
             match = patterns["section_title"].search(line)
             section_title = [match.groups()[0].capitalize(),
-                             headers[header_level+1]*len(match.groups()[0]),
+                             _HEADERS[header_level+1]*len(match.groups()[0]),
                             ]
         elif started == True:
             matchdict = None
@@ -270,7 +310,7 @@ def process_single_or_subprogram(app,obj,help_lines,
                         positional_args += 1
                         break
                     elif pat == "subcommand_names":
-                        new_lines = process_subprogram_container(app,
+                        new_lines = get_subcommand_tables(app,
                                                                  obj,
                                                                  help_lines,
                                                                  n,
@@ -287,45 +327,7 @@ def process_single_or_subprogram(app,obj,help_lines,
       
     return out_lines
 
-def get_col1_text(matchdict):
-    """Format argument name(s) and value(s) for column 1 of argument table
-
-    Parameters
-    ----------
-    matchdict : dict
-        Dictionary of values
-
-    Returns
-    -------
-    str
-    """
-    if "val1" in matchdict:
-        tmpstr = "``%s %s``" % (matchdict["arg1"],matchdict["val1"])
-        if matchdict.get("arg2") is not None:
-            tmpstr += (", ``%s %s``" % (matchdict["arg2"],matchdict["val2"]))
-    else:
-        tmpstr = "``%s``" % matchdict["arg1"]
-        if matchdict.get("arg2") is not None:
-            tmpstr += (", ``%s``" % matchdict["arg2"])
-
-    return tmpstr
-
-def get_col2_text(matchdict):
-    """Format argument descriptions, if present, for column 2 of argument table
-
-    Parameters
-    ----------
-    matchdict : dict
-        Dictionary of values
-
-    Returns
-    -------
-    str
-    """
-    return matchdict.get("desc","") if matchdict.get("desc") is not None else ""
-
-
-def add_args_to_module_docstring(app,what,name,obj,options,lines):
+def post_process_automodule(app,what,name,obj,options,lines):
     """Insert a table listing and describing an executable script's command-line
     arguments into its ``:automodule:`` documentation.
     
@@ -387,7 +389,7 @@ def add_args_to_module_docstring(app,what,name,obj,options,lines):
                 out += ("-"*75) + "\n"
                 app.warn(out)
             try:
-                out_lines = process_single_or_subprogram(app,obj,help_lines,section_head=True,header_level=1)
+                out_lines = format_argparser_to_docstring(app,obj,help_lines,section_head=True,header_level=1)
                 out_lines += _SEPARATOR
                 lines.extend(out_lines)
                 lines.extend(_OTHER_HEADER_LINES)
@@ -414,7 +416,7 @@ def setup(app):
     for ext in _REQUIRED:
         app.setup_extension(ext)
     
-    app.connect("autodoc-process-docstring",add_args_to_module_docstring)
+    app.connect("autodoc-process-docstring",post_process_automodule)
     app.add_config_value("argdoc_main_func","main","env")
 #    app.add_config_value("argdoc_arg_prefix_char","-","env")
 
