@@ -6,12 +6,16 @@ Version numbers follow the conventions described in
 [Semantic versioning](http://semver.org/).
 
 
-## Unreleased
+
+
+## [0.0.3] = 2015-06-15
 
 ### Added
 - Quickstart, advanced usage, FAQ, glossary documentation, et c
 - Export RST of processed docstrings
 - argdoc-process-docstring event
+- improved subcommand support for argparsers that have args
+  in the main parser and in subcommands
 
 ### Fixed
 - Can now handle option+argument+description lines that have
