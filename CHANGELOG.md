@@ -10,6 +10,8 @@ Version numbers follow the conventions described in
 
 ### Added
 - Quickstart, advanced usage, FAQ, glossary documentation, et c
+- Export RST of processed docstrings
+- argdoc-process-docstring event
 
 ### Fixed
 - Can now handle option+argument+description lines that have
