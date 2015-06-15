@@ -21,7 +21,7 @@ from pkg_resources import resource_filename, cleanup_resources
 from nose.tools import assert_equal, assert_true, assert_dict_equal
 from nose.plugins.attrib import attr
 from sphinx import main as sphinxbuild
-from argdoc.ext import patterns
+from argdoc.ext import patterns, get_col1_text, get_col2_text, noargdoc
 
 
 class TestArgdoc():
@@ -195,6 +195,78 @@ class TestArgdoc():
         cls.pattern_tests["continue_desc"] = []
         cls.pattern_tests["section_desc"] = []
 
+        # test cases for test_get_col1_text, test_get_col2_text
+        cls.match_dicts = [
+                { "arg1" : "ARG",
+                  "col1" : "``ARG``",
+                  "col2" : "",
+                },
+                { "arg1" : "ARG",
+                  "desc" : "some description",
+                  "col1" : "``ARG``",
+                  "col2" : "some description",
+                },
+                { "arg1" : "-v",
+                  "val1" : "ARG",
+                  "col1" : "``-v ARG``",
+                  "col2" : "",
+                },
+                { "arg1" : "--val",
+                  "val1" : "ARG",
+                  "col1" : "``--val ARG``",
+                  "col2" : ""
+                },
+                { "arg1" : "-v",
+                  "val1" : "ARG",
+                  "arg2" : "--val",
+                  "val2" : "ARG",
+                  "desc" : "some description",
+                  "col1" : "``-v ARG``, ``--val ARG``",
+                  "col2" : "some description",
+                },
+                { "arg1" : "-v",
+                  "val1" : "ARG",
+                  "desc" : "some description",
+                  "col1" : "``-v ARG``",
+                  "col2" : "some description",
+                },
+                { "arg1" : "--val",
+                  "val1" : "ARG",
+                  "desc" : "some description",
+                  "col1" : "``--val ARG``",
+                  "col2" : "some description",
+                },
+                { "arg1" : "-v",
+                  "val1" : "ARG",
+                  "arg2" : "--val",
+                  "val2" : "ARG",
+                  "desc" : "some description",
+                  "col1" : "``-v ARG``, ``--val ARG``",
+                  "col2" : "some description",
+                },
+                { "arg1" : "-v",
+                  "arg2" : "--val",
+                  "col1" : "``-v``, ``--val``",
+                  "col2" : ""
+                },
+                { "arg1" : "-v",
+                  "arg2" : "--val",
+                  "desc" : "some description",
+                  "col1" : "``-v``, ``--val``",
+                  "col2" : "some description",
+                },
+
+                ]
+
+    # test case names to (input, output rst)
+    cls.test_cases = {
+            "noargdoc"        : ("","")
+            "simple"          : ("",""),
+#            "altprefix"       : ("",""),
+            "optiongroup"     : ("",""),
+            "with_subparsers" : ("",""),
+            }
+ 
     @classmethod
     def tearDownClass(cls):
         """Clean up temp files after tests are complete"""
@@ -209,7 +281,7 @@ class TestArgdoc():
         ------
         AssertionError
             If builder exists with non-zero status
-        """
+        """ 
         if cls.built == False:
             try:
                 sphinxbuild(shlex.split(cls.sphinxopts))
@@ -217,7 +289,7 @@ class TestArgdoc():
                 if e.code != 0:
                     raise AssertionError("Error running sphinx-build (exited with code %s)" % e.code)
 
-            cls.built = True
+            cls.built = True 
 
     @staticmethod
     def check_match(test_name,pat,inp,expected):
@@ -265,21 +337,43 @@ class TestArgdoc():
             for inp,expected in cases:
                 yield self.check_match, name, patterns[name], inp, expected
 
+    @staticmethod
+    def check_equal(expected,found):
+        """Helper method just to allow us to use test generators in other tests"""
+        message = "Expected '%s', found '%s'" % (expected,found)
+        assert_equal(expected,found)
+
+    def test_get_col1_text(self):
+        for my_dict in self.match_dicts:
+            yield self.check_equal, get_col1_text(my_dict), my_dict["col1"]
+
+    def test_get_col2_text(self):
+        for my_dict in self.match_dicts:
+            yield self.check_equal, get_col2_text(my_dict), my_dict["col2"]
+
+    def test_noargdoc_adds_attribute(self):
+        def my_func():
+            pass
+
+        b = noargdoc(my_func)
+        assert_true(b.__dict__["noargdoc"])
+
     @attr(kind="functional")
-    def test_simple_parser(self):
-        self.run_builder()
+    def test_noargdoc_prevents_argdoc(self):
+        inp, outp_ = self.test_cases["noargdoc"]
+        assert False
+
+    def test_process_subprogram_container(self):
+        inp, outp = self.test_cases["with_suparsers"]
+        # look at output & test against known RST
+        assert False
+
+    def test_process_single_or_subprogram(self):
+        test_keys = ["simple","optiongroup"] # altprefix
+        # look at output & test against known RST
         assert False
 
     @attr(kind="functional")
-    def test_optiongroup_parser(self):
-        self.run_builder()
-        assert False
-
-    @attr(kind="functional")
-    def test_with_subparsers(self):
-        self.run_builder()
-        assert False
-
-    def test_process_argparser_help(self):
-        assert False
-     
+    def test_add_args_to_module_docstring(self):
+        for name, (inp,outp) in self.test_cases.items["pass"]
+            assert False
