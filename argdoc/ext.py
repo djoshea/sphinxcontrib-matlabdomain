@@ -417,6 +417,7 @@ def add_args_to_module_docstring(app,what,name,obj,options,lines):
                 out_lines = process_argparser(app,obj,help_lines,indent_size=0,section_head=True)
                 lines.extend(out_lines)
                 lines.extend(_OTHER_HEADER_LINES)
+                app.emit("argdoc-process-docstring",what,name,obj,options,lines)
             except IndexError as e:
                 app.warn("Error processing argparser into docstring for module %s: " % obj.__name__)
 
@@ -441,7 +442,9 @@ def setup(app):
     
     app.connect("autodoc-process-docstring",add_args_to_module_docstring)
     app.add_config_value("argdoc_main_func","main","env")
-    app.add_config_value("argdoc_arg_prefix_char","-","env")
+#    app.add_config_value("argdoc_arg_prefix_char","-","env")
 
-    if sphinx.version_info >= (1,3,0,'',0):
+    app.add_event("argdoc-process-docstring")
+
+    if sphinx.version_info >= (1,3,):
         return metadata
