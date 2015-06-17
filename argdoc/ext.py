@@ -28,8 +28,11 @@ Developer functions
 import re
 import shlex
 import subprocess
+#import warnings
+
 import sphinx
 import argdoc
+from sphinx.errors import ConfigError
 
 #===============================================================================
 # INDEX: various constants
@@ -44,27 +47,45 @@ _REQUIRED = [
 ]
 """Other `Sphinx`_ extensions required by :py:obj:`argdoc`"""
 
-patterns = { "section_title"      : r"^(\w+.*):$",
-             "positional_arg"     : r"^  (?P<arg1>[^{}\s-]+)(?:\s\s+(?P<desc>\w+.*))?$",
-             "arg_only"           : r"^  (?P<arg1>-?[^\s,]+)(?:, (?P<arg2>--[^\s]+))?$",
-             "arg_plus_val"       : r"^  (?P<arg1>-+[^\s]+)(?P<val1>(?: [^-\s]+)+)(?:(?:, (?P<arg2>--[^\s]+))(?P<val2>(?: [^\s]+)+))?$",
-             "arg_plus_desc"      : r"^  (?P<arg1>-?[^\s]+)(?:,\s(?P<arg2>--[^\s]+))?\s\s+(?P<desc>.*)",
-             "arg_plus_val_desc"  : r"^  (?P<arg1>-+[^\s]+)(?P<val1>(?: [^-\s]+)+)(?:(?:, (?P<arg2>--[^\s]+))(?P<val2>(?: [^\s]+)+))?  +(?P<desc>\w+.*)$",
-             "continue_desc"      : r"^ {24}(.*)",
-             "section_desc"       : r"^  ([^- ]+\s)+$",
-             "subcommand_names"   : r"^  {((?:\w+)(?:(?:,(?:\w+))+)?)}$"             
-            }
-"""Regular expressions describing components of docstrings created by :py:mod:`argparse`"""
 
-patterns = { K : re.compile(V) for K,V in patterns.items() }  
 
 _HEADERS = "=-~._\"'^;"
 _INDENT_SIZE = 4
 _SEPARATOR = "\n------------\n\n".split("\n")
 
 #===============================================================================
-# INDEX: string formatting functions 
+# INDEX: helper functions 
 #===============================================================================
+
+def get_patterns(prefix_chars="-"):
+    """Retrieve a dictionary of regular expressions that separate argument names
+    from their values and descriptions
+    
+    Parameters
+    ----------
+    prefix_chars : str, optional
+        String of prefix characters that the :class:`~argparse.ArgumentParser`
+        uses (Default: `'-'`)
+    
+    Returns
+    -------
+    dict
+        Dictionary of regular expression :class:`~re.compile` objects
+    """
+    patterns = { "section_title"      : r"^(\w+.*):$",
+                 "positional_arg"     : r"^  (?P<arg1>[^{}\s-]+)(?:\s\s+(?P<desc>\w+.*))?$",
+                 "arg_only"           : r"^  (?P<arg1>-?[^\s,]+)(?:, (?P<arg2>--[^\s]+))?$",
+                 "arg_plus_val"       : r"^  (?P<arg1>-+[^\s]+)(?P<val1>(?: [^-\s]+)+)(?:(?:, (?P<arg2>--[^\s]+))(?P<val2>(?: [^\s]+)+))?$",
+                 "arg_plus_desc"      : r"^  (?P<arg1>-?[^\s]+)(?:,\s(?P<arg2>--[^\s]+))?\s\s+(?P<desc>.*)",
+                 "arg_plus_val_desc"  : r"^  (?P<arg1>-+[^\s]+)(?P<val1>(?: [^-\s]+)+)(?:(?:, (?P<arg2>--[^\s]+))(?P<val2>(?: [^\s]+)+))?  +(?P<desc>\w+.*)$",
+                 "continue_desc"      : r"^ {24}(.*)",
+                 "section_desc"       : r"^  ([^- ]+\s)+$",
+                 "subcommand_names"   : r"^  {((?:\w+)(?:(?:,(?:\w+))+)?)}$"             
+                }
+    """Regular expressions describing components of docstrings created by :py:mod:`argparse`"""
+    
+    patterns = { K : re.compile(V) for K,V in patterns.items() }
+    return patterns  
 
 def get_subcommand_header(name,header_level):
     stmp = "%s\n%s\n" % (name,_HEADERS[header_level]*len(name))
@@ -132,7 +153,7 @@ def noargdoc(func):
 # INDEX: docstring-processing functions
 #===============================================================================
 
-def get_subcommand_tables(app,obj,help_lines,start_line,section_head=True,pre_args=0,header_level=1):
+def get_subcommand_tables(app,obj,help_lines,start_line,section_head=True,pre_args=0,header_level=1,patterns=get_patterns()):
     """Processes help output from an :py:class:`argparse.ArgumentParser`
     from a program that includes one or more subprograms.  Called by
     :func:`process_argparser`
@@ -179,11 +200,12 @@ def get_subcommand_tables(app,obj,help_lines,start_line,section_head=True,pre_ar
             proc = subprocess.Popen(call,stdout=subprocess.PIPE)
             sub_help_lines = proc.communicate()[0].split("\n")
             out_lines.extend(format_argparser_to_docstring(app,
-                                                          obj,
-                                                          sub_help_lines,
-                                                          section_head=section_head,
-                                                          header_level=header_level+1,
-                                                          section_name=u"``%s`` subcommand arguments" % subcommand)) 
+                                                           obj,
+                                                           sub_help_lines,
+                                                           section_head=section_head,
+                                                           header_level=header_level+1,
+                                                           section_name=u"``%s`` subcommand arguments" % subcommand,
+                                                           patterns=patterns)) 
         except subprocess.CalledProcessError as e:
             out  = ("-"*75) + "\n" + e.output + "\n" + ("-"*75)
             out += "Could not call module %s as '%s'. Output:\n"% (obj.__name__, e.cmd)
@@ -194,8 +216,9 @@ def get_subcommand_tables(app,obj,help_lines,start_line,section_head=True,pre_ar
     return out_lines
 
 def format_argparser_to_docstring(app,obj,help_lines,
-                                 section_head=True,section_name=u"Command-line arguments",
-                                 header_level=1):
+                                  section_head=True,section_name=u"Command-line arguments",
+                                  header_level=1,
+                                  patterns=get_patterns()):
     """Processes help output from an :py:class:`argparse.ArgumentParser`
     of subprograms, or of a program that has no subprograms. Called by
     :func:`process_argparser`
@@ -221,7 +244,6 @@ def format_argparser_to_docstring(app,obj,help_lines,
 
     out_lines = []  # lines we will output
     positional_args = 0
-
     # the following are wiped & re-initialized for each section
     col1      = []  # holder for column 1 contents: argument names
     col2      = []  # holder for column 2 contents: argument descriptions
@@ -311,12 +333,14 @@ def format_argparser_to_docstring(app,obj,help_lines,
                         break
                     elif pat == "subcommand_names":
                         new_lines = get_subcommand_tables(app,
-                                                                 obj,
-                                                                 help_lines,
-                                                                 n,
-                                                                 section_head=section_head,
-                                                                 header_level=header_level+2,
-                                                                 pre_args=positional_args)
+                                                          obj,
+                                                          help_lines,
+                                                          n,
+                                                          section_head=section_head,
+                                                          header_level=header_level+2,
+                                                          pre_args=positional_args,
+                                                          patterns=patterns
+                                                         )
                         out_lines.extend(new_lines)
                         break
                     else:
@@ -372,6 +396,7 @@ def post_process_automodule(app,what,name,obj,options,lines):
        If `argdoc_main_func` is defined in ``conf.py`` and is not a `str`
     """
     funcname = app.config.argdoc_main_func
+    patterns = get_patterns("-")
     if not isinstance(funcname,str):
         message = "Incorrect type for `argdoc_main_func. Expected `str`, found, `%s` with value `%s`)" % (type(funcname),funcname)
         raise ConfigError(message)
@@ -389,13 +414,15 @@ def post_process_automodule(app,what,name,obj,options,lines):
                 out += ("-"*75) + "\n"
                 app.warn(out)
             try:
-                out_lines = format_argparser_to_docstring(app,obj,help_lines,section_head=True,header_level=1)
+                out_lines = format_argparser_to_docstring(app,obj,help_lines,section_head=True,header_level=1,patterns=patterns)
                 out_lines += _SEPARATOR
                 lines.extend(out_lines)
                 lines.extend(_OTHER_HEADER_LINES)
-                app.emit("argdoc-process-docstring",what,name,obj,options,lines)
             except IndexError as e:
                 app.warn("Error processing argparser into docstring for module %s: " % obj.__name__)
+
+        app.emit("argdoc-process-docstring",what,name,obj,options,lines)
+
 
 #===============================================================================
 # INDEX: extension setup

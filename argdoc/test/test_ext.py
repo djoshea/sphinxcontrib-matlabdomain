@@ -1,27 +1,28 @@
 #!/usr/bin/env python
+# coding: utf-8
 """Test suite for :obj:`argdoc.ext`
 
 """
 __date__   = "2015-06-09"
 __author__ = "Joshua Griffin Dunn"
 
-import argparse
 import os
 import tempfile
 import shlex
 import shutil
 import cStringIO
 import importlib
-import argdoc
 import argdoc.test.cases
+import sys
+import codecs
 
 
 from modulefinder import ModuleFinder
 from pkg_resources import resource_filename, cleanup_resources
-from nose.tools import assert_equal, assert_true, assert_dict_equal
+from nose.tools import assert_equal, assert_true, assert_dict_equal, assert_list_equal
 from nose.plugins.attrib import attr
 from sphinx import main as sphinxbuild
-from argdoc.ext import patterns, get_col1_text, get_col2_text, noargdoc,\
+from argdoc.ext import get_patterns, get_col1_text, get_col2_text, noargdoc,\
                        post_process_automodule,\
                        format_argparser_to_docstring
 
@@ -282,7 +283,7 @@ class TestArgdoc():
 
                 ]
 
-        # automatically load test cases
+        # automatically load module test cases for functional tests
         # testcase names mapped to (module, expected rst output, built rst output)
         cls.test_cases = {}
         mf = ModuleFinder()
@@ -320,7 +321,7 @@ class TestArgdoc():
             cls.built = True 
 
     @staticmethod
-    def check_match(test_name,pat,inp,expected):
+    def check_pattern(test_name,pat,inp,expected):
         """Check patterns for matching, or non-matching
 
         Parameters
@@ -361,9 +362,11 @@ class TestArgdoc():
             fn(expected,groups,msg)
     
     def test_patterns(self):
+        # test all patterns
+        patterns = get_patterns("-")
         for name, cases in self.pattern_tests.items():
             for inp,expected in cases:
-                yield self.check_match, name, patterns[name], inp, expected
+                yield self.check_pattern, name, patterns[name], inp, expected
 
     @staticmethod
     def check_equal(expected,found,casename=""):
@@ -398,71 +401,102 @@ class TestArgdoc():
         b = noargdoc(my_func)
         assert_true(b.__dict__["noargdoc"])
 
-    @attr(kind="functional")
-    def test_noargdoc_prevents_argdoc(self):
-        self.run_builder()
-        inp, expected, built = self.test_cases["noargdoc"]
-        assert False
-
     def test_get_subcommand_tables(self):
         inp, expected, built = self.test_cases["with_subparsers"]
         # look at output & test against known RST
         assert False
 
+    @staticmethod
+    def check_list_equal(l1,l2,test_name):
+        print("Checking list equality for %s" % test_name)
+        mismatched = []
+        for n, (line1,line2) in enumerate(zip(l1,l2)):
+            if isinstance(line1,str):
+                line1 = line1.decode("utf-8")
+            if isinstance(line2,str):
+                line2 = line2.decode("utf-8")
+            if line1 != line2:
+                mismatched.append(n)
+        
+        message = ""
+        if len(mismatched) > 0:
+            message  = "-"*75 + "\n"
+            message  = "test '%s': Lists differ at lines %s\n" % (test_name,(", ").join([str(X) for X in mismatched]))
+            message += "List 1:\n"
+            for n in mismatched:
+                message += "%s\t%s\n" % (n,l1[n])
+
+            message += "List 2:\n"
+            for n in mismatched:
+                message += "%s\t%s\n" % (n,l2[n])
+
+            message = "-"*75 + "\n"
+        
+        assert_equal(len(mismatched),0,message)
+        
     def test_format_argparser_to_docstring(self):
-        test_keys = ["simple_parser","optiongroup_parser"] # altprefix
         # look at output & test against known RST
         app = FakeApp()
-        for k in test_keys:
+        for k in self.test_cases:
+            testname = "test_format_argparser_to_docstring '%s'" % k            
             mod, expected, _ = self.test_cases[k]
             app = FakeApp()
             with open(expected) as f:
                 expected_lines = f.read().split("\n")
             f.close()
 
-            for n, line in enumerate(expected_lines):
-                if line.startswith("Command-line arguments"):
-                    break
-
             buf = cStringIO.StringIO()
+            old_out = sys.stdout
+            sys.stdout = buf
             try:
-                with buf as sys.stdout:
-                    mod.main(["--help"])
-            except AttributeError:
-                pass
+                mod.main(["--help"])
+            except SystemExit as e:
+                if e.code != 0:
+                    raise(AssertionError("Exit code for '%s --help' was %s instead of zero" % (mod.__name__,e.code)))
+            sys.stdout = old_out
             
             buf.seek(0)
             lines = buf.read().split("\n")
 
             found_lines = format_argparser_to_docstring(app,mod,lines)
-            yield self.check_equal, expected_lines[n:], found_lines, k
+            
+            if k == "noargdoc":
+                n1 = 0
+                expected_lines = []
+            else:
+                for n1, line in enumerate(expected_lines):
+                    if line.startswith("Command-line arguments"):
+                        break
+
+            for n2, line in enumerate(found_lines):
+                if line.startswith("Command-line arguments"):
+                    break
+
+            yield self.check_list_equal, expected_lines[n1:], found_lines[n2:], testname
 
     @attr(kind="functional")
     def test_post_process_automodule(self):
         self.run_builder()
-        options = {}
-        for k, (mod,expected,built) in self.test_cases.items():
+        for k, (_,expected,built) in self.test_cases.items():
             if k == "noargdoc":
                 continue
-            app = FakeApp()
             with open(expected) as f:
                 expected_lines = f.read().split("\n")
 
             with open(built) as f:
                 built_lines = f.read().split("\n")
 
-            yield self.check_equal, expected_lines, built_lines, k
+            testname = "test_post_process_automodule '%s'" % k
+            yield self.check_equal, expected_lines, built_lines, testname
 
     def test_post_process_automodule_emits_event(self):
         for k, (mod,_,_) in self.test_cases.items():
-            if k != "noargdoc":
-                expected = ["argdoc-process-docstring"]
-            else:
-                expected = []
+            testname = "test_post_process_automodule_emits_event '%s'" % k
             app = FakeApp()
             options = {}
-            found = post_process_automodule(app,"module",mod.__name__,mod,options,[])
-            yield self.check_equal, expected, app.emitted, k
+            expected = ["argdoc-process-docstring"]
+            _ = post_process_automodule(app,"module",mod.__name__,mod,options,[])
+            yield self.check_equal, expected, app.emitted, testname
 
 class Record(object):
     """Proxy object that allows addition of arbitrary properties"""
