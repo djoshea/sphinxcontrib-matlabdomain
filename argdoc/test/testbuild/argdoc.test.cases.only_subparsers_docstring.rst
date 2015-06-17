@@ -69,6 +69,9 @@ Optional arguments
 
 ``foo`` subcommand arguments
 ____________________________
+This is a long description of what a foo program might do. It spans multiple
+lines, so that we can test things reasonably.
+
 
 Positional arguments
 """"""""""""""""""""
@@ -99,6 +102,8 @@ Optional arguments
 
 ``bar`` subcommand arguments
 ____________________________
+This is the long description for the `bar` subprogram.
+
 
 Positional arguments
 """"""""""""""""""""

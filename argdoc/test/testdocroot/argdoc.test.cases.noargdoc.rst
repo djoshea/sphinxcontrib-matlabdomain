@@ -1,5 +1,5 @@
-argdoc.test.cases.simple_parser_altprefix module
-================================================
+argdoc.test.cases.noargdoc module
+=================================
 
 .. automodule:: argdoc.test.cases.noargdoc
     :members:

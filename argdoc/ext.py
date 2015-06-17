@@ -79,7 +79,7 @@ def get_patterns(prefix_chars="-"):
                  "arg_plus_desc"      : r"^  (?P<arg1>-?[^\s]+)(?:,\s(?P<arg2>--[^\s]+))?\s\s+(?P<desc>.*)",
                  "arg_plus_val_desc"  : r"^  (?P<arg1>-+[^\s]+)(?P<val1>(?: [^-\s]+)+)(?:(?:, (?P<arg2>--[^\s]+))(?P<val2>(?: [^\s]+)+))?  +(?P<desc>\w+.*)$",
                  "continue_desc"      : r"^ {24}(.*)",
-                 "section_desc"       : r"^  ([^- ]+\s)+$",
+                 "section_desc"       : r"^ ((?:(?: [^-\s][^\s]+)){2,})$",
                  "subcommand_names"   : r"^  {((?:\w+)(?:(?:,(?:\w+))+)?)}$"             
                 }
     """Regular expressions describing components of docstrings created by :py:mod:`argparse`"""
@@ -199,13 +199,15 @@ def get_subcommand_tables(app,obj,help_lines,start_line,section_head=True,pre_ar
         try:
             proc = subprocess.Popen(call,stdout=subprocess.PIPE)
             sub_help_lines = proc.communicate()[0].split("\n")
+
             out_lines.extend(format_argparser_to_docstring(app,
                                                            obj,
                                                            sub_help_lines,
                                                            section_head=section_head,
                                                            header_level=header_level+1,
                                                            section_name=u"``%s`` subcommand arguments" % subcommand,
-                                                           patterns=patterns)) 
+                                                           patterns=patterns,
+                                                           is_subcommand=True)) 
         except subprocess.CalledProcessError as e:
             out  = ("-"*75) + "\n" + e.output + "\n" + ("-"*75)
             out += "Could not call module %s as '%s'. Output:\n"% (obj.__name__, e.cmd)
@@ -218,7 +220,9 @@ def get_subcommand_tables(app,obj,help_lines,start_line,section_head=True,pre_ar
 def format_argparser_to_docstring(app,obj,help_lines,
                                   section_head=True,section_name=u"Command-line arguments",
                                   header_level=1,
-                                  patterns=get_patterns()):
+                                  patterns=get_patterns(),
+                                  is_subcommand=False
+                                  ):
     """Processes help output from an :py:class:`argparse.ArgumentParser`
     of subprograms, or of a program that has no subprograms. Called by
     :func:`process_argparser`
@@ -250,9 +254,19 @@ def format_argparser_to_docstring(app,obj,help_lines,
     section_title = [] # title of current section
     section_desc  = [] # description of current section
     
+    # markers for beginning and end of subcommand docstring descriptions
+    desc_start = None
+    desc_end   = None
+    
     for n,line in enumerate(help_lines):
         line = line.rstrip()
+        if is_subcommand == True and desc_start is None:
+            if line.strip() == "":
+                desc_start = n+1
+        
+            
         if len(line.strip()) == 0 and started == True:
+            
             # if current argument group is finished, format table of arguments for export
             # and append it to `out_lines`
             if len(col1) > 0 and len(col2) > 0:
@@ -287,40 +301,49 @@ def format_argparser_to_docstring(app,obj,help_lines,
             # Found first argument section. Create command-line argument heading
             if started == False:
                 started = True
+                desc_end = n
                 if section_head == True:
                     stmp1 = section_name
                     stmp2 = _HEADERS[header_level]*len(section_name)
                     out_lines.extend(_SEPARATOR)
                     out_lines.append(stmp1)
                     out_lines.append(stmp2)
+                    if is_subcommand == True:
+                        out_lines.extend(help_lines[desc_start:desc_end])
             
             # Create paragraph header for this section
-            match = patterns["section_title"].search(line)
+            match = patterns["section_title"].match(line)
             section_title = [match.groups()[0].capitalize(),
                              _HEADERS[header_level+1]*len(match.groups()[0]),
                             ]
-        elif patterns["section_title"].search(line) is not None and not line.startswith("usage:"):
+
+        elif patterns["section_title"].match(line) is not None and not line.startswith("usage:"):
             # Found section section of arguments.
             # Create paragraph header
-            match = patterns["section_title"].search(line)
+            match = patterns["section_title"].match(line)
             section_title = [match.groups()[0].capitalize(),
                              _HEADERS[header_level+1]*len(match.groups()[0]),
                             ]
+            app.warn("Found section title %s:" % line)
+        elif patterns["section_desc"].match(line) is not None: # and prev_was_title == True:
+            section_desc.append(line)
+            app.warn(line)
+            
         elif started == True:
             matchdict = None
             match = None
-            # arg_only MUST precede section_desc, because option-only lines will
+            # positional_arg MUST precede section_desc, because option-only lines will
             # match the section description pattern, but not vice-versa
             for pat in ["positional_arg",
                         "arg_only",
-                        "section_desc",
+                        #"section_desc",
                         "arg_plus_val",
                         "continue_desc",
                         "arg_plus_desc",
                         "arg_plus_val_desc",
                         "subcommand_names"
                         ]:
-                match = patterns[pat].search(line)
+                match = patterns[pat].match(line)
                 if match is not None:
                     if pat == "continue_desc":
                         col2[-1] += line.strip("\n")
@@ -348,7 +371,7 @@ def format_argparser_to_docstring(app,obj,help_lines,
                         col1.append(get_col1_text(matchdict))
                         col2.append(get_col2_text(matchdict))
                         break
-      
+    
     return out_lines
 
 def post_process_automodule(app,what,name,obj,options,lines):
