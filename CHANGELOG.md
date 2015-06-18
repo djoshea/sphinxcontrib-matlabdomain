@@ -48,7 +48,6 @@ Version numbers follow the conventions described in
 - Lowered visual hierarchy of section headers for subcommands
   in processed rst output
 
-
 # [0.0.1]
 
 ### Changed

@@ -21,7 +21,6 @@ else:
 
 import argdoc
 import argdoc.test.cases
-import sys
 
 from modulefinder import ModuleFinder
 from pkg_resources import resource_filename, cleanup_resources
@@ -483,34 +482,35 @@ class TestArgdoc():
                 expected_lines = f.read().split("\n")
             f.close()
 
-            buf = cStringIO.StringIO()
-            old_out = sys.stdout
-            sys.stdout = buf
-            try:
-                mod.main(["--help"])
-            except SystemExit as e:
-                if e.code != 0:
-                    raise(AssertionError("Exit code for '%s --help' was %s instead of zero" % (mod.__name__,e.code)))
-            sys.stdout = old_out
-            
-            buf.seek(0)
-            lines = buf.read().split("\n")
-
-            found_lines = format_argparser_to_docstring(app,mod,lines,get_patterns())
-            
-            if k == "noargdoc":
-                n1 = 0
-                expected_lines = []
-            else:
-                for n1, line in enumerate(expected_lines):
-                    if line.startswith("Command-line arguments"):
-                        break
-
-            for n2, line in enumerate(found_lines):
+            for n, line in enumerate(expected_lines):
                 if line.startswith("Command-line arguments"):
                     break
 
-            yield self.check_list_equal, expected_lines[n1:], found_lines[n2:], testname
+            buf = StringIOWrapper.StringIO()
+            with buf as sys.stdout:
+                try:
+                    mod.main(["--help"])
+                except AttributeError:
+                    pass
+                except SystemExit as e:
+                    if e.code != 0:
+                        raise(AssertionError("Exit code for '%s --help' was %s instead of zero" % (mod.__name__,e.code)))
+
+                if k == "noargdoc":
+                    n1 = 0
+                    expected_lines = []
+                else:
+                    for n1, line in enumerate(expected_lines):
+                        if line.startswith("Command-line arguments"):
+                            break
+
+                for n2, line in enumerate(found_lines):
+                    if line.startswith("Command-line arguments"):
+                        break
+
+                lines = buf.getvalue().split("\n")
+                found_lines = format_argparser_to_docstring(app,mod,lines)
+                yield self.check_equal, expected_lines[n1:], found_lines[n2:], testname
 
     @attr(kind="functional")
     def test_post_process_automodule(self):

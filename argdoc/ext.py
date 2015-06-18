@@ -298,32 +298,36 @@ def format_argparser_to_docstring(app,obj,help_lines,patterns,
             if line.strip() == "":
                 desc_start = n+1
 
-
         if len(line.strip()) == 0 and started == True and len(col1) > 0 and len(col2) > 0:
             # if current argument group is finished, format table of arguments for export
             # and append it to `out_lines`
-            col1_width = 1 + max([len(X) for X in col1])
-            col2_width = max([len(X) for X in col2])
-            table_header = (u" "*(_INDENT_SIZE))+(u"="*col1_width) + u" " + (u"="*col2_width)
-            out_lines.append(u"")
-            out_lines.extend(section_title)
-            out_lines.extend(section_desc)
-            out_lines.append(u"")
-            out_lines.append(table_header)
-            out_lines.append( (u" "*(_INDENT_SIZE))+u"*Option*" + u" "*(1 + col1_width - 8) + u"*Description*")
-            out_lines.append(table_header.replace("=","-"))
-             
-            for c1, c2 in zip(col1,col2):
-                out_lines.append((u" "*(_INDENT_SIZE))+ c1.decode("utf-8") + (u" "*(1+col1_width-len(c1))) + c2.decode("utf-8"))
- 
-            out_lines.append(table_header)
-            out_lines.append(u"")
-            
-            # reset section-specific variables
-            section_title = []
-            section_desc  = []
-            col1 = []
-            col2 = []        
+            if len(col1) > 0 and len(col2) > 0:
+                col1_width = 1 + max([len(X) for X in col1])
+                col2_width = max([len(X) for X in col2])
+                table_header = (" "*(_INDENT_SIZE))+("="*col1_width) + " " + ("="*col2_width)
+                out_lines.append("")
+                out_lines.extend(section_title)
+                out_lines.extend(section_desc)
+                out_lines.append("")
+                out_lines.append(table_header)
+                out_lines.append( (" "*(_INDENT_SIZE))+"*Option*" + " "*(1 + col1_width - 8) + "*Description*")
+                out_lines.append(table_header.replace("=","-"))
+                 
+                for c1, c2 in zip(col1,col2):
+                    if sys.version_info < (3,):
+                        c1 = c1.decode("utf-8")
+                        c2 = c2.encode("utf-8")
+
+                    out_lines.append((" "*(_INDENT_SIZE))+ c1 + (" "*(1+col1_width-len(c1))) + c2)
+     
+                out_lines.append(table_header)
+                out_lines.append("")
+                
+                # reset section-specific variables
+                section_title = []
+                section_desc  = []
+                col1 = []
+                col2 = []
             
         #elif patterns["section_title"].search(line) is not None and not line.endswith("usage:"):
         #FIXME: this is a kludge to deal with __doc__ lines that have trailing colons
