@@ -11,8 +11,13 @@ Version numbers follow the conventions described in
 ### Added
 - `argdoc_save_rst` config option to export raw RST after argdoc processing completes 
 
+### Changed
+- Clearer visual formatting
+- Changed names of internal functions to make more sense
+
 ### Fixed
 - Argument group description strings are now output.
+
 
 ## [0.0.3] = 2015-06-15
 
