@@ -8,6 +8,10 @@ Version numbers follow the conventions described in
 
 ## Unreleased
 
+### Changed
+- Clearer visual formatting
+- Changed names of internal functions to make more sense
+
 ### Added
 - `argdoc_save_rst` config option to export raw RST after argdoc processing completes 
 
