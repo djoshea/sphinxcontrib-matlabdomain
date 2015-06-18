@@ -137,6 +137,19 @@ Optional arguments
     ======================================== ========================================================
 
 
+An argument group
+"""""""""""""""""
+  A special goup of arguments in the bar subparser
+
+    ============= ===================
+    *Option*      *Description*
+    ------------- -------------------
+    ``--b1  B1``  
+    ``--b2  B2``  Argument 2 has help
+    ``-k  N N``   Some other argument
+    ============= ===================
+
+
 ------------
 
 

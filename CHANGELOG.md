@@ -6,7 +6,13 @@ Version numbers follow the conventions described in
 [Semantic versioning](http://semver.org/).
 
 
+## Unreleased
 
+### Added
+- `argdoc_save_rst` config option to export raw RST after argdoc processing completes 
+
+### Fixed
+- Argument group description strings are now output.
 
 ## [0.0.3] = 2015-06-15
 
@@ -20,7 +26,6 @@ Version numbers follow the conventions described in
 ### Fixed
 - Can now handle option+argument+description lines that have
   multiple arguments.
-
 
 ## [0.0.2] - 2015-06-09
 

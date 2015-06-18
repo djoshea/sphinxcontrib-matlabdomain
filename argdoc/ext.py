@@ -9,15 +9,16 @@ User functions
     
 Developer functions
 -------------------
-:func:`get_subcommand_tables`
-    Extract tables from all subcommands
-    :class:`ArgumentParsers <argparse.ArgumentParser>`
-    contained by an enclosing :class:`~argparse.ArgumentParser`
 
 :func:`format_argparser_to_docstring`
     Extract tables of arguments from an :class:`~argparse.ArgumentParser`
     and from all of its subprograms, and format their descriptions &
     help text.
+
+:func:`get_subcommand_tables`
+    Extract tables from all subcommands
+    :class:`ArgumentParsers <argparse.ArgumentParser>`
+    contained by an enclosing :class:`~argparse.ArgumentParser`
 
 :func:`post_process_automodule`
     Event handler to activate argdoc upon `autodoc-process-docstring` events
@@ -28,7 +29,8 @@ Developer functions
 import re
 import shlex
 import subprocess
-#import warnings
+import os
+import codecs
 
 import sphinx
 import argdoc
@@ -70,7 +72,7 @@ def get_patterns(prefix_chars="-"):
     Returns
     -------
     dict
-        Dictionary of regular expression :class:`~re.compile` objects
+        Dictionary of regular expression patterns
     """
     patterns = { "section_title"      : r"^(\w+.*):$",
                  "positional_arg"     : r"^  (?P<arg1>[^{}\s-]+)(?:\s\s+(?P<desc>\w+.*))?$",
@@ -79,7 +81,7 @@ def get_patterns(prefix_chars="-"):
                  "arg_plus_desc"      : r"^  (?P<arg1>-?[^\s]+)(?:,\s(?P<arg2>--[^\s]+))?\s\s+(?P<desc>.*)",
                  "arg_plus_val_desc"  : r"^  (?P<arg1>-+[^\s]+)(?P<val1>(?: [^-\s]+)+)(?:(?:, (?P<arg2>--[^\s]+))(?P<val2>(?: [^\s]+)+))?  +(?P<desc>\w+.*)$",
                  "continue_desc"      : r"^ {24}(.*)",
-                 "section_desc"       : r"^ ((?:(?: [^-\s][^\s]+)){2,})$",
+                 "section_desc"       : r"^  ((?:[^-\s][^\s]*)(?:\s[^\s]+)+)$",
                  "subcommand_names"   : r"^  {((?:\w+)(?:(?:,(?:\w+))+)?)}$"             
                 }
     """Regular expressions describing components of docstrings created by :py:mod:`argparse`"""
@@ -87,12 +89,8 @@ def get_patterns(prefix_chars="-"):
     patterns = { K : re.compile(V) for K,V in patterns.items() }
     return patterns  
 
-def get_subcommand_header(name,header_level):
-    stmp = "%s\n%s\n" % (name,_HEADERS[header_level]*len(name))
-    return stmp.split("\n")
-
 def get_col1_text(matchdict):
-    """Format argument name(s) and value(s) for column 1 of argument table
+    """Format argument name(s) and value(s) for column 1 of argument tables
 
     Parameters
     ----------
@@ -115,7 +113,7 @@ def get_col1_text(matchdict):
     return tmpstr
 
 def get_col2_text(matchdict):
-    """Format argument descriptions, if present, for column 2 of argument table
+    """Format argument descriptions, if present, for column 2 of argument tables
 
     Parameters
     ----------
@@ -153,7 +151,7 @@ def noargdoc(func):
 # INDEX: docstring-processing functions
 #===============================================================================
 
-def get_subcommand_tables(app,obj,help_lines,start_line,section_head=True,pre_args=0,header_level=1,patterns=get_patterns()):
+def get_subcommand_tables(app,obj,help_lines,patterns,start_line,section_head=True,pre_args=0,header_level=1):
     """Processes help output from an :py:class:`argparse.ArgumentParser`
     from a program that includes one or more subprograms.  Called by
     :func:`process_argparser`
@@ -161,22 +159,34 @@ def get_subcommand_tables(app,obj,help_lines,start_line,section_head=True,pre_ar
     Parameters
     ----------
     app
-        Sphinx application
-            
-    obj : module
-        Module containing :term:`main-like function`
+        Sphinx application instance
+    
+    obj : object
+        Object (e.g. module, class, function) to document
             
     help_lines : list
         List of strings, each corresponding to a line of output from having
         passed ``--help`` as an argument to the :term:`main-like function`
 
-    start_line : int
-        Line where token `'subcommands: '` was found in argparser output
     
+    patterns : dict
+        Dictionary names of line types in argparse output to regular expression
+        patterns that process those line types
+
+    start_line : int
+        Line in argparse help output containing subcommand header
+
     section_head : bool, optional
-        If `True`, a section header for "Command-line arguments" will be included.
-        This messes up parsing for function docstrings, but is fine for module
-        docstrings (Default: `False`).
+        If `True`, a section header for "Command-line arguments" will be included
+        in the output. (Default: `True`)
+
+    pre_args : int, optional
+        Number of arguments required to be supplied before subcommand help
+        can be retrieved (Default: `0`)
+        
+    header_level : int, optional
+        Level of header to use for `section_name`. Lower numbers are higher
+        precedence. (Default: `1`)        
     
     Returns
     -------
@@ -203,11 +213,11 @@ def get_subcommand_tables(app,obj,help_lines,start_line,section_head=True,pre_ar
             out_lines.extend(format_argparser_to_docstring(app,
                                                            obj,
                                                            sub_help_lines,
+                                                           patterns,
                                                            section_head=section_head,
                                                            header_level=header_level+1,
                                                            section_name=u"``%s`` subcommand arguments" % subcommand,
-                                                           patterns=patterns,
-                                                           is_subcommand=True)) 
+                                                           _is_subcommand=True)) 
         except subprocess.CalledProcessError as e:
             out  = ("-"*75) + "\n" + e.output + "\n" + ("-"*75)
             out += "Could not call module %s as '%s'. Output:\n"% (obj.__name__, e.cmd)
@@ -217,11 +227,10 @@ def get_subcommand_tables(app,obj,help_lines,start_line,section_head=True,pre_ar
 
     return out_lines
 
-def format_argparser_to_docstring(app,obj,help_lines,
+def format_argparser_to_docstring(app,obj,help_lines,patterns,
                                   section_head=True,section_name=u"Command-line arguments",
                                   header_level=1,
-                                  patterns=get_patterns(),
-                                  is_subcommand=False
+                                  _is_subcommand=False
                                   ):
     """Processes help output from an :py:class:`argparse.ArgumentParser`
     of subprograms, or of a program that has no subprograms. Called by
@@ -229,14 +238,38 @@ def format_argparser_to_docstring(app,obj,help_lines,
     
     Parameters
     ----------
+    app
+        Sphinx application instance
+    
+    obj : object
+        Object (e.g. module, class, function) to document
+            
     help_lines : list
         List of strings, each corresponding to a line of output from having
         passed ``--help`` as an argument to the :term:`main-like function`
+
+    patterns : dict
+        Dictionary names of line types in argparse output to regular expression
+        patterns that process those line types
     
     section_head : bool, optional
         If `True`, a section header for "Command-line arguments" will be included.
         This messes up parsing for function docstrings, but is fine for module
         docstrings (Default: `False`).
+    
+    section_name : str, optional
+        A name or title for the current program or subcommand.
+        (Default: `'Command-line arguments'`)
+    
+    header_level : int, optional
+        Level of header to use for `section_name`. Lower numbers are higher
+        precedence. (Default: `1`)
+    
+    _is_subcommand : bool, optional
+        If `True`, include module docstring in output. Required for subcommands
+        whose help won't be included by in the module docstring found by 
+        autodoc. (Default: `False`) 
+        
     
     Returns
     -------
@@ -260,38 +293,36 @@ def format_argparser_to_docstring(app,obj,help_lines,
     
     for n,line in enumerate(help_lines):
         line = line.rstrip()
-        if is_subcommand == True and desc_start is None:
+        if _is_subcommand == True and desc_start is None:
             if line.strip() == "":
                 desc_start = n+1
-        
-            
-        if len(line.strip()) == 0 and started == True:
-            
+
+
+        if len(line.strip()) == 0 and started == True and len(col1) > 0 and len(col2) > 0:
             # if current argument group is finished, format table of arguments for export
             # and append it to `out_lines`
-            if len(col1) > 0 and len(col2) > 0:
-                col1_width = 1 + max([len(X) for X in col1])
-                col2_width = max([len(X) for X in col2])
-                table_header = (u" "*(_INDENT_SIZE))+(u"="*col1_width) + u" " + (u"="*col2_width)
-                out_lines.append(u"")
-                out_lines.extend(section_title)
-                out_lines.extend(section_desc)
-                out_lines.append(u"")
-                out_lines.append(table_header)
-                out_lines.append( (u" "*(_INDENT_SIZE))+u"*Option*" + u" "*(1 + col1_width - 8) + u"*Description*")
-                out_lines.append(table_header.replace("=","-"))
-                 
-                for c1, c2 in zip(col1,col2):
-                    out_lines.append((u" "*(_INDENT_SIZE))+ c1.decode("utf-8") + (u" "*(1+col1_width-len(c1))) + c2.decode("utf-8"))
-     
-                out_lines.append(table_header)
-                out_lines.append(u"")
-                
-                # reset section-specific variables
-                section_title = []
-                section_desc  = []
-                col1 = []
-                col2 = []
+            col1_width = 1 + max([len(X) for X in col1])
+            col2_width = max([len(X) for X in col2])
+            table_header = (u" "*(_INDENT_SIZE))+(u"="*col1_width) + u" " + (u"="*col2_width)
+            out_lines.append(u"")
+            out_lines.extend(section_title)
+            out_lines.extend(section_desc)
+            out_lines.append(u"")
+            out_lines.append(table_header)
+            out_lines.append( (u" "*(_INDENT_SIZE))+u"*Option*" + u" "*(1 + col1_width - 8) + u"*Description*")
+            out_lines.append(table_header.replace("=","-"))
+             
+            for c1, c2 in zip(col1,col2):
+                out_lines.append((u" "*(_INDENT_SIZE))+ c1.decode("utf-8") + (u" "*(1+col1_width-len(c1))) + c2.decode("utf-8"))
+ 
+            out_lines.append(table_header)
+            out_lines.append(u"")
+            
+            # reset section-specific variables
+            section_title = []
+            section_desc  = []
+            col1 = []
+            col2 = []        
             
         #elif patterns["section_title"].search(line) is not None and not line.endswith("usage:"):
         #FIXME: this is a kludge to deal with __doc__ lines that have trailing colons
@@ -308,35 +339,31 @@ def format_argparser_to_docstring(app,obj,help_lines,
                     out_lines.extend(_SEPARATOR)
                     out_lines.append(stmp1)
                     out_lines.append(stmp2)
-                    if is_subcommand == True:
+                    # if is a subcommand, put cached description under heading
+                    if _is_subcommand == True:
                         out_lines.extend(help_lines[desc_start:desc_end])
             
-            # Create paragraph header for this section
+            # Create paragraph header for the argument section
             match = patterns["section_title"].match(line)
             section_title = [match.groups()[0].capitalize(),
                              _HEADERS[header_level+1]*len(match.groups()[0]),
                             ]
-
         elif patterns["section_title"].match(line) is not None and not line.startswith("usage:"):
             # Found section section of arguments.
             # Create paragraph header
+            app.debug("Found section title: '%s'" % line)
             match = patterns["section_title"].match(line)
             section_title = [match.groups()[0].capitalize(),
                              _HEADERS[header_level+1]*len(match.groups()[0]),
                             ]
-            app.warn("Found section title %s:" % line)
-        elif patterns["section_desc"].match(line) is not None: # and prev_was_title == True:
+        elif patterns["section_desc"].match(line) is not None:
             section_desc.append(line)
-            app.warn(line)
-            
+                        
         elif started == True:
             matchdict = None
             match = None
-            # positional_arg MUST precede section_desc, because option-only lines will
-            # match the section description pattern, but not vice-versa
             for pat in ["positional_arg",
                         "arg_only",
-                        #"section_desc",
                         "arg_plus_val",
                         "continue_desc",
                         "arg_plus_desc",
@@ -358,11 +385,11 @@ def format_argparser_to_docstring(app,obj,help_lines,
                         new_lines = get_subcommand_tables(app,
                                                           obj,
                                                           help_lines,
+                                                          patterns,
                                                           n,
                                                           section_head=section_head,
                                                           header_level=header_level+2,
                                                           pre_args=positional_args,
-                                                          patterns=patterns
                                                          )
                         out_lines.extend(new_lines)
                         break
@@ -371,6 +398,7 @@ def format_argparser_to_docstring(app,obj,help_lines,
                         col1.append(get_col1_text(matchdict))
                         col2.append(get_col2_text(matchdict))
                         break
+                    
     
     return out_lines
 
@@ -384,12 +412,10 @@ def post_process_automodule(app,what,name,obj,options,lines):
     ``argdoc_main_func`` inside ``conf.py``. The default value for
     ``argdoc_main_func`` is `main`.
     
+    
     Notes
     -----
-    Per the `Sphinx`_ spec, this function modifies `lines` in place.
-    
-    This will only work for :term:`executable scripts` that use
-    :mod:`argparse`.
+    Per the `autodoc`_ spec, this function modifies `lines` in place.
     
     
     Parameters
@@ -404,7 +430,7 @@ def post_process_automodule(app,what,name,obj,options,lines):
         Fully-qualified name of object
     
     obj : object
-        Object to skip or not
+        Object (e.g. module, class, function) to document
     
     options : object
         Options given to the directive, whose boolean properties are set to `True`
@@ -415,7 +441,7 @@ def post_process_automodule(app,what,name,obj,options,lines):
 
     Raises
     ------
-    ConfigError
+    :class:`~sphinx.errors.ConfigError`
        If `argdoc_main_func` is defined in ``conf.py`` and is not a `str`
     """
     funcname = app.config.argdoc_main_func
@@ -444,6 +470,21 @@ def post_process_automodule(app,what,name,obj,options,lines):
             except IndexError as e:
                 app.warn("Error processing argparser into docstring for module %s: " % obj.__name__)
 
+        if app.config.argdoc_save_rst == True:
+            filename = os.path.join(app.outdir,"%s_docstring.rst" % name)
+            with codecs.open(filename,encoding="utf-8",mode="w") as fout:
+                for n,line in enumerate(lines):
+                    try:
+                        if isinstance(line,str):
+                            line = line.encode("utf-8")
+                        
+                        fout.write(line)
+                        fout.write(u"\n")
+                    except:
+                        app.warn("Could not write out line %s of file %s." % (n,name))
+    
+            fout.close()
+                
         app.emit("argdoc-process-docstring",what,name,obj,options,lines)
 
 
@@ -468,6 +509,7 @@ def setup(app):
     
     app.connect("autodoc-process-docstring",post_process_automodule)
     app.add_config_value("argdoc_main_func","main","env")
+    app.add_config_value("argdoc_save_rst",False,"env")
 #    app.add_config_value("argdoc_arg_prefix_char","-","env")
 
     app.add_event("argdoc-process-docstring")

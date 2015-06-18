@@ -82,6 +82,12 @@ def main(argv=sys.argv[1:]):
     barparser.add_argument("bararg",help="bar argument")
     barparser.add_argument("--choice",choices=("option1","option2","option3"),
                            help="A keyword that requries a choice")
+    
+    bgroup = barparser.add_argument_group(title="An argument group",
+                                          description="A special goup of arguments in the bar subparser")
+    bgroup.add_argument("--b1")
+    bgroup.add_argument("--b2",help="Argument 2 has help")
+    bgroup.add_argument("-k",nargs=2,metavar="N",help="Some other argument")
 
     args = parser.parse_args(argv)
  

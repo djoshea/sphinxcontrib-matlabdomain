@@ -14,12 +14,11 @@ import cStringIO
 import importlib
 import argdoc.test.cases
 import sys
-import codecs
 
 
 from modulefinder import ModuleFinder
 from pkg_resources import resource_filename, cleanup_resources
-from nose.tools import assert_equal, assert_true, assert_dict_equal, assert_list_equal
+from nose.tools import assert_equal, assert_true, assert_dict_equal
 from nose.plugins.attrib import attr
 from sphinx import main as sphinxbuild
 from argdoc.ext import get_patterns, get_col1_text, get_col2_text, noargdoc,\
@@ -193,7 +192,49 @@ class TestArgdoc():
              ("  --ne M                  ", None),
              ("  --ne M M                ", None),
              ("  --ne M M M              ", None),
+             # arg only
+             ("  --help", None),    
+             ("  -h",     None),
+             ("  -h, --help", None),
+             # arg + desc
+             ("  -n, --ne                some description", None),
+             ("  -n                      some description", None),
+             ("  --ne                    some description", None),
+             # positional
+             ("  positional1",None),
+             ("  po3413134",None),
+             ("  reallyreallyreallyreallyreallyreallyreallyreallylongpositional",None),
+                          
+                                                ]
+        cls.pattern_tests["subcommand_names"] = {("  {one,another,four,five}",("one,another,four,five",)),
+                                              ("  {one,another,four}",("one,another,four",)),
+                                              ("  {one,another}",("one,another",)),
+                                              ("  {just_one}",("just_one",)),
+                                              ("{one,another,four,five}",None),
+                                              ("{one,another,four}",None),
+                                              ("{one,another}",None),
+                                              ("{just_one}",None),                                              
+                                              }
+        cls.pattern_tests["continue_desc"] = []
+        cls.pattern_tests["section_desc"] = [
+            ("  choose one of the following:",("choose one of the following:",)),
+            ("  Sometimes it is useful to group arguments that relate to each other in an",
+             ("Sometimes it is useful to group arguments that relate to each other in an",)),
+            ("  Description of second argument group",("Description of second argument group",)),
+            ("  A special group of arguments in the `bar` subparser",("A special group of arguments in the `bar` subparser",)),
+            ("  Oneworddescription",None),
+
              # arg + vals
+             ("  -n M, --ne M            ", None),
+             ("  -n M M, --ne M M        ", None),
+             ("  -n M M M, --ne M M M    ", None),
+             ("  -n M                    ", None),
+             ("  -n M M                  ", None),
+             ("  -n M M M                ", None),
+             ("  --ne M                  ", None),
+             ("  --ne M M                ", None),
+             ("  --ne M M M              ", None),
+             # arg + vals + desc
              ("  -n , --ne             some description", None),
              ("  -n  , --ne          some description", None),
              ("  -n   , --ne       some description", None),
@@ -207,18 +248,9 @@ class TestArgdoc():
              ("  --help", None),    
              ("  -h",     None),
              ("  -h, --help", None),
-                                                ]
-        cls.pattern_tests["subcommand_names"] = {("  {one,another,four,five}",("one,another,four,five",)),
-                                              ("  {one,another,four}",("one,another,four",)),
-                                              ("  {one,another}",("one,another",)),
-                                              ("  {just_one}",("just_one",)),
-                                              ("{one,another,four,five}",None),
-                                              ("{one,another,four}",None),
-                                              ("{one,another}",None),
-                                              ("{just_one}",None),                                              
-                                              }
-        cls.pattern_tests["continue_desc"] = []
-        cls.pattern_tests["section_desc"] = []
+             ("  arg1",None),
+             ("  some_arg         some_description with lots of words",None),
+        ]
 
         # test cases for test_get_col1_text, test_get_col2_text
         cls.match_dicts = [
@@ -299,8 +331,8 @@ class TestArgdoc():
     @classmethod
     def tearDownClass(cls):
         """Clean up temp files after tests are complete"""
-        #cleanup_resources()
-        #shutil.rmtree(cls.optdict["outdir"])
+        cleanup_resources()
+        shutil.rmtree(cls.optdict["outdir"])
 
     @classmethod
     def run_builder(cls):
@@ -401,10 +433,10 @@ class TestArgdoc():
         b = noargdoc(my_func)
         assert_true(b.__dict__["noargdoc"])
 
-    def test_get_subcommand_tables(self):
-        inp, expected, built = self.test_cases["with_subparsers"]
-        # look at output & test against known RST
-        assert False
+#     def test_get_subcommand_tables(self):
+#         inp, expected, built = self.test_cases["with_subparsers"]
+#         # look at output & test against known RST
+#         assert False
 
     @staticmethod
     def check_list_equal(l1,l2,test_name):
@@ -436,11 +468,10 @@ class TestArgdoc():
         
     def test_format_argparser_to_docstring(self):
         # look at output & test against known RST
-        app = FakeApp()
+        app = FakeApp(outdir=self.optdict["outdir"])
         for k in self.test_cases:
             testname = "test_format_argparser_to_docstring '%s'" % k            
             mod, expected, _ = self.test_cases[k]
-            app = FakeApp()
             with open(expected) as f:
                 expected_lines = f.read().split("\n")
             f.close()
@@ -458,7 +489,7 @@ class TestArgdoc():
             buf.seek(0)
             lines = buf.read().split("\n")
 
-            found_lines = format_argparser_to_docstring(app,mod,lines)
+            found_lines = format_argparser_to_docstring(app,mod,lines,get_patterns())
             
             if k == "noargdoc":
                 n1 = 0
@@ -492,7 +523,7 @@ class TestArgdoc():
     def test_post_process_automodule_emits_event(self):
         for k, (mod,_,_) in self.test_cases.items():
             testname = "test_post_process_automodule_emits_event '%s'" % k
-            app = FakeApp()
+            app = FakeApp(outdir=self.optdict["outdir"])
             options = {}
             expected = ["argdoc-process-docstring"]
             _ = post_process_automodule(app,"module",mod.__name__,mod,options,[])
@@ -508,9 +539,11 @@ class FakeApp(object):
     required for us to test functions in :mod:`argdoc.ext` that require
     a Sphinx application instance
     """
-    def __init__(self,argdoc_main_func="main"):
+    def __init__(self,argdoc_main_func="main",argdoc_save_rst=True,outdir="/tmp/"):
         self.config = Record()
         self.config.argdoc_main_func = argdoc_main_func
+        self.config.argdoc_save_rst = argdoc_save_rst
+        self.outdir  = outdir
         self.emitted = []
 
     def warn(self,*args,**kwargs):
