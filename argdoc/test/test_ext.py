@@ -10,11 +10,18 @@ import os
 import tempfile
 import shlex
 import shutil
-import cStringIO
 import importlib
-import argdoc.test.cases
 import sys
 
+if sys.version_info < (3,):
+    import cStringIO as StringIOWrapper
+else:
+    import io as StringIOWrapper
+
+
+import argdoc
+import argdoc.test.cases
+import sys
 
 from modulefinder import ModuleFinder
 from pkg_resources import resource_filename, cleanup_resources
@@ -44,7 +51,7 @@ class TestArgdoc():
                         "outdir"    : tempfile.mkdtemp(prefix="argdoc"),
                        }
 
-        cls.sphinxopts = "-Q -b html %(sourcedir)s %(outdir)s" % cls.optdict
+        cls.sphinxopts = "-Q -N -b html %(sourcedir)s %(outdir)s" % cls.optdict
 
         # test cases for patterns
         cls.pattern_tests = {}

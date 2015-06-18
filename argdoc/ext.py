@@ -26,6 +26,7 @@ Developer functions
 :func:`setup`
     Register the extension with the running `Sphinx`_ instance
 """
+import sys
 import re
 import shlex
 import subprocess
@@ -40,7 +41,7 @@ from sphinx.errors import ConfigError
 # INDEX: various constants
 #===============================================================================
 
-_OTHER_HEADER_LINES = u"""Script contents
+_OTHER_HEADER_LINES = """Script contents
 ---------------""".split("\n")
 
 _REQUIRED = [
@@ -207,7 +208,7 @@ def get_subcommand_tables(app,obj,help_lines,patterns,start_line,section_head=Tr
         app.debug("Testing subcommand %s with %s preargs" % (subcommand,pre_args))
         call = shlex.split("python -m %s %s %s --help" % (obj.__name__,prearg_text,subcommand))
         try:
-            proc = subprocess.Popen(call,stdout=subprocess.PIPE)
+            proc = subprocess.Popen(call,stdout=subprocess.PIPE,universal_newlines=True)
             sub_help_lines = proc.communicate()[0].split("\n")
 
             out_lines.extend(format_argparser_to_docstring(app,
@@ -454,7 +455,7 @@ def post_process_automodule(app,what,name,obj,options,lines):
         if obj.__dict__.get(funcname).__dict__.get("noargdoc",False) == False:
             call = shlex.split("python -m %s --help" % obj.__name__)
             try:
-                proc = subprocess.Popen(call,stdout=subprocess.PIPE)
+                proc = subprocess.Popen(call,stdout=subprocess.PIPE,universal_newlines=True)
                 help_lines = proc.communicate()[0].split("\n")
             except subprocess.CalledProcessError as e:
                 out  = ("-"*75) + "\n" + e.output + "\n" + ("-"*75)
