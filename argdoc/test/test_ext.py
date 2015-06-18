@@ -14,7 +14,7 @@ import importlib
 import sys
 
 if sys.version_info < (3,):
-    import cStringIO as StringIOWrapper
+    import StringIO as StringIOWrapper
 else:
     import io as StringIOWrapper
 
@@ -481,35 +481,81 @@ class TestArgdoc():
             with open(expected) as f:
                 expected_lines = f.read().split("\n")
             f.close()
+            
+#             nose_stdout = sys.stdout
+#             sys.stdout = sys.__stdout__
+# 
+#             stdout_fd = os.dup(sys.stdout.fileno())
+#             tmpfile = tempfile.TemporaryFile()
+#             new_fd  = tmpfile.fileno()
+#             os.dup2(new_fd,sys.stdout.fileno())
+#             try:
+#                 mod.main(["--help"])
+#             except SystemExit as e:
+#                 if e.code != 0:
+#                     raise(AssertionError("Exit code for '%s --help' was %s instead of zero" % (mod.__name__,e.code)))                
+#             except Exception as e:
+#                 tmpfile.flush()
+#                 tmpfile.close()
+#                 os.dup2(stdout_fd,sys.stdout.fileno())
+#                 raise(e)
+# 
+#             tmpfile.flush()
+#             os.dup2(stdout_fd,sys.stdout.fileno())
+#             
+#             tmpfile.seek(0)
+#             found_lines = tmpfile.read().split("\n".encode("utf-8"))
+#    
+#             if k == "noargdoc":
+#                 n1 = 0
+#                 expected_lines = []
+#             else:
+#                 for n1, line in enumerate(expected_lines):
+#                     if line[:23] == "Command-line arguments":
+#                         break
+#             for n2, line in enumerate(found_lines):
+#                     if line[:23] == "Command-line arguments":
+#                         break                
+# 
+#             sys.stdout = nose_stdout
+#             yield self.check_equal, expected_lines[n1:], found_lines[n2:], testname
+ 
+            buf = ProxySTDOut()
+            nose_stdout = sys.stdout
+            sys.stdout = sys.__stdout__
 
-            buf = StringIOWrapper.StringIO()
-            try:
-                with buf as sys.stdout:
+            with buf as sys.stdout:
+                try:
                     mod.main(["--help"])
-
+                except SystemExit as e:
+                    if e.code != 0:
+                        raise(AssertionError("Exit code for '%s --help' was %s instead of zero" % (mod.__name__,e.code)))
+ 
                 lines = buf.getvalue().split("\n")
                 found_lines = format_argparser_to_docstring(app,mod,lines,get_patterns())
-
-                if k == "noargdoc":
-                    n1 = 0
-                    expected_lines = []
-                else:
-                    for n1, line in enumerate(expected_lines):
-                        if line.startswith("Command-line arguments"):
+ 
+                n1 = n2 = 0
+                if k != "noargdoc":
+                    for line in expected_lines:
+                        if line[:23] != "Command-line arguments":
+                            n1 += 1
+                        else:
                             break
 
-                for n2, line in enumerate(found_lines):
-                    if line.startswith("Command-line arguments"):
+                for line in found_lines:
+                    if line[:23] != "Command-line arguments":
+                        n2 += 1   
+                    else:
                         break
-
+ 
                 yield self.check_equal, expected_lines[n1:], found_lines[n2:], testname
-            except AttributeError as e:
-                print(buf.getvalue())
-                print(e)
-                raise AssertionError
-            except SystemExit as e:
-                if e.code != 0:
-                    raise(AssertionError("Exit code for '%s --help' was %s instead of zero" % (mod.__name__,e.code)))
+            
+            sys.stdout = nose_stdout
+            yield self.check_equal, [], [], "dummy"
+#             except AttributeError as e:
+#                 print(buf.getvalue())
+#                 print(e)
+#                 raise AssertionError
 
 
     @attr(kind="functional")
@@ -535,6 +581,34 @@ class TestArgdoc():
             expected = ["argdoc-process-docstring"]
             _ = post_process_automodule(app,"module",mod.__name__,mod,options,[])
             yield self.check_equal, expected, app.emitted, testname
+
+
+class ProxySTDOut():
+    def __init__(self):
+        self.buf = StringIOWrapper.StringIO() 
+        
+    def write(self,*args,**kwargs):
+        self.buf.write(*args,**kwargs)
+    
+    def read(self,*args,**kwargs):
+        return self.buf.read(*args,**kwargs)
+    
+    def flush(self,*args,**kwargs):
+        return self.buf.flush(*args,**kwargs)
+    
+    def close(self,*args,**kwargs):
+        self.buf.close(*args,**kwargs)
+    
+    def getvalue(self,*args,**kwargs):
+        return self.buf.getvalue(*args,**kwargs)
+    
+    def seek(self,*args,**kwargs):
+        return self.buf.seek(*args,**kwargs)
+    
+    def __enter__(self):
+        pass
+    def __exit__(self,*args):
+        self.close()
 
 class Record(object):
     """Proxy object that allows addition of arbitrary properties"""
