@@ -12,8 +12,8 @@ use the :func:`~argdoc.ext.noargdoc` function decorator. For example::
 
     @noargdoc
     def main():
-        """Main-like function that would normally be processed by `argdoc`,
-        but that we are skipping instead!
+        """Main-like function that would normally be processed by `argdoc`
+        but that will instead be skipped!
         """
         # main function body here
         parser = argparse.ArgumentParser()

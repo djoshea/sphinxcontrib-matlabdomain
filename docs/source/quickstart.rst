@@ -17,8 +17,8 @@ For a system-wide installation:
     $ sudo pip install argdoc
 
 
-Setting up :obj:`argdoc`
-------------------------
+Using :obj:`argdoc` in your project
+-----------------------------------
 Setting up :obj:`argdoc` only takes a few steps:
 
  1. Find the `extensions` definition in your `Sphinx`_ configuration file,

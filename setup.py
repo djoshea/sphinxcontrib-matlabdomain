@@ -13,6 +13,9 @@ config_info = { "version"      : argdoc.__version__,
 
 setup(
     name = "argdoc",
+    url          = "",
+    download_url = "",
+
     install_requires = [
     	                "sphinx>=1.3.1",
                         "autodoc>=0.3",
@@ -26,12 +29,11 @@ setup(
     maintainer       = "Joshua Griffin Dunn",
     maintainer_email = "Joshua Griffin Dunn",
     
-    description = "Sphinx plugin that automatically adds tables describing command-line arguments to autodoc's 'automodule' directive",
+    description = "Sphinx extension that automatically adds tables describing command-line arguments to autodoc's `:automodule:` directive",
     long_description = long_description,
     license   = "BSD 3-Clause",
     keywords  = "sphinx documentation argparse command-line autodoc",
-    url       = "",
-    platforms = "POSIX", # windows, 
+    platforms = "any", 
     
     tests_require=["nose>=1.0"],
     test_suite = "nose.collector",
@@ -39,14 +41,16 @@ setup(
     classifiers=[
          'Programming Language :: Python',
          'Programming Language :: Python :: 2.7',
-         'Programming Language :: Python :: 3.3',
-         'Programming Language :: Python :: 3.4',
+         'Programming Language :: Python :: 3',
+
+         'Framework :: Sphinx :: Extension'
 
          'Topic :: Documentation',
-         'Topic :: Sphinx',
+         'Topic :: Documentation :: Sphinx',
+         'Topic :: Text Processing',
+         'Topic :: Utilities',
 
          'Intended Audience :: Developers',
-
          'License :: BSD 3-Clause',
          
          'Operating System :: POSIX',
