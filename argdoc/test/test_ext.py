@@ -482,19 +482,13 @@ class TestArgdoc():
                 expected_lines = f.read().split("\n")
             f.close()
 
-            for n, line in enumerate(expected_lines):
-                if line.startswith("Command-line arguments"):
-                    break
-
             buf = StringIOWrapper.StringIO()
-            with buf as sys.stdout:
-                try:
+            try:
+                with buf as sys.stdout:
                     mod.main(["--help"])
-                except AttributeError:
-                    pass
-                except SystemExit as e:
-                    if e.code != 0:
-                        raise(AssertionError("Exit code for '%s --help' was %s instead of zero" % (mod.__name__,e.code)))
+
+                lines = buf.getvalue().split("\n")
+                found_lines = format_argparser_to_docstring(app,mod,lines,get_patterns())
 
                 if k == "noargdoc":
                     n1 = 0
@@ -508,9 +502,15 @@ class TestArgdoc():
                     if line.startswith("Command-line arguments"):
                         break
 
-                lines = buf.getvalue().split("\n")
-                found_lines = format_argparser_to_docstring(app,mod,lines)
                 yield self.check_equal, expected_lines[n1:], found_lines[n2:], testname
+            except AttributeError as e:
+                print(buf.getvalue())
+                print(e)
+                raise AssertionError
+            except SystemExit as e:
+                if e.code != 0:
+                    raise(AssertionError("Exit code for '%s --help' was %s instead of zero" % (mod.__name__,e.code)))
+
 
     @attr(kind="functional")
     def test_post_process_automodule(self):
