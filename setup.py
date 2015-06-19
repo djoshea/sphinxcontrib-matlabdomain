@@ -39,6 +39,8 @@ setup(
     test_suite = "nose.collector",
     
     classifiers=[
+         'Development Status :: 4 - Beta',
+         'Environment :: Plugins',
          'Programming Language :: Python',
          'Programming Language :: Python :: 2.7',
          'Programming Language :: Python :: 3',
@@ -47,11 +49,16 @@ setup(
 
          'Topic :: Documentation',
          'Topic :: Documentation :: Sphinx',
+         'Topic :: SOftware Development :: Documentation',
          'Topic :: Text Processing',
          'Topic :: Utilities',
 
          'Intended Audience :: Developers',
-         'License :: BSD 3-Clause',
+         'Intended Audience :: End Users/Desktop',
+         'Intended Audience :: Science/Research',
+         'License :: OSI Approved :: BSD License',
+
+         'Natural Language :: English',
          
          'Operating System :: POSIX',
          'Operating System :: MacOS :: MacOS X',
