@@ -13,6 +13,7 @@ import shutil
 import importlib
 import sys
 import codecs
+import re
 
 if sys.version_info < (3,):
     import StringIO as StringIOWrapper
@@ -31,7 +32,7 @@ from argdoc.ext import get_patterns, get_col1_text, get_col2_text, noargdoc,\
                        format_argparser_to_docstring
 
 
-
+# space_pat = re.compile(" {20,}")
 
 class TestArgdoc():
     """Test case for functions defined in :mod:`argdoc.ext`"""
@@ -448,23 +449,25 @@ class TestArgdoc():
                     line1 = line1.decode("utf-8")
                 if isinstance(line2,str):
                     line2 = line2.decode("utf-8")
-            if line1 != line2:
+            if line1.strip() != line2.strip():
+#             if space_pat.subn("     ",line1.strip()) != space_pat.subn("     ",line2.strip()):
                 mismatched.append(n)
         
         message = ""
         if len(mismatched) > 0:
             message  = "-"*75 + "\n"
             message  = "test '%s': Lists differ at lines %s\n" % (test_name,(", ").join([str(X) for X in mismatched]))
-            message += "List 1:\n"
-            for n in mismatched:
-                message += "%s\t%s\n" % (n,l1[n])
-
-            message += "List 2:\n"
-            for n in mismatched:
-                message += "%s\t%s\n" % (n,l2[n])
+#            message += "List 1:\n"
+#             for n in mismatched:
+#                 message += "%s\t%s\n" % (n,l1[n])
+# 
+#             message += "List 2:\n"
+#             for n in mismatched:
+#                 message += "%s\t%s\n" % (n,l2[n])
+            for line1, line2 in zip(l1,l2):
+                message += "%s\n%s\n" % (l1,l2)
 
             message = "-"*75 + "\n"
-        
         assert_equal(len(mismatched),0,message)
         
     def test_format_argparser_to_docstring(self):
@@ -473,7 +476,7 @@ class TestArgdoc():
         for k in self.test_cases:
             testname = "test_format_argparser_to_docstring '%s'" % k            
             mod, expected, _ = self.test_cases[k]
-            with  codecs.open(expected,encoding="utf-8",mode="r") as f: #open(expected) as f:
+            with codecs.open(expected,encoding="utf-8",mode="r") as f:
                 expected_lines = f.read().split("\n")
             f.close()
             
@@ -489,7 +492,7 @@ class TestArgdoc():
  
             sys.stdout = old_out
             buf.seek(0)
-            lines = buf.read().split("\n") #getvalue().split("\n")
+            lines = buf.read().split("\n")
             found_lines = format_argparser_to_docstring(app,mod,lines,get_patterns())
 
             n1 = n2 = 0
@@ -521,7 +524,7 @@ class TestArgdoc():
                 built_lines = f.read().split("\n")
 
             testname = "test_post_process_automodule '%s'" % k
-            yield self.check_equal, expected_lines, built_lines, testname
+            yield self.check_list_equal, expected_lines, built_lines, testname
 
     def test_post_process_automodule_emits_event(self):
         for k, (mod,_,_) in self.test_cases.items():

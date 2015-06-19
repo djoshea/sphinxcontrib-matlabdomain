@@ -41,7 +41,7 @@ from sphinx.errors import ConfigError
 # INDEX: various constants
 #===============================================================================
 
-_OTHER_HEADER_LINES = """Script contents
+_OTHER_HEADER_LINES = u"""Script contents
 ---------------""".split("\n")
 
 _REQUIRED = [
@@ -310,12 +310,12 @@ def format_argparser_to_docstring(app,obj,help_lines,patterns,
             out_lines.append(u"")
             out_lines.append(table_header)
             out_lines.append( (u" "*(_INDENT_SIZE))+u"*Option*" + u" "*(1 + col1_width - 8) + u"*Description*")
-            out_lines.append(table_header.replace(u"=",u"-"))
+            out_lines.append(table_header.replace("=","-"))
              
             for c1, c2 in zip(col1,col2):
                 if sys.version_info < (3,):
                     c1 = c1.decode("utf-8")
-                    c2 = c2.encode("utf-8")
+                    c2 = c2.decode("utf-8")
 
                 out_lines.append((u" "*(_INDENT_SIZE))+ c1 + (u" "*(1+col1_width-len(c1))) + c2)
  
