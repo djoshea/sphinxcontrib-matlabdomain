@@ -1,3 +1,9 @@
+This test case tests the use of the :func:`noargdoc` keyword, which
+should prevent `argdoc` from adding command-line arguments to the following
+docstring.
+
+-----------------
+
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean feugiat
 tempor diam sed condimentum. Mauris aliquam interdum libero, ut aliquet
 erat malesuada sed. Mauris nec venenatis sapien, a feugiat neque. Sed

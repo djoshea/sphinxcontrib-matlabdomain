@@ -1,3 +1,8 @@
+This module tests argparsers with subcommands, arguments for which
+should appear in their own sections.
+
+------------------
+
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean feugiat
 tempor diam sed condimentum. Mauris aliquam interdum libero, ut aliquet
 erat malesuada sed. Mauris nec venenatis sapien, a feugiat neque. Sed
@@ -87,14 +92,14 @@ Positional arguments
 Optional arguments
 """"""""""""""""""
 
-    ======================================== =====================================
+    ======================================== ===============================
     *Option*                                 *Description*
-    ---------------------------------------- -------------------------------------
+    ---------------------------------------- -------------------------------
     ``-h``, ``--help``                       show this help message and exit
     ``-f  F``                                short foo argument
     ``--fookwarg  FOOKWARG``                 foo keyword argument
-    ``-v  VERBOSE``, ``--verbose  VERBOSE``                          foo verbosely
-    ======================================== =====================================
+    ``-v  VERBOSE``, ``--verbose  VERBOSE``   foo verbosely
+    ======================================== ===============================
 
 
 ------------
@@ -118,12 +123,12 @@ Positional arguments
 Optional arguments
 """"""""""""""""""
 
-    ======================================== ========================================================
+    ======================================== =================================
     *Option*                                 *Description*
-    ---------------------------------------- --------------------------------------------------------
+    ---------------------------------------- ---------------------------------
     ``-h``, ``--help``                       show this help message and exit
-    ``--choice  {option1,option2,option3}``                          A keyword that requries a choice
-    ======================================== ========================================================
+    ``--choice  {option1,option2,option3}``   A keyword that requries a choice
+    ======================================== =================================
 
 
 ------------

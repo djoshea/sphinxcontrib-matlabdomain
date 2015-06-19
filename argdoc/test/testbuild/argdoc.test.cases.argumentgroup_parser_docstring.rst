@@ -1,3 +1,10 @@
+This test case tests the processing of argument groups with short,
+long, or no description. Argument groups should be styled as paragraph-
+level sections, with their descriptions appearing below the title,
+followed by the options.
+
+-------------------
+
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean feugiat
 tempor diam sed condimentum. Mauris aliquam interdum libero, ut aliquet
 erat malesuada sed. Mauris nec venenatis sapien, a feugiat neque. Sed
@@ -81,27 +88,27 @@ One group of arguments
   argument group. This can make command-line help, documentation, and source
   code more intelligible to others
 
-    ======================================== =====================================
+    ======================================== ====================
     *Option*                                 *Description*
-    ---------------------------------------- -------------------------------------
+    ---------------------------------------- --------------------
     ``fooarg1``                              foo argument 1
     ``fooarg2``                              foo argument 2
     ``-f  F``                                short foo argument
     ``--fookwarg  FOOKWARG``                 foo keyword argument
-    ``-v  VERBOSE``, ``--verbose  VERBOSE``                          foo verbosely
-    ======================================== =====================================
+    ``-v  VERBOSE``, ``--verbose  VERBOSE``   foo verbosely
+    ======================================== ====================
 
 
 A second group of arguments
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
   Description of second argument group
 
-    ======================================== ========================================================
+    ======================================== =================================
     *Option*                                 *Description*
-    ---------------------------------------- --------------------------------------------------------
+    ---------------------------------------- ---------------------------------
     ``bararg``                               bar argument
-    ``--choice  {option1,option2,option3}``                          A keyword that requries a choice
-    ======================================== ========================================================
+    ``--choice  {option1,option2,option3}``   A keyword that requries a choice
+    ======================================== =================================
 
 
 A final group of arguments, with no description

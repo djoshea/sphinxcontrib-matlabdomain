@@ -1,6 +1,23 @@
 #!/usr/bin/env python
 # coding: utf-8
-"""Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean feugiat
+"""This parser exhaustively tests different argument types. The following
+argument attributes are tested in all combinations to ensure they are 
+all displayed correctly:
+
+  - arguments with short or long names
+  - positional arguments
+  - keyword arguments starting with '-', '--', or both
+  - arguments taking 0, 1, 2, (0 or more), (1 or more), or (0 or 1) arguments
+  - arguments taking choices of 1 or more items
+  - arguments with no help text
+  - arguments with short help text, which tends to be displayed on one line
+    by :mod:`argparse`
+  - arguments with long help text, which tends to appear on multiple lines
+  - arguments including or excluding unicode characters in their names
+
+--------------
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean feugiat
 tempor diam sed condimentum. Mauris aliquam interdum libero, ut aliquet
 erat malesuada sed. Mauris nec venenatis sapien, a feugiat neque. Sed
 pulvinar erat sit amet posuere aliquet. Phasellus non quam tincidunt,

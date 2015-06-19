@@ -380,7 +380,7 @@ def format_argparser_to_docstring(app,obj,help_lines,patterns,
                 match = patterns[pat].match(line)
                 if match is not None:
                     if pat == "continue_desc":
-                        col2[-1] += line.strip("\n")
+                        col2[-1] = "%s %s" % (col2[-1],match.groups()[0].strip("\n"))
                         break
                     elif pat == "positional_arg":
                         matchdict = match.groupdict()

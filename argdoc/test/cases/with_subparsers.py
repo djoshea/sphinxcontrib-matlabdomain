@@ -1,5 +1,10 @@
 #!/usr/bin/env python
-"""Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean feugiat
+"""In this test case, we test a parser that has its own arguments as well as
+multiple subcommands, for which individual help sections should be generated.
+
+----------------
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean feugiat
 tempor diam sed condimentum. Mauris aliquam interdum libero, ut aliquet
 erat malesuada sed. Mauris nec venenatis sapien, a feugiat neque. Sed
 pulvinar erat sit amet posuere aliquet. Phasellus non quam tincidunt,
@@ -84,7 +89,7 @@ def main(argv=sys.argv[1:]):
                            help="A keyword that requries a choice")
     
     bgroup = barparser.add_argument_group(title="An argument group",
-                                          description="A special goup of arguments in the bar subparser")
+                                          description="A special goup of arguments in the `bar` subparser")
     bgroup.add_argument("--b1")
     bgroup.add_argument("--b2",help="Argument 2 has help")
     bgroup.add_argument("-k",nargs=2,metavar="N",help="Some other argument")
