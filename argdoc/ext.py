@@ -111,6 +111,9 @@ def get_col1_text(matchdict):
         if matchdict.get("arg2") is not None:
             tmpstr += (", ``%s``" % matchdict["arg2"])
 
+    if sys.version_info[0] == 2 and isinstance(tmpstr,str):
+        tmpstr = unicode(tmpstr,"utf-8")
+        
     return tmpstr
 
 def get_col2_text(matchdict):
@@ -125,7 +128,11 @@ def get_col2_text(matchdict):
     -------
     str
     """
-    return matchdict.get("desc","") if matchdict.get("desc") is not None else ""
+    tmpstr =  matchdict.get("desc","") if matchdict.get("desc") is not None else ""
+    if sys.version_info[0] == 2 and isinstance(tmpstr,str):
+        tmpstr = unicode(tmpstr,"utf-8")
+        
+    return tmpstr
 
 #===============================================================================
 # INDEX: function decorators
@@ -313,10 +320,6 @@ def format_argparser_to_docstring(app,obj,help_lines,patterns,
             out_lines.append(table_header.replace("=","-"))
              
             for c1, c2 in zip(col1,col2):
-                if sys.version_info < (3,):
-                    c1 = c1.decode("utf-8")
-                    c2 = c2.decode("utf-8")
-
                 out_lines.append((u" "*(_INDENT_SIZE))+ c1 + (u" "*(1+col1_width-len(c1))) + c2)
  
             out_lines.append(table_header)
