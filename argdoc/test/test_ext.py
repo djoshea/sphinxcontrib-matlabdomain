@@ -12,14 +12,13 @@ import shlex
 import shutil
 import importlib
 import sys
+import codecs
 
 if sys.version_info < (3,):
     import StringIO as StringIOWrapper
 else:
     import io as StringIOWrapper
 
-
-import argdoc
 import argdoc.test.cases
 
 from modulefinder import ModuleFinder
@@ -337,8 +336,8 @@ class TestArgdoc():
     @classmethod
     def tearDownClass(cls):
         """Clean up temp files after tests are complete"""
-        cleanup_resources()
-        shutil.rmtree(cls.optdict["outdir"])
+#         cleanup_resources()
+#         shutil.rmtree(cls.optdict["outdir"])
 
     @classmethod
     def run_builder(cls):
@@ -439,20 +438,16 @@ class TestArgdoc():
         b = noargdoc(my_func)
         assert_true(b.__dict__["noargdoc"])
 
-#     def test_get_subcommand_tables(self):
-#         inp, expected, built = self.test_cases["with_subparsers"]
-#         # look at output & test against known RST
-#         assert False
-
     @staticmethod
     def check_list_equal(l1,l2,test_name):
         print("Checking list equality for %s" % test_name)
         mismatched = []
         for n, (line1,line2) in enumerate(zip(l1,l2)):
-            if isinstance(line1,str):
-                line1 = line1.decode("utf-8")
-            if isinstance(line2,str):
-                line2 = line2.decode("utf-8")
+            if sys.version_info[0] == 2:
+                if isinstance(line1,str):
+                    line1 = line1.decode("utf-8")
+                if isinstance(line2,str):
+                    line2 = line2.decode("utf-8")
             if line1 != line2:
                 mismatched.append(n)
         
@@ -478,85 +473,40 @@ class TestArgdoc():
         for k in self.test_cases:
             testname = "test_format_argparser_to_docstring '%s'" % k            
             mod, expected, _ = self.test_cases[k]
-            with open(expected) as f:
+            with  codecs.open(expected,encoding="utf-8",mode="r") as f: #open(expected) as f:
                 expected_lines = f.read().split("\n")
             f.close()
             
-#             nose_stdout = sys.stdout
-#             sys.stdout = sys.__stdout__
-# 
-#             stdout_fd = os.dup(sys.stdout.fileno())
-#             tmpfile = tempfile.TemporaryFile()
-#             new_fd  = tmpfile.fileno()
-#             os.dup2(new_fd,sys.stdout.fileno())
-#             try:
-#                 mod.main(["--help"])
-#             except SystemExit as e:
-#                 if e.code != 0:
-#                     raise(AssertionError("Exit code for '%s --help' was %s instead of zero" % (mod.__name__,e.code)))                
-#             except Exception as e:
-#                 tmpfile.flush()
-#                 tmpfile.close()
-#                 os.dup2(stdout_fd,sys.stdout.fileno())
-#                 raise(e)
-# 
-#             tmpfile.flush()
-#             os.dup2(stdout_fd,sys.stdout.fileno())
-#             
-#             tmpfile.seek(0)
-#             found_lines = tmpfile.read().split("\n".encode("utf-8"))
-#    
-#             if k == "noargdoc":
-#                 n1 = 0
-#                 expected_lines = []
-#             else:
-#                 for n1, line in enumerate(expected_lines):
-#                     if line[:23] == "Command-line arguments":
-#                         break
-#             for n2, line in enumerate(found_lines):
-#                     if line[:23] == "Command-line arguments":
-#                         break                
-# 
-#             sys.stdout = nose_stdout
-#             yield self.check_equal, expected_lines[n1:], found_lines[n2:], testname
- 
-            buf = ProxySTDOut()
-            nose_stdout = sys.stdout
-            sys.stdout = sys.__stdout__
+            buf = StringIOWrapper.StringIO()
+            old_out = sys.stdout
+            sys.stdout = buf
 
-            with buf as sys.stdout:
-                try:
-                    mod.main(["--help"])
-                except SystemExit as e:
-                    if e.code != 0:
-                        raise(AssertionError("Exit code for '%s --help' was %s instead of zero" % (mod.__name__,e.code)))
+            try:
+                mod.main(["--help"])
+            except SystemExit as e:
+                if e.code != 0:
+                    raise(AssertionError("Exit code for '%s --help' was %s instead of zero" % (mod.__name__,e.code)))
  
-                lines = buf.getvalue().split("\n")
-                found_lines = format_argparser_to_docstring(app,mod,lines,get_patterns())
- 
-                n1 = n2 = 0
-                if k != "noargdoc":
-                    for line in expected_lines:
-                        if line[:23] != "Command-line arguments":
-                            n1 += 1
-                        else:
-                            break
+            sys.stdout = old_out
+            buf.seek(0)
+            lines = buf.read().split("\n") #getvalue().split("\n")
+            found_lines = format_argparser_to_docstring(app,mod,lines,get_patterns())
+
+            n1 = n2 = 0
+            if k != "noargdoc":
+                for line in expected_lines:
+                    if line[:23] != "Command-line arguments":
+                        n1 += 1
+                    else:
+                        break
 
                 for line in found_lines:
                     if line[:23] != "Command-line arguments":
                         n2 += 1   
                     else:
                         break
- 
-                yield self.check_equal, expected_lines[n1:], found_lines[n2:], testname
-            
-            sys.stdout = nose_stdout
-            yield self.check_equal, [], [], "dummy"
-#             except AttributeError as e:
-#                 print(buf.getvalue())
-#                 print(e)
-#                 raise AssertionError
 
+            yield self.check_list_equal, expected_lines[n1:], found_lines[n2:], testname
 
     @attr(kind="functional")
     def test_post_process_automodule(self):
@@ -583,37 +533,11 @@ class TestArgdoc():
             yield self.check_equal, expected, app.emitted, testname
 
 
-class ProxySTDOut():
-    def __init__(self):
-        self.buf = StringIOWrapper.StringIO() 
-        
-    def write(self,*args,**kwargs):
-        self.buf.write(*args,**kwargs)
-    
-    def read(self,*args,**kwargs):
-        return self.buf.read(*args,**kwargs)
-    
-    def flush(self,*args,**kwargs):
-        return self.buf.flush(*args,**kwargs)
-    
-    def close(self,*args,**kwargs):
-        self.buf.close(*args,**kwargs)
-    
-    def getvalue(self,*args,**kwargs):
-        return self.buf.getvalue(*args,**kwargs)
-    
-    def seek(self,*args,**kwargs):
-        return self.buf.seek(*args,**kwargs)
-    
-    def __enter__(self):
-        pass
-    def __exit__(self,*args):
-        self.close()
-
 class Record(object):
     """Proxy object that allows addition of arbitrary properties"""
     def __init__(self):
         pass
+
 
 class FakeApp(object):
     """Proxy for a Sphinx application object. Implements minimial methods
