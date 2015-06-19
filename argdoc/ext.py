@@ -227,8 +227,8 @@ def get_subcommand_tables(app,obj,help_lines,patterns,start_line,section_head=Tr
                                                            section_name=u"``%s`` subcommand arguments" % subcommand,
                                                            _is_subcommand=True)) 
         except subprocess.CalledProcessError as e:
-            out  = ("-"*75) + "\n" + e.output + "\n" + ("-"*75)
-            out += "Could not call module %s as '%s'. Output:\n"% (obj.__name__, e.cmd)
+            out  = ("-"*75) + "\n"
+            out += "argdoc: Could not call module %s as '%s'. Output:\n"% (obj.__name__, e.cmd)
             out += e.output
             out += ("-"*75) + "\n"
             app.warn(out)
@@ -464,8 +464,8 @@ def post_process_automodule(app,what,name,obj,options,lines):
                 proc = subprocess.Popen(call,stdout=subprocess.PIPE,universal_newlines=True)
                 help_lines = proc.communicate()[0].split("\n")
             except subprocess.CalledProcessError as e:
-                out  = ("-"*75) + "\n" + e.output + "\n" + ("-"*75)
-                out += "Could not call module %s as '%s'. Output:\n"% (obj.__name__, e.cmd)
+                out  = ("-"*75) + "\n"
+                out += "argdoc: Could not call module %s as '%s'. Output:\n"% (obj.__name__, e.cmd)
                 out += e.output
                 out += ("-"*75) + "\n"
                 app.warn(out)
@@ -475,8 +475,11 @@ def post_process_automodule(app,what,name,obj,options,lines):
                 lines.extend(out_lines)
                 lines.extend(_OTHER_HEADER_LINES)
             except IndexError as e:
-                app.warn("Error processing argparser into docstring for module %s: " % obj.__name__)
-
+                out  = ("-"*75) + "\n"
+                out += "argdoc: Error processing argparser into docstring for module %s: \n%s" % (obj.__name__,e))
+                out += ("-"*75) + "\n"
+                app.warn(out)
+ 
         if app.config.argdoc_save_rst == True:
             filename = os.path.join(app.outdir,"%s_docstring.rst" % name)
             with codecs.open(filename,encoding="utf-8",mode="wb") as fout:
@@ -489,7 +492,7 @@ def post_process_automodule(app,what,name,obj,options,lines):
                         fout.write(line)
                         fout.write(u"\n")
                     except Exception as e:
-                        app.warn("Could not write out line %s of file %s." % (n,name))
+                        app.warn("argdoc: Could not write out line %s of file %s." % (n,name))
                         raise e
     
             fout.close()
