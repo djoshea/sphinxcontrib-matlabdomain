@@ -13,7 +13,6 @@ import shutil
 import importlib
 import sys
 import codecs
-import re
 
 if sys.version_info < (3,):
     import StringIO as StringIOWrapper
@@ -32,7 +31,6 @@ from argdoc.ext import get_patterns, get_col1_text, get_col2_text, noargdoc,\
                        format_argparser_to_docstring
 
 
-# space_pat = re.compile(" {20,}")
 
 class TestArgdoc():
     """Test case for functions defined in :mod:`argdoc.ext`"""
@@ -337,8 +335,8 @@ class TestArgdoc():
     @classmethod
     def tearDownClass(cls):
         """Clean up temp files after tests are complete"""
-#         cleanup_resources()
-#         shutil.rmtree(cls.optdict["outdir"])
+        cleanup_resources()
+        shutil.rmtree(cls.optdict["outdir"])
 
     @classmethod
     def run_builder(cls):
@@ -493,18 +491,17 @@ class TestArgdoc():
             found_lines = format_argparser_to_docstring(app,mod,lines,get_patterns())
 
             n1 = n2 = 0
-            if k != "noargdoc":
-                for line in expected_lines:
-                    if line[:23] != "Command-line arguments":
-                        n1 += 1
-                    else:
-                        break
+            for line in expected_lines:
+                if line[:23] != "Command-line arguments":
+                    n1 += 1
+                else:
+                    break
 
-                for line in found_lines:
-                    if line[:23] != "Command-line arguments":
-                        n2 += 1   
-                    else:
-                        break
+            for line in found_lines:
+                if line[:23] != "Command-line arguments":
+                    n2 += 1   
+                else:
+                    break
 
             yield self.check_list_equal, expected_lines[n1:], found_lines[n2:], testname
 

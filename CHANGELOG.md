@@ -14,6 +14,7 @@ Version numbers follow the conventions described in
 
 ### Added
 - `argdoc_save_rst` config option to export raw RST after argdoc processing completes 
+- Python 3 support
 
 ### Changed
 - Clearer visual formatting
