@@ -1,6 +1,37 @@
 #!/usr/bin/env python
 # coding: utf-8
-"""Test suite for :obj:`argdoc.ext`
+"""Test suite for :obj:`argdoc.ext`.
+
+Test implementation
+-------------------
+  - Unit tests are provided for regular expressions used to identify different
+    patterns from :obj:`argparse` output
+    
+  - Unit and functional tests e.g. for :func:`format_argparser_to_docstring` are
+    performed as follows:
+    
+      1. `Sphinx`_ is run on the test cases in :obj:`argdoc.test.cases` using
+         the `reStructuredText`_ (`rst`) document stubs and configuration file
+         (``conf.py``) in ``argdoc/test/testdocroot``. `rst` stubs are
+         automatically detected by `Sphinx`_, and the corresponding 
+         :term:`executable scripts` in :obj:`argdoc.test.cases` auto-detected
+         by :class:`TestArgdoc`.  
+         
+      2. The `rst` output is saved after `argdoc` completes, before conversion
+         to HTML (or other formats) by `Sphinx`_. The `rst` output is compared
+         against reference output that can be found in ``argdoc/test/testbuild``.
+         Comparing the `rst` output makes the tests
+         robust to potential changes in html rendering in `Sphinx`_.
+
+To add a test case for a new :mod:`argparse` configuration
+----------------------------------------------------------
+  1. Create an executable script using argparse following the general form
+     of the other tests. Put it in the subpackage :obj:`argdoc.test.cases`
+     
+  2. Create a matching `rst` document stub, and put it into ``argdoc/test/testdocroot``
+  
+  3. Add an entry for the `rst` document stub in ``argdoc/test/testdocroot/master_toctree.rst``
+   
 
 """
 __date__   = "2015-06-09"

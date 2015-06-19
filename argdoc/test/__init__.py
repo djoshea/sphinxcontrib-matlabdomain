@@ -2,14 +2,17 @@
 """Test suites and test data for :obj:`argdoc`
 
 :mod:`argdoc.test.test_ext`
-    Tests for the argdoc `Sphinx`_ extension :mod:`argdoc.ext`
+    Tests for the argdoc `Sphinx`_ extension :mod:`argdoc.ext`. All tests are
+    implemented in here. The module docstring for :mod:`argdoc.test.test_ext`
+    contains information on how to add new test cases.
 
 :obj:`argdoc.test.cases`
-    Executable scripts used as test cases for :mod:`argoc.ext`
+    :term:`executable scripts` used as test cases for :mod:`argdoc.ext`
 
-`argdoc/test/testdocroot`
-    Documentation root folder for test suite
+``argdoc/test/testdocroot``
+    `reStructuredText`_ documentation stubs for executable scripts in the test
+    suite, and a `Sphinx`_ configuration file (``conf.py``) that runs :obj:`argdoc`
 
-`argdoc/test/testbuild`
-    Data files containing expected `rst` output from :mod:`argdoc.ext`
+``argdoc/test/testbuild``
+    Eexpected `rst` output from Sphinx from :mod:`argdoc.ext`
 """

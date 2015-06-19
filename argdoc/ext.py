@@ -100,7 +100,7 @@ def get_col1_text(matchdict):
 
     Returns
     -------
-    str
+    str (unicode if Python 2.7)
     """
     if "val1" in matchdict:
         tmpstr = "``%s %s``" % (matchdict["arg1"],matchdict["val1"])
@@ -126,7 +126,7 @@ def get_col2_text(matchdict):
 
     Returns
     -------
-    str
+    str (unicode if Python 2.7)
     """
     tmpstr =  matchdict.get("desc","") if matchdict.get("desc") is not None else ""
     if sys.version_info[0] == 2 and isinstance(tmpstr,str):

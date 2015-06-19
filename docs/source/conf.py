@@ -167,7 +167,8 @@ def setup(app):
 
 # intersphinx config ------------------------------------------------------------
 intersphinx_mapping = { "python" : ("http://docs.python.org",None),
-                        "nose"   : ("https://nose.readthedocs.org/en/latest/", None)
+                        "nose"   : ("https://nose.readthedocs.org/en/latest/", None),
+                        "sphinx" : ("http://sphinx-doc.org/", "objects.inv"),
                         }
 
 # other -------------------------------------------------------------------------
