@@ -8,4 +8,4 @@ the Sphinx `autodoc`_ extension.
 
 __author__ = "Joshua Griffin Dunn"
 __date__ = "2015-06-09"
-__version__ = "0.0.3"
+__version__ = "0.0.4"

@@ -6,7 +6,7 @@ Version numbers follow the conventions described in
 [Semantic versioning](http://semver.org/).
 
 
-## Unreleased
+## [0.0.4] = 2015-06-19
 
 ### Added
 - `argdoc_save_rst` config option to export raw RST after argdoc processing
