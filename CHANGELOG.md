@@ -8,13 +8,9 @@ Version numbers follow the conventions described in
 
 ## Unreleased
 
-### Changed
-- Clearer visual formatting
-- Changed names of internal functions to make more sense
-
 ### Added
-- `argdoc_save_rst` config option to export raw RST after argdoc processing completes 
-- Python 3 support
+- `argdoc_save_rst` config option to export raw RST after argdoc processing
+- completed Python 3 support
 
 ### Changed
 - Clearer visual formatting
@@ -37,6 +33,7 @@ Version numbers follow the conventions described in
 - Can now handle option+argument+description lines that have
   multiple arguments.
 
+
 ## [0.0.2] - 2015-06-09
 
 ### Added
@@ -48,6 +45,7 @@ Version numbers follow the conventions described in
 ### Changed
 - Lowered visual hierarchy of section headers for subcommands
   in processed rst output
+
 
 # [0.0.1]
 
