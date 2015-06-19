@@ -450,22 +450,19 @@ class TestArgdoc():
                 if isinstance(line2,str):
                     line2 = line2.decode("utf-8")
             if line1.strip() != line2.strip():
-#             if space_pat.subn("     ",line1.strip()) != space_pat.subn("     ",line2.strip()):
                 mismatched.append(n)
         
         message = ""
         if len(mismatched) > 0:
             message  = "-"*75 + "\n"
             message  = "test '%s': Lists differ at lines %s\n" % (test_name,(", ").join([str(X) for X in mismatched]))
-#            message += "List 1:\n"
-#             for n in mismatched:
-#                 message += "%s\t%s\n" % (n,l1[n])
-# 
-#             message += "List 2:\n"
-#             for n in mismatched:
-#                 message += "%s\t%s\n" % (n,l2[n])
-            for line1, line2 in zip(l1,l2):
-                message += "%s\n%s\n" % (l1,l2)
+            message += "List 1:\n"
+            for n in mismatched:
+                message += "%s\t%s\n" % (n,l1[n])
+ 
+            message += "List 2:\n"
+            for n in mismatched:
+                message += "%s\t%s\n" % (n,l2[n])
 
             message = "-"*75 + "\n"
         assert_equal(len(mismatched),0,message)
