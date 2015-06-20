@@ -106,6 +106,11 @@ classMethod
 
 .. autofunction:: classMethod
 
+My Static Function
+~~~~~~~~~~~~~~~~~~
+
+.. autofunction:: my_static_func
+
 Submodule
 +++++++++
 This is the test data module
@@ -143,6 +148,10 @@ TestFibonacci
 .. autoclass:: TestFibonacci
     :members:
     :show-inheritance:
+
+Function with no parentheses
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. autofunction:: f_constant
 
 Indices and tables
 ==================

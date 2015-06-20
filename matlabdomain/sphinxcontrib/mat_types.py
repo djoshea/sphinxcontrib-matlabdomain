@@ -152,18 +152,25 @@ class MatObject(object):
         # use Pygments to parse mfile to determine type: function/classdef
         # read mfile code
         with open(mfile, 'r') as code_f:
-            code = code_f.read()
+            code = code_f.read().replace('\r\n', '\n')  # repl crlf with lf
         # functions must be contained in one line, no ellipsis, classdef is OK
-        pat = r"""^[ \t]*(function)        # keyword
-                  ([\[\], \t\w.\n]*)       # outputs
-                  ([ \t=.\n]*)             # equal sign
-                  ([\w.]+)                 # name
-                  \(?([, \t\w.\n]*)\)?"""  # args
-        pat = re.compile(pat, re.X | re.MULTILINE)
-        repl = lambda m: m.group().replace('...\n', '')
-        code, nsubs = pat.subn(repl, code)
-        msg = '[%s] replaced %d ellipsis in function signatures'
-        MatObject.sphinx_dbg(msg, MAT_DOM, nsubs)
+        pat = r"""^[ \t]*function[ \t.\n]*  # keyword (function)
+                  (\[?[\w, \t.\n]*\]?)      # outputs: group(1)
+                  [ \t.\n]*=[ \t.\n]*       # punctuation (eq)
+                  (\w+)[ \t.\n]*            # name: group(2)
+                  \(?([\w, \t.\n]*)\)?"""   # args: group(3)
+        pat = re.compile(pat, re.X | re.MULTILINE)  # search start of every line
+        # replacement function
+        def repl(m):
+            # replace any ellipsis found in function signatures
+            retv = m.group(0).replace('...\n', ' ')
+            # if no args and doesn't end with parentheses, append "()"
+            if not (m.group(3) or m.group(0).endswith('()')):
+                retv = retv.replace(m.group(2), m.group(2) + "()")
+            return retv
+        code = pat.sub(repl, code)  # search for functions and apply replacement
+        msg = '[%s] replaced ellipsis & appended parentheses in function signatures'
+        MatObject.sphinx_dbg(msg, MAT_DOM)
         tks = list(MatlabLexer().get_tokens(code))  # tokenenize code
         modname = path.replace(os.sep, '.')  # module name
         # assume that functions and classes always start with a keyword
@@ -554,10 +561,13 @@ class MatClass(MatMixin, MatObject):
                        'Constant': bool, 'Dependent': bool, 'GetAccess': list,
                        'GetObservable': bool, 'Hidden': bool,
                        'SetAccess': list, 'SetObservable': bool,
-                       'Transient': bool}
+                       'Transient': bool, 'ClassSetupParameter': bool,
+                       'MethodSetupParameter': bool, 'TestParameter': bool}
     meth_attr_types = {'Abstract': bool, 'Access': list, 'Hidden': bool,
                        'Sealed': list, 'Static': bool, 'Test': bool,
-                       'TestClassSetup': bool, 'TestMethodSetup': bool}
+                       'TestClassSetup': bool, 'TestMethodSetup': bool,
+                       'TestClassTeardown': bool, 'TestMethodTeardown': bool,
+                       'ParameterCombination': bool}
 
     def __init__(self, name, modname, tokens):
         super(MatClass, self).__init__(name)
@@ -773,15 +783,36 @@ class MatClass(MatMixin, MatObject):
                             idx += whitespace
                         else:
                             idx += 1
-                    # find methods
-                    meth = MatMethod(self.module, self.tokens[idx:],
-                                     self, attr_dict)
-                    # replace dot in get/set methods with underscore
-                    if meth.name.split('.')[0] in ['get', 'set']:
-                        meth.name = meth.name.replace('.', '_')
-                    idx += meth.reset_tokens()  # reset method tokens and index
-                    self.methods[meth.name] = meth  # update methods
-                    idx += self._whitespace(idx)
+                    # skip methods defined in other files
+                    meth_tk = self.tokens[idx]
+                    if (meth_tk[0] is Token.Name or
+                        meth_tk[0] is Token.Name.Function or
+                        (meth_tk[0] is Token.Keyword and
+                         meth_tk[1].strip() == 'function'
+                         and self.tokens[idx+1][0] is Token.Name.Function) or
+                        self._tk_eq(idx, (Token.Punctuation, '[')) or
+                        self._tk_eq(idx, (Token.Punctuation, ']')) or
+                        self._tk_eq(idx, (Token.Punctuation, '=')) or
+                        self._tk_eq(idx, (Token.Punctuation, '(')) or
+                        self._tk_eq(idx, (Token.Punctuation, ')')) or
+                        self._tk_eq(idx, (Token.Punctuation, ','))):
+                        msg = ['[%s] Skipping tokens for methods defined in separate files.',
+                               'token #%d: %r']
+                        MatClass.sphinx_dbg('\n'.join(msg), MAT_DOM, idx, self.tokens[idx])
+                        idx += 1 + self._whitespace(idx + 1)
+                    elif self._tk_eq(idx, (Token.Keyword, 'end')):
+                        idx += 1
+                        break 
+                    else:
+                        # find methods
+                        meth = MatMethod(self.module, self.tokens[idx:],
+                                         self, attr_dict)
+                        # replace dot in get/set methods with underscore
+                        if meth.name.split('.')[0] in ['get', 'set']:
+                            meth.name = meth.name.replace('.', '_')
+                        idx += meth.reset_tokens()  # reset method tokens and index
+                        self.methods[meth.name] = meth  # update methods
+                        idx += self._whitespace(idx)
                 idx += 1
         self.rem_tks = idx  # index of last token
 
