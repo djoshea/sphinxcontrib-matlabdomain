@@ -69,11 +69,23 @@ Optional arguments
     =================== ===============================
 
 
+Subcommands
+~~~~~~~~~~~
+  choose one of the following:
+
+    ======== ==========================================================
+    *Option* *Description*
+    -------- ----------------------------------------------------------
+    ``foo``  Run the foo subprogram
+    ``bar``  Take output from foo subprogram and run it through the bar
+    ======== ==========================================================
+
+
 ------------
 
 
-``foo`` subcommand arguments
-____________________________
+``foo`` subcommand
+__________________
 This is a long description of what a foo program might do. It spans multiple
 lines, so that we can test things reasonably.
 
@@ -105,8 +117,8 @@ Optional arguments
 ------------
 
 
-``bar`` subcommand arguments
-____________________________
+``bar`` subcommand
+__________________
 This is the long description for the `bar` subprogram.
 
 
