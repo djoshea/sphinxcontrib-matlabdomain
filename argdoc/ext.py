@@ -81,7 +81,7 @@ def get_patterns(prefix_chars="-"):
                  "arg_plus_val"       : r"^  (?P<arg1>-+[^\s]+)(?P<val1>(?: [^-\s]+)+)(?:(?:, (?P<arg2>--[^\s]+))(?P<val2>(?: [^\s]+)+))?$",
                  "arg_plus_desc"      : r"^  (?P<arg1>-?[^\s]+)(?:,\s(?P<arg2>--[^\s]+))?\s\s+(?P<desc>.*)",
                  "arg_plus_val_desc"  : r"^  (?P<arg1>-+[^\s]+)(?P<val1>(?: [^-\s]+)+)(?:(?:, (?P<arg2>--[^\s]+))(?P<val2>(?: [^\s]+)+))?  +(?P<desc>\w+.*)$",
-                 "continue_desc"      : r"^ {24}(.*)",
+                 "continue_desc"      : r"^ {12,24}(.*)",
                  "section_desc"       : r"^  ((?:[^-\s][^\s]*)(?:\s[^\s]+)+)$",
                  "subcommand_names"   : r"^  {((?:\w+)(?:(?:,(?:\w+))+)?)}$",
                  "subcommand_name"    : r"^    (?P<arg1>[^{}\s-]+)(?:\s\s+(?P<desc>\w+.*))?$", # same as positional arg, but with more leading space
@@ -89,7 +89,7 @@ def get_patterns(prefix_chars="-"):
     """Regular expressions describing components of docstrings created by :py:mod:`argparse`"""
     
     patterns = { K : re.compile(V) for K,V in patterns.items() }
-    return patterns  
+    return patterns
 
 def get_col1_text(matchdict):
     """Format argument name(s) and value(s) for column 1 of argument tables
@@ -297,6 +297,7 @@ def format_argparser_to_docstring(app,obj,help_lines,patterns,
     col2      = []  # holder for column 2 contents: argument descriptions
     section_title = [] # title of current section
     section_desc  = [] # description of current section
+    unmatched = []
     
     # markers for beginning and end of subcommand docstring descriptions
     desc_start = None
@@ -331,12 +332,15 @@ def format_argparser_to_docstring(app,obj,help_lines,patterns,
             out_lines.append(table_header)
             out_lines.append(u"")
             
+            out_lines.extend(unmatched)
+
             # reset section-specific variables
             section_title = []
             section_desc  = []
             col1 = []
             col2 = []
-            
+            unmatched = []
+        
         #elif patterns["section_title"].search(line) is not None and not line.endswith("usage:"):
         #FIXME: this is a kludge to deal with __doc__ lines that have trailing colons
         #       and will not work if the first argument section is not one of the following
@@ -417,10 +421,16 @@ def format_argparser_to_docstring(app,obj,help_lines,patterns,
                         col1.append(get_col1_text(matchdict))
                         col2.append(get_col2_text(matchdict))
                         break
-                else:
-                    pass
-                    # epilog or other description?
-                    #out_lines.append(line)
+            if match is None:
+                if len(line.strip()) > 0:
+                    app.debug2("argdoc: No match:\n%s" % line)
+                    if sys.version_info[0] == 2 and isinstance(line,str):
+                        line = unicode(line,"utf-8")
+
+                    out_lines.append(line)
+                pass
+                # epilog or other description?
+                #out_lines.append(line)
    
     if has_subcommands == True:
         new_lines = get_subcommand_tables(app,

@@ -10,6 +10,8 @@ Unreleased
 
 Changed
 .......
+  - Subcommands are now given a summary table, and their parsing deferred
+    until the main docstring is complete.
   - Converted format of CHANGELOG, README, and TODO to reStructuredText
     from Markdown
 

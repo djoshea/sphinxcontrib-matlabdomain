@@ -1,7 +1,8 @@
-This module tests argparsers with subcommands, arguments for which
-should appear in their own sections.
+In this test case, we test a parser that has its own arguments as well as
+multiple subcommands, one of which has an exceedingly long name. This is 
+mostly to test column alignment.
 
-------------------
+----------------
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean feugiat
 tempor diam sed condimentum. Mauris aliquam interdum libero, ut aliquet
@@ -59,6 +60,17 @@ Here is another item
 Command-line arguments
 ----------------------
 
+Positional arguments
+~~~~~~~~~~~~~~~~~~~~
+
+    ============= ===========================
+    *Option*      *Description*
+    ------------- ---------------------------
+    ``mainarg1``  
+    ``mainarg2``  main positional argument #2
+    ============= ===========================
+
+
 Optional arguments
 ~~~~~~~~~~~~~~~~~~
 
@@ -73,12 +85,12 @@ Subcommands
 ~~~~~~~~~~~
   choose one of the following:
 
-    ======== =====================================================================
-    *Option* *Description*
-    -------- ---------------------------------------------------------------------
-    ``foo``  Run the foo subprogram
-    ``bar``  Take output from foo subprogram and run it through the bar subprogram
-    ======== =====================================================================
+    =========================================================================== ======================================================================
+    *Option*                                                                    *Description*
+    --------------------------------------------------------------------------- ----------------------------------------------------------------------
+    ``foo``                                                                     Run the foo subprogram
+    ``barbarbarbarbaraaeadslfjasdlkfjljalksjflsjdfladjfklasdjkfladsjglkjdasl``   Take output from foo subprogram and run it through the bar subprogram
+    =========================================================================== ======================================================================
 
 
 ------------
@@ -117,8 +129,8 @@ Optional arguments
 ------------
 
 
-``bar`` subcommand
-__________________
+``barbarbarbarbaraaeadslfjasdlkfjljalksjflsjdfladjfklasdjkfladsjglkjdasl`` subcommand
+_____________________________________________________________________________________
 This is the long description for the `bar` subprogram.
 
 
@@ -141,6 +153,19 @@ Optional arguments
     ``-h``, ``--help``                       show this help message and exit
     ``--choice  {option1,option2,option3}``   A keyword that requries a choice
     ======================================== =================================
+
+
+An argument group
+"""""""""""""""""
+  A special goup of arguments in the `bar` subparser
+
+    ============= ===================
+    *Option*      *Description*
+    ------------- -------------------
+    ``--b1  B1``  
+    ``--b2  B2``  Argument 2 has help
+    ``-k  N N``   Some other argument
+    ============= ===================
 
 
 ------------
