@@ -12,6 +12,8 @@ Changed
 .......
   - Subcommands are now given a summary table, and their parsing deferred
     until the main docstring is complete.
+  - Added support for argparser epilogs, though visual styling could use
+    some work.
   - Converted format of CHANGELOG, README, and TODO to reStructuredText
     from Markdown
 
