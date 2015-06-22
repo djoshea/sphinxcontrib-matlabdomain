@@ -387,10 +387,10 @@ def format_argparser_to_docstring(app,obj,help_lines,patterns,
 
                 match = patterns[pat].match(line)
                 if match is not None:
-                    app.debug("argdoc: %s\n    %s\n" % (pat,line))
+                    app.debug2("argdoc: %s\n    %s\n" % (pat,line))
                     if pat == "continue_desc":
                         try:
-                            col2[-1] = "%s %s" % (col2[-1],match.groups()[0].strip("\n"))
+                            col2[-1] = u"%s %s" % (col2[-1],match.groups()[0].strip("\n"))
                         except IndexError as e:
                             app.warn("argdoc: continuing description with no prior description on line %s: \n    %s" % (n,line))
                             assert False
@@ -418,8 +418,9 @@ def format_argparser_to_docstring(app,obj,help_lines,patterns,
                         col2.append(get_col2_text(matchdict))
                         break
                 else:
+                    pass
                     # epilog or other description?
-                    out_lines.append(line)
+                    #out_lines.append(line)
    
     if has_subcommands == True:
         new_lines = get_subcommand_tables(app,
@@ -516,13 +517,13 @@ def post_process_automodule(app,what,name,obj,options,lines):
                     try:
                         if sys.version_info[0] == "2":
                             if isinstance(line,str):
-                                line = line.encode("utf-8")
+                                line = unicode(line,"utf-8")
                         
                         fout.write(line)
                         fout.write(u"\n")
                     except Exception as e:
                         app.warn("argdoc: Could not write out line %s of file %s." % (n,name))
-                        raise e
+                        #raise e
     
             fout.close()
                 

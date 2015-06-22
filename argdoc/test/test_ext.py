@@ -585,6 +585,9 @@ class FakeApp(object):
     def debug(self,*args,**kwargs):
         pass
 
+    def debug2(self,*args,**kwargs):
+        pass
+
     def emit(self,*args,**kwargs):
         """Simulate `emit` method. Save event name in `self.emitted` at each call"""
         self.emitted.append(args[0])
