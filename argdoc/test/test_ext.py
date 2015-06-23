@@ -44,6 +44,7 @@ import shutil
 import importlib
 import sys
 import codecs
+import argparse
 
 if sys.version_info < (3,):
     import StringIO as StringIOWrapper
@@ -433,7 +434,7 @@ class TestArgdoc():
         patterns = get_patterns("-")
         for name, cases in self.pattern_tests.items():
             for inp,expected in cases:
-                yield self.check_pattern, name, patterns[name], inp, expected
+                yield self.check_pattern, name, patterns["-"][name], inp, expected
 
     @staticmethod
     def check_equal(expected,found,casename=""):
@@ -452,6 +453,69 @@ class TestArgdoc():
             message = "test '%s': %s" % (casename,message)
 
         assert_equal(expected,found,message)
+
+    def test_prefix_chars_matches(self):
+        app = FakeApp(argdoc_prefix_chars="+")
+        parser = argparse.ArgumentParser(prefix_chars="+",
+                                         description="")
+        parser.add_argument("pos1",help="Positional argument 1")
+        parser.add_argument("pos2")
+        parser.add_argument("+o","++option",metavar="N",help="Some argument")
+        parser.add_argument("+x",nargs=2,metavar="N",help="argument with multiple values")
+        parser.add_argument("++other",action="store_true",default=False,help="No-value argument")
+        parser.add_argument("++argumentwithreallyreallyreallylongname",help="""An argument with
+        a really really really really long name, and a really reallly really long multi-line
+        help""")
+
+        lines = parser.format_help().split("\n")
+        found_lines    = format_argparser_to_docstring(app,None,lines,get_patterns("+"))
+        expected_lines = [u'Command-line arguments',
+                          u'----------------------',
+                          u'',
+                          u'Positional arguments',
+                          u'~~~~~~~~~~~~~~~~~~~~',
+                          u'',
+                          u'    ========= =====================',
+                          u'    *Option*  *Description*',
+                          u'    --------- ---------------------',
+                          u'    ``pos1``  Positional argument 1',
+                          u'    ``pos2``  ',
+                          u'    ========= =====================',
+                          u'',
+                          u'',
+                          u'Optional arguments',
+                          u'~~~~~~~~~~~~~~~~~~',
+                          u'',
+                          u'    ===================================================================================== ===========================================================================================================',
+                          u'    *Option*                                                                              *Description*',
+                             u'    ------------------------------------------------------------------------------------- -----------------------------------------------------------------------------------------------------------',
+                          u'    ``+h``, ``++help``                                                                    show this help message and exit',
+                          u'    ``+o  N``, ``++option  N``                                                            Some argument',
+                          u'    ``+x  N N``                                                                           argument with multiple values',
+                          u'    ``++other``                                                                           No-value argument',
+                          u'    ``++argumentwithreallyreallyreallylongname  ARGUMENTWITHREALLYREALLYREALLYLONGNAME``   An argument with a really really really really long name, and a really reallly really long multi-line help',
+                          u'    ===================================================================================== ===========================================================================================================',
+                          u''
+                         ]
+
+        n1 = n2 = 0
+        for line in expected_lines:
+            if line[:23] != "Command-line arguments":
+                n1 += 1
+            else:
+                break
+
+        for line in found_lines:
+            if line[:23] != "Command-line arguments":
+                n2 += 1   
+            else:
+                break
+
+        yield self.check_list_equal, expected_lines[n1:], found_lines[n2:], "prefix_chars"
+
+    def test_prefix_chars_doesnot_mix(self):
+        app = FakeApp(argdoc_prefix_chars="-+")
+        assert False
 
     def test_get_col1_text(self):
         for my_dict in self.match_dicts:
@@ -475,9 +539,9 @@ class TestArgdoc():
         for n, (line1,line2) in enumerate(zip(l1,l2)):
             if sys.version_info[0] == 2:
                 if isinstance(line1,str):
-                    line1 = line1.decode("utf-8")
+                    line1 = unicode(line1,"utf-8")
                 if isinstance(line2,str):
-                    line2 = line2.decode("utf-8")
+                    line2 = unicode(line2,"utf-8")
             if line1.strip() != line2.strip():
                 mismatched.append(n)
         
@@ -572,10 +636,11 @@ class FakeApp(object):
     required for us to test functions in :mod:`argdoc.ext` that require
     a Sphinx application instance
     """
-    def __init__(self,argdoc_main_func="main",argdoc_save_rst=True,outdir="/tmp/"):
+    def __init__(self,argdoc_main_func="main",argdoc_save_rst=True,outdir="/tmp/",argdoc_prefix_chars="-"):
         self.config = Record()
-        self.config.argdoc_main_func = argdoc_main_func
-        self.config.argdoc_save_rst = argdoc_save_rst
+        self.config.argdoc_main_func    = argdoc_main_func
+        self.config.argdoc_save_rst     = argdoc_save_rst
+        self.config.argdoc_prefix_chars = argdoc_prefix_chars
         self.outdir  = outdir
         self.emitted = []
 

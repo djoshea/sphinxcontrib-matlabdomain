@@ -8,3 +8,4 @@
     argdoc.test.cases.with_subparsers
     argdoc.test.cases.with_long_subparsers
     argdoc.test.cases.with_epilog
+    argdoc.test.cases.multiprefix
