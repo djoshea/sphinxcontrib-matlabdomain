@@ -14,6 +14,7 @@ Changed
     until the main docstring is complete.
   - Added support for argparser epilogs, though visual styling could use
     some work.
+  - Added support for multiple prefix characters.
   - Converted format of CHANGELOG, README, and TODO to reStructuredText
     from Markdown
 

@@ -211,8 +211,9 @@ def get_subcommand_tables(app,obj,help_lines,patterns,start_line,section_head=Tr
         arguments for all subprograms in the containing argparser
     """
     out_lines = []
+    base = list(patterns.values())[0]
     for line in help_lines[start_line:]:
-        match = patterns.values()[0]["subcommand_names"].search(line.strip("\n")) 
+        match = base["subcommand_names"].search(line.strip("\n")) 
         if match is not None:
             subcommands = match.groups()[0].split(",")
             break
@@ -297,6 +298,7 @@ def format_argparser_to_docstring(app,obj,help_lines,patterns,
         List of strings encoding reStructuredText table of arguments
         for program or subprogram
     """
+    base = list(patterns.values())[0]
     started = False
     has_subcommands  = False
     subcommand_start = 0
@@ -372,19 +374,19 @@ def format_argparser_to_docstring(app,obj,help_lines,patterns,
                         out_lines.extend(help_lines[desc_start:desc_end])
             
             # Create paragraph header for the argument section
-            match = patterns.values()[0]["section_title"].match(line)
+            match = base["section_title"].match(line)
             section_title = [match.groups()[0].capitalize(),
                              _HEADERS[header_level+1]*len(match.groups()[0]),
                             ]
-        elif patterns.values()[0]["section_title"].match(line) is not None and not line.startswith("usage:"):
+        elif base["section_title"].match(line) is not None and not line.startswith("usage:"):
             # Found section section of arguments.
             # Create paragraph header
             app.debug("Found section title: '%s'" % line)
-            match = patterns.values()[0]["section_title"].match(line)
+            match = base["section_title"].match(line)
             section_title = [match.groups()[0].capitalize(),
                              _HEADERS[header_level+1]*len(match.groups()[0]),
                             ]
-        elif patterns.values()[0]["section_desc"].match(line) is not None:
+        elif base["section_desc"].match(line) is not None:
             section_desc.append(line)
                         
         elif started == True:
@@ -440,9 +442,6 @@ def format_argparser_to_docstring(app,obj,help_lines,patterns,
                         line = unicode(line,"utf-8")
 
                     out_lines.append(line)
-                pass
-                # epilog or other description?
-                #out_lines.append(line)
    
     if has_subcommands == True:
         new_lines = get_subcommand_tables(app,
@@ -519,19 +518,19 @@ def post_process_automodule(app,what,name,obj,options,lines):
                 out += e.output
                 out += "\n" + ("-"*75) + "\n"
                 app.warn(out)
-#            try:
-            out_lines = format_argparser_to_docstring(app,obj,help_lines,section_head=True,header_level=1,patterns=patterns)
-            out_lines += _SEPARATOR
-            lines.extend(out_lines)
-            lines.extend(_OTHER_HEADER_LINES)
-#            except IndexError as e:
-#                out  = ("-"*75) + "\n"
-#                out += "argdoc: Error processing argparser into docstring for module %s: \n%s" % (obj.__name__,e.message)
-#                out += "\n\n%s" % e.args
-#                out += "\n\n%s" % e
-#                out += "\n" + ("-"*75) + "\n"
-#                app.warn(out)
-#                raise e
+            try:
+                out_lines = format_argparser_to_docstring(app,obj,help_lines,section_head=True,header_level=1,patterns=patterns)
+                out_lines += _SEPARATOR
+                lines.extend(out_lines)
+                lines.extend(_OTHER_HEADER_LINES)
+            except IndexError as e:
+                out  = ("-"*75) + "\n"
+                out += "argdoc: Error processing argparser into docstring for module %s: \n%s" % (obj.__name__,e.message)
+                out += "\n\n%s" % e.args
+                out += "\n\n%s" % e
+                out += "\n" + ("-"*75) + "\n"
+                app.warn(out)
+                raise e
  
         if app.config.argdoc_save_rst == True:
             filename = os.path.join(app.outdir,"%s_docstring.rst" % name)
