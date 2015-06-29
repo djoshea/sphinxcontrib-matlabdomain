@@ -1,5 +1,10 @@
 #!/usr/bin/env python
-"""Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean feugiat
+"""This module tests argparsers with subcommands, arguments for which
+should appear in their own sections.
+
+------------------
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean feugiat
 tempor diam sed condimentum. Mauris aliquam interdum libero, ut aliquet
 erat malesuada sed. Mauris nec venenatis sapien, a feugiat neque. Sed
 pulvinar erat sit amet posuere aliquet. Phasellus non quam tincidunt,

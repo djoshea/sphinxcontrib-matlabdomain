@@ -10,6 +10,7 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 
 argdoc_save_rst = True # tell argdoc to save RST output after processing
+argdoc_prefix_chars = "-+"
 
 
 # -- General configuration ------------------------------------------------

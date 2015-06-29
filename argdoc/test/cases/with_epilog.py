@@ -56,6 +56,11 @@ Here is another item
 import argparse
 import sys
 
+epilog = """This is a multi-line epilog which should appear at the bottom of the module
+docstring and also follow all of the options, arguments, et cetera.
+"""
+
+
 foo_help = "Run the foo subprogram"
 foo_desc = """This is a long description of what a foo program might do.
 It spans multiple lines, so that we can test things reasonably.
@@ -65,7 +70,9 @@ bar_help = "Take output from foo subprogram and run it through the bar subprogra
 bar_desc = """This is the long description for the `bar` subprogram."""
 
 def main(argv=sys.argv[1:]):
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description=__doc__,
+                                     formatter_class=argparse.RawDescriptionHelpFormatter,
+                                     epilog=epilog)
     parser.add_argument("mainarg1")
     parser.add_argument("mainarg2",help="main positional argument #2")
     subparsers = parser.add_subparsers(title="subcommands",

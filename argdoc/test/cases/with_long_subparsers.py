@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """In this test case, we test a parser that has its own arguments as well as
-multiple subcommands, for which individual help sections should be generated.
+multiple subcommands, one of which has an exceedingly long name. This is 
+mostly to test column alignment.
 
 ----------------
 
@@ -74,7 +75,7 @@ def main(argv=sys.argv[1:]):
     fooparser = subparsers.add_parser("foo",
                                       help=foo_help,
                                       description=foo_desc)
-    barparser = subparsers.add_parser("bar",
+    barparser = subparsers.add_parser("barbarbarbarbaraaeadslfjasdlkfjljalksjflsjdfladjfklasdjkfladsjglkjdasl",
                                       help=bar_help,
                                       description=bar_desc)
     
