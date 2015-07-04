@@ -10,7 +10,7 @@ User functions
 Developer functions
 -------------------
 
-:func:`format_argparser_to_docstring`
+:func:`format_argparser_as_docstring`
     Extract tables of arguments from an :class:`~argparse.ArgumentParser`
     and from all of its subprograms, then format their descriptions and
     help text.
@@ -77,22 +77,24 @@ def get_patterns(prefix_chars="-"):
         Dictionary of regular expression patterns
     """
     all_patterns = {}
-    prefix_chars = prefix_chars.replace("-","\-")
+    esc_prefix_chars = prefix_chars
+    for char in "-+*?[]{}()":
+        esc_prefix_chars = esc_prefix_chars.replace(char,"\%s" % char)
     for char in prefix_chars:
         if char in "-+*?[]{}()":
             esc_char = "\%s" % char
         else:
             esc_char = char
         patterns = { "section_title"      : r"^(\w+.*):$",
-                     "positional_arg"     : r"^  (?P<arg1>[^{}\sALL]+)(?:\s\s+(?P<desc>\w+.*))?$".replace("ALL",prefix_chars),
+                     "positional_arg"     : r"^  (?P<arg1>[^{}\sALL]+)(?:\s\s+(?P<desc>\w+.*))?$".replace("ALL",esc_prefix_chars),
                      "arg_only"           : r"^  (?P<arg1>-?[^\s,]+)(?:, (?P<arg2>--[^\s]+))?$".replace("-",esc_char),
-                     "arg_plus_val"       : r"^  (?P<arg1>-+[^\s]+)(?P<val1>(?: [^ALL\s]+)+)(?:(?:, (?P<arg2>--[^\s]+))(?P<val2>(?: [^\s]+)+))?$".replace("-",esc_char).replace("ALL",prefix_chars),
+                     "arg_plus_val"       : r"^  (?P<arg1>-+[^\s]+)(?P<val1>(?: [^ALL\s]+)+)(?:(?:, (?P<arg2>--[^\s]+))(?P<val2>(?: [^\s]+)+))?$".replace("-",esc_char).replace("ALL",esc_prefix_chars),
                      "arg_plus_desc"      : r"^  (?P<arg1>-?[^\s]+)(?:,\s(?P<arg2>--[^\s]+))?\s\s+(?P<desc>.*)".replace("-",esc_char),
-                     "arg_plus_val_desc"  : r"^  (?P<arg1>-+[^\s]+)(?P<val1>(?: [^ALL\s]+)+)(?:(?:, (?P<arg2>--[^\s]+))(?P<val2>(?: [^\s]+)+))?  +(?P<desc>\w+.*)$".replace("-",esc_char).replace("ALL",prefix_chars),
+                     "arg_plus_val_desc"  : r"^  (?P<arg1>-+[^\s]+)(?P<val1>(?: [^ALL\s]+)+)(?:(?:, (?P<arg2>--[^\s]+))(?P<val2>(?: [^\s]+)+))?  +(?P<desc>\w+.*)$".replace("-",esc_char).replace("ALL",esc_prefix_chars),
                      "continue_desc"      : r"^ {12,24}(.*)",
-                     "section_desc"       : r"^  ((?:[^ALL\s][^\s]*)(?:\s[^\s]+)+)$".replace("ALL",prefix_chars),
+                     "section_desc"       : r"^  ((?:[^ALL\s][^\s]*)(?:\s[^\s]+)+)$".replace("ALL",esc_prefix_chars),
                      "subcommand_names"   : r"^  {((?:\w+)(?:(?:,(?:\w+))+)?)}$",
-                     "subcommand_name"    : r"^    (?P<arg1>[^{}\sALL]+)(?:\s\s+(?P<desc>\w+.*))?$".replace("ALL",prefix_chars), # same as positional arg, but with more leading space
+                     "subcommand_name"    : r"^    (?P<arg1>[^{}\sALL]+)(?:\s\s+(?P<desc>\w+.*))?$".replace("ALL",esc_prefix_chars), # same as positional arg, but with more leading space
                     }
         
         all_patterns[char] = { K : re.compile(V) for K,V in patterns.items() }
@@ -170,7 +172,7 @@ def noargdoc(func):
 
 def get_subcommand_tables(app,obj,help_lines,patterns,start_line,section_head=True,pre_args=0,header_level=1):
     """Process help output from an :py:class:`~argparse.ArgumentParser`
-    that includes one or more subcommands.  Called by :func:`format_argparser_to_docstring`
+    that includes one or more subcommands.  Called by :func:`format_argparser_as_docstring`
     
     Parameters
     ----------
@@ -218,10 +220,10 @@ def get_subcommand_tables(app,obj,help_lines,patterns,start_line,section_head=Tr
             subcommands = match.groups()[0].split(",")
             break
     
-    app.debug("%s subcommands: %s" % (obj.__name__,", ".join(subcommands)))
+    app.debug("[argdoc] %s subcommands: %s" % (obj.__name__,", ".join(subcommands)))
     prearg_text = " ".join(["X"]*pre_args)
     for subcommand in subcommands:
-        app.debug("Parsing subcommand %s with %s preargs" % (subcommand,pre_args))
+        app.debug("[argdoc] Parsing subcommand %s with %s preargs" % (subcommand,pre_args))
         try:
             call = shlex.split("python -m %s %s %s %s%shelp" % (obj.__name__,
                                                                 prearg_text,
@@ -231,7 +233,7 @@ def get_subcommand_tables(app,obj,help_lines,patterns,start_line,section_head=Tr
             proc = subprocess.Popen(call,stdout=subprocess.PIPE,universal_newlines=True)
             sub_help_lines = proc.communicate()[0].split("\n")
 
-            out_lines.extend(format_argparser_to_docstring(app,
+            out_lines.extend(format_argparser_as_docstring(app,
                                                            obj,
                                                            sub_help_lines,
                                                            patterns,
@@ -240,14 +242,14 @@ def get_subcommand_tables(app,obj,help_lines,patterns,start_line,section_head=Tr
                                                            section_name=u"``%s`` subcommand" % subcommand,
                                                            _is_subcommand=True)) 
         except subprocess.CalledProcessError as e:
-            out += "argdoc: Could not call module %s as '%s'. Output:\n"% (obj.__name__, e.cmd)
+            out += "[argdoc] Could not call module %s as '%s'. Output:\n"% (obj.__name__, e.cmd)
             out += e.output
             out += ("-"*75) + "\n"
             app.warn(out)
 
     return out_lines
 
-def format_argparser_to_docstring(app,obj,help_lines,patterns,
+def format_argparser_as_docstring(app,obj,help_lines,patterns,
                                   section_head=True,section_name=u"Command-line arguments",
                                   header_level=1,
                                   _is_subcommand=False
@@ -315,6 +317,7 @@ def format_argparser_to_docstring(app,obj,help_lines,patterns,
     desc_end   = None
     
     for n,line in enumerate(help_lines):
+        app.debug2("[argdoc] line: '%s'" % line)
         line = line.rstrip()
         if _is_subcommand == True and desc_start is None:
             if line.strip() == "":
@@ -324,7 +327,7 @@ def format_argparser_to_docstring(app,obj,help_lines,patterns,
             # if current argument group is finished, format table of arguments for export
             # and append it to `out_lines`
             if len(col1) != len(col2):
-                app.warn("argdoc: Column mismatch in section '%s'. col1 %s, col2 %s rows." % (section_title,len(col1),len(col2)))
+                app.warn("[argdoc] Column mismatch in section '%s'. col1 %s, col2 %s rows." % (section_title,len(col1),len(col2)))
 
             col1_width = 1 + max([len(X) for X in col1])
             col2_width = max([len(X) for X in col2])
@@ -379,12 +382,13 @@ def format_argparser_to_docstring(app,obj,help_lines,patterns,
         elif base["section_title"].match(line) is not None and not line.startswith("usage:"):
             # Found section section of arguments.
             # Create paragraph header
-            app.debug("Found section title: '%s'" % line)
+            app.debug("[argdoc] Found section title: '%s'" % line)
             match = base["section_title"].match(line)
             section_title = [match.groups()[0].capitalize(),
                              _HEADERS[header_level+1]*len(match.groups()[0]),
                             ]
         elif base["section_desc"].match(line) is not None:
+            app.debug2("[argdoc] section desc %s\n    %s\n" % (base["section_desc"].pattern,line))
             section_desc.append(line)
                         
         elif started == True:
@@ -403,12 +407,12 @@ def format_argparser_to_docstring(app,obj,help_lines,patterns,
                     if match is None:
                         match = patterns[char][pat].match(line)
                         if match is not None:
-                            app.debug2("argdoc: %s\n    %s\n" % (pat,line))
+                            app.debug2("[argdoc] %s\n    %s\n" % (pat,line))
                             if pat == "continue_desc":
                                 try:
                                     col2[-1] = u"%s %s" % (col2[-1],match.groups()[0].strip("\n"))
                                 except IndexError as e:
-                                    app.warn("argdoc: continuing description with no prior description on line %s: \n    %s" % (n,line))
+                                    app.warn("[argdoc] continuing description with no prior description on line %s: \n    %s" % (n,line))
                                     assert False
                                 break
                             elif pat == "positional_arg":
@@ -426,7 +430,7 @@ def format_argparser_to_docstring(app,obj,help_lines,patterns,
                                 col1.append(get_col1_text(matchdict))
                                 col2.append(get_col2_text(matchdict))
                                 if has_subcommands == False:
-                                    app.warn("argdoc: found subcommand-like line but no subcommands at line %s:\n    %s" % (n,line))
+                                    app.warn("[argdoc] found subcommand-like line but no subcommands at line %s:\n    %s" % (n,line))
                                 break
                             else:
                                 matchdict = match.groupdict()
@@ -435,11 +439,13 @@ def format_argparser_to_docstring(app,obj,help_lines,patterns,
                                 break
             if match is None:
                 if len(line.strip()) > 0:
-                    app.debug2("argdoc: No match:\n%s" % line)
+                    app.debug2("[argdoc] No match\n%s\n" % line.strip())
                     if sys.version_info[0] == 2 and isinstance(line,str):
                         line = unicode(line,"utf-8")
 
                     out_lines.append(line)
+                else:
+                    app.debug2("[argdoc] blank line")
    
     if has_subcommands == True:
         new_lines = get_subcommand_tables(app,
@@ -512,18 +518,18 @@ def post_process_automodule(app,what,name,obj,options,lines):
                 help_lines = proc.communicate()[0].split("\n")
             except subprocess.CalledProcessError as e:
                 out  = ("-"*75) + "\n"
-                out += "argdoc: Could not call module %s as '%s'. Output:\n"% (obj.__name__, e.cmd)
+                out += "[argdoc] Could not call module %s as '%s'. Output:\n"% (obj.__name__, e.cmd)
                 out += e.output
                 out += "\n" + ("-"*75) + "\n"
                 app.warn(out)
             try:
-                out_lines = format_argparser_to_docstring(app,obj,help_lines,section_head=True,header_level=1,patterns=patterns)
+                out_lines = format_argparser_as_docstring(app,obj,help_lines,section_head=True,header_level=1,patterns=patterns)
                 out_lines += _SEPARATOR
                 lines.extend(out_lines)
                 lines.extend(_OTHER_HEADER_LINES)
             except IndexError as e:
                 out  = ("-"*75) + "\n"
-                out += "argdoc: Error processing argparser into docstring for module %s: \n%s" % (obj.__name__,e.message)
+                out += "[argdoc] Error processing argparser into docstring for module %s: \n%s" % (obj.__name__,e.message)
                 out += "\n\n%s" % e.args
                 out += "\n\n%s" % e
                 out += "\n" + ("-"*75) + "\n"
@@ -542,7 +548,7 @@ def post_process_automodule(app,what,name,obj,options,lines):
                         fout.write(line)
                         fout.write(u"\n")
                     except Exception as e:
-                        app.warn("argdoc: Could not write out line %s of file %s." % (n,name))
+                        app.warn("[argdoc] Could not write out line %s of file %s." % (n,name))
     
             fout.close()
                 

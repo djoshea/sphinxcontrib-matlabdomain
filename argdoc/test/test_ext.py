@@ -7,7 +7,7 @@ Test implementation
   - Unit tests are provided for regular expressions used to identify different
     patterns from :obj:`argparse` output
     
-  - Unit and functional tests e.g. for :func:`format_argparser_to_docstring` are
+  - Unit and functional tests e.g. for :func:`format_argparser_as_docstring` are
     performed as follows:
     
       1. `Sphinx`_ is run on the test cases in :obj:`argdoc.test.cases` using
@@ -60,7 +60,7 @@ from nose.plugins.attrib import attr
 from sphinx import main as sphinxbuild
 from argdoc.ext import get_patterns, get_col1_text, get_col2_text, noargdoc,\
                        post_process_automodule,\
-                       format_argparser_to_docstring
+                       format_argparser_as_docstring
 
 
 
@@ -468,7 +468,7 @@ class TestArgdoc():
         help""")
 
         lines = parser.format_help().split("\n")
-        found_lines    = format_argparser_to_docstring(app,None,lines,get_patterns("+"))
+        found_lines    = format_argparser_as_docstring(app,None,lines,get_patterns("+"))
         expected_lines = [u'Command-line arguments',
                           u'----------------------',
                           u'',
@@ -560,11 +560,11 @@ class TestArgdoc():
             message = "-"*75 + "\n"
         assert_equal(len(mismatched),0,message)
         
-    def test_format_argparser_to_docstring(self):
+    def test_format_argparser_as_docstring(self):
         # look at output & test against known RST
         app = FakeApp(outdir=self.optdict["outdir"])
         for k in self.test_cases:
-            testname = "test_format_argparser_to_docstring '%s'" % k            
+            testname = "test_format_argparser_as_docstring '%s'" % k            
             mod, expected, _ = self.test_cases[k]
             with codecs.open(expected,encoding="utf-8",mode="r") as f:
                 expected_lines = f.read().split("\n")
@@ -583,7 +583,7 @@ class TestArgdoc():
             sys.stdout = old_out
             buf.seek(0)
             lines = buf.read().split("\n")
-            found_lines = format_argparser_to_docstring(app,mod,lines,get_patterns())
+            found_lines = format_argparser_as_docstring(app,mod,lines,get_patterns(prefix_chars="-+"))
 
             n1 = n2 = 0
             for line in expected_lines:
