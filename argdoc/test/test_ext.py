@@ -367,8 +367,8 @@ class TestArgdoc():
     @classmethod
     def tearDownClass(cls):
         """Clean up temp files after tests are complete"""
-        #cleanup_resources()
-        #shutil.rmtree(cls.optdict["outdir"])
+        cleanup_resources()
+        shutil.rmtree(cls.optdict["outdir"])
 
     @classmethod
     def run_builder(cls):

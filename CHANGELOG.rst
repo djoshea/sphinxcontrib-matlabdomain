@@ -5,8 +5,8 @@ the conventions described in `PEP440 <https://www.python.org/dev/peps/pep-0440/>
 and `Semantic versioning <http://semver.org/>`_.
 
 
-Unreleased
-----------
+[0.1.0] = 2015-07-4
+-------------------
 
 Changed
 .......
