@@ -21,7 +21,7 @@ Using :obj:`argdoc` in your project
 -----------------------------------
 Setting up :obj:`argdoc` only takes a few steps:
 
- 1. Find the `extensions` definition in your `Sphinx`_ configuration file,
+ #. Find the `extensions` definition in your `Sphinx`_ configuration file,
     ``conf.py``, and add `'argdoc.ext'` to the list. For example::
 
         # inside conf.py
@@ -32,8 +32,8 @@ Setting up :obj:`argdoc` only takes a few steps:
             'argdoc.ext' # <---- ta-da!
         ]
 
- 2. Generate document stubs for your package. It is easiest to use
-    `sphinx-apidoc`_:
+ #. Generate document stubs for your package. It is easiest to use
+    `sphinx-apidoc`_. From the terminal:
      
      .. code-block:: shell
 
@@ -42,18 +42,31 @@ Setting up :obj:`argdoc` only takes a few steps:
   
     Or you can make your document stubs manually. Just make sure the
     final document stubs for your :term:`executable scripts` include the
-    ``.. automodule :`` `directive`_. For example:
+    ``.. automodule :`` `directive`_. A stub file for a demo script
+    (e.g. ``demo.rst``) might look like this:
 
      .. code-block:: rest
+
+        `argdoc` demo script
+        ====================
 
          .. automodule:: some_package.some_module
             :members:
             :undoc-members:
             :show-inheritance:
 
- 3. Make sure your :term:`executable scripts` use :class:`argparse.ArgumentParser`
-    to parse their arguments, and define a :term:`main-like function` that
-    is called when the script is executed from the :term:`shell`.
+
+         .. toctree::
+            :maxdepth: 2
+
+
+ #. Make sure your :term:`executable scripts`:
+
+     #. use :class:`~argparse.ArgumentParser` rather than
+        :class:`~optparse.OptionParser` or :mod:`getopt` for argument parsing
+
+     #. contain a :term:`main-like function` (typically called `main`) that
+        is called when the script is executed from the :term:`shell`.
     
     If you want your documentation to be extra nice, write a user-friendly
     description of your script in its :term:`module docstring`, and pass
@@ -69,7 +82,7 @@ Setting up :obj:`argdoc` only takes a few steps:
         import argparse
 
         # other functions et c here
-        ...
+        pass
 
         def main():
             """This is the body of the program"""
@@ -82,7 +95,7 @@ Setting up :obj:`argdoc` only takes a few steps:
             args = argparse.parse_args()
 
             # rest of main()
-            ...
+            pass
 
         if __name__ == "__main__":
             main()

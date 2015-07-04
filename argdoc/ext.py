@@ -12,19 +12,20 @@ Developer functions
 
 :func:`format_argparser_to_docstring`
     Extract tables of arguments from an :class:`~argparse.ArgumentParser`
-    and from all of its subprograms, and format their descriptions &
+    and from all of its subprograms, then format their descriptions and
     help text.
 
 :func:`get_subcommand_tables`
-    Extract tables from all subcommands
+    Extract tables from all subcommand
     :class:`ArgumentParsers <argparse.ArgumentParser>`
     contained by an enclosing :class:`~argparse.ArgumentParser`
 
 :func:`post_process_automodule`
-    Event handler to activate argdoc upon `autodoc-process-docstring` events
+    Event handler that activates :data:`argdoc` upon `autodoc-process-docstring`
+    events
 
 :func:`setup`
-    Register the extension with the running `Sphinx`_ instance
+    Register :data:`argdoc` with the running `Sphinx`_ instance
 """
 import sys
 import re
@@ -147,7 +148,7 @@ def get_col2_text(matchdict):
 #===============================================================================
 
 def noargdoc(func):
-    """Decorator that forces argdoc to skip processing of `func` 
+    """Decorator that forces :data:`argdoc` to skip processing of `func` 
     
     Parameters
     ----------
@@ -168,9 +169,8 @@ def noargdoc(func):
 #===============================================================================
 
 def get_subcommand_tables(app,obj,help_lines,patterns,start_line,section_head=True,pre_args=0,header_level=1):
-    """Processes help output from an :py:class:`argparse.ArgumentParser`
-    from a program that includes one or more subprograms.  Called by
-    :func:`process_argparser`
+    """Process help output from an :py:class:`~argparse.ArgumentParser`
+    that includes one or more subcommands.  Called by :func:`format_argparser_to_docstring`
     
     Parameters
     ----------
@@ -252,9 +252,8 @@ def format_argparser_to_docstring(app,obj,help_lines,patterns,
                                   header_level=1,
                                   _is_subcommand=False
                                   ):
-    """Processes help output from an :py:class:`argparse.ArgumentParser`
-    of subprograms, or of a program that has no subprograms. Called by
-    :func:`process_argparser`
+    """Process help output from an :py:class:`argparse.ArgumentParser`.
+    Called by :func:`post_process_automodule` and :func:`get_subcommand_tables`
     
     Parameters
     ----------
@@ -463,8 +462,8 @@ def post_process_automodule(app,what,name,obj,options,lines):
     Any :term:`main-like function` decorated with the :func:`noargdoc` decorator
     will be skipped. A function is determined to be a :term:`main-like function`
     if its name matches the name set in the configuration option
-    ``argdoc_main_func`` inside ``conf.py``. The default value for
-    ``argdoc_main_func`` is `main`.
+    `argdoc_main_func` inside ``conf.py``. The default value for
+    `argdoc_main_func` is `main`.
     
     
     Notes
@@ -555,7 +554,7 @@ def post_process_automodule(app,what,name,obj,options,lines):
 #===============================================================================
 
 def setup(app):
-    """Set up :obj:`argdoc` extension and register with `Sphinx`_
+    """Set up :data:`argdoc` extension and register it with `Sphinx`_
     
     Parameters
     ----------

@@ -176,7 +176,7 @@ intersphinx_mapping = { "python" : ("http://docs.python.org",None),
 
 # General information about the project.
 project = u'argdoc'
-copyright = u'2014, Joshua G. Dunn'
+copyright = u'2015, Joshua G. Dunn'
 
 # Short version number, for |version|
 version = str(argdoc.__version__)
@@ -224,9 +224,6 @@ exclude_patterns = []
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
 
-# A list of ignored prefixes for module index sorting.
-#modindex_common_prefix = []
-
 # If true, keep warnings as "system message" paragraphs in the built documents.
 #keep_warnings = False
 
@@ -273,7 +270,7 @@ html_static_path = ['_static']
 
 # If true, SmartyPants will be used to convert quotes and dashes to
 # typographically correct entities.
-#html_use_smartypants = True
+html_use_smartypants = True
 
 # Custom sidebar templates, maps document names to template names.
 #html_sidebars = {}

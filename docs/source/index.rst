@@ -10,10 +10,10 @@ for :term:`executable scripts` written in `Python`_, and inserts
 those tables into the scripts' ``:automodule:`` documentation. The
 only requirements are:
 
- 1. The scripts use the Python :mod:`argparse` module for argument 
-    parsing
+ 1. The exectuable scripts use the Python :mod:`argparse` module for
+    argument parsing
  
- 2. The ``rst`` documentation for the scripts include the ``:automodule:``
+ 2. The ``rst`` stub files for the scripts include the ``:automodule:``
     directive (which they will, by default, if you use `sphinx-apidoc`_).
 
 To start using :obj:`argdoc`, see the :doc:`quickstart` guide.

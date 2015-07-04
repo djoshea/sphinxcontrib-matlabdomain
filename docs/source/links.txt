@@ -8,6 +8,7 @@
 .. _PEP8:   https://www.python.org/dev/peps/pep-0008
 .. _PEP257: https://www.python.org/dev/peps/pep-0257
 .. _directive: http://docutils.sourceforge.net/docs/ref/rst/directives.html
+.. _prefix characters: https://docs.python.org/3/library/argparse.html#prefix-chars
 
 .. Other
 .. _bash: http://en.wikipedia.org/wiki/Bash_(Unix_shell)
