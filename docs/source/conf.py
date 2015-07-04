@@ -47,6 +47,7 @@ extensions = [
     #'sphinx.ext.inheritance_diagram'
     ]
 
+argdoc_prefix_chars="-+"
 
 
 # theming, compatibility both for local and builds on readthedocs -------------
