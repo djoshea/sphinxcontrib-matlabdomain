@@ -532,7 +532,7 @@ def post_process_automodule(app,what,name,obj,options,lines):
                 raise e
 
         if app.config.argdoc_save_rst == True:
-            filename = os.path.join(app.outdir,"%s_docstring.rst" % name)
+            filename = os.path.join(app.outdir,"%s_postargdoc.rst" % name)
             with codecs.open(filename,encoding="utf-8",mode="wb") as fout:
                 for n,line in enumerate(lines):
                     try:

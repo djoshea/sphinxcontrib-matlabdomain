@@ -358,7 +358,7 @@ class TestArgdoc():
         for modname in mf.find_all_submodules(argdoc.test.cases):
             if modname not in (__name__,"__init__"):
                 mod = importlib.import_module("argdoc.test.cases.%s" % modname)
-                basename = "argdoc.test.cases.%s_docstring.rst" % modname
+                basename = "argdoc.test.cases.%s_postargdoc.rst" % modname
                 tup = (mod,
                        resource_filename("argdoc","test/testbuild/%s" % basename),
                        os.path.join(cls.optdict["outdir"],basename))
