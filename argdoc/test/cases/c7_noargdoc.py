@@ -1,21 +1,12 @@
 #!/usr/bin/env python
 # coding: utf-8
-"""This parser exhaustively tests different argument types. The following
-argument attributes are tested in all combinations to ensure they are 
-all displayed correctly:
+"""Use of \'noargdoc\' function decorator
 
-  - arguments with short or long names
-  - positional arguments
-  - keyword arguments starting with '-', '--', or both
-  - arguments taking 0, 1, 2, (0 or more), (1 or more), or (0 or 1) arguments
-  - arguments taking choices of 1 or more items
-  - arguments with no help text
-  - arguments with short help text, which tends to be displayed on one line
-    by :mod:`argparse`
-  - arguments with long help text, which tends to appear on multiple lines
-  - arguments including or excluding unicode characters in their names
+The :func:`~argdoc.ext.noargdoc` function decorator tells :data:`argdoc`
+to ignore a command-line script, leaving its ``:automodule:`` output
+unchanged.
 
---------------
+-----------------
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean feugiat
 tempor diam sed condimentum. Mauris aliquam interdum libero, ut aliquet
@@ -30,19 +21,6 @@ ipsum a vestibulum placerat. Vestibulum ante ipsum primis in faucibus orci
 luctus et ultrices posuere cubilia Curae; Nullam consequat nulla quis quam
 interdum, eu auctor ante molestie.
 
-Cum sociis natoque penatibus et magnis dis parturient montes, nascetur
-ridiculus mus. Ut egestas nec leo a luctus. Suspendisse libero magna,
-ultricies vel porttitor varius, vulputate nec orci. Ut et vehicula neque.
-Quisque ut libero eget sem pretium mollis elementum vitae quam. Etiam varius
-rutrum iaculis. Mauris consectetur cursus dolor nec tincidunt. Morbi aliquam
-elit ipsum, at aliquam purus ultricies sed. Donec tortor ante, consectetur
-et faucibus non, dignissim vitae eros. Duis pharetra convallis efficitur.
-Curabitur congue in tortor luctus molestie. Donec turpis felis, sollicitudin
-volutpat tristique quis, mattis at arcu. Praesent interdum luctus sodales.
-Sed imperdiet augue vulputate hendrerit tincidunt. Curabitur pharetra, odio
-in laoreet pretium, metus turpis posuere dui, quis aliquet leo nisl
-sollicitudin ligula.
-
 Here is a table, to show that we can have rich formatting:
 
     =============  ======================================================
@@ -55,7 +33,6 @@ Here is a table, to show that we can have rich formatting:
      Another row.  Row with a link to `Python <https://www.python.org>`_
     =============  ======================================================
  
-
 See also
 --------
 A definition list
@@ -68,6 +45,7 @@ Here is another item
 """
 import argparse
 import sys
+from argdoc.ext import noargdoc
 
 helptext = {
     "short" : "one-line help text",
@@ -79,6 +57,7 @@ choices = {
     "multi"  : ["one","two","three","four"],
 }
 
+@noargdoc
 def main(argv=sys.argv[1:]):
     """Command-line program for `simple_parser`"""
     parser = argparse.ArgumentParser(description=__doc__,

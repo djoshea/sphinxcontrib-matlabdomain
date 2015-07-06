@@ -1,26 +1,22 @@
 argdoc package
 ==============
 
- .. automodule:: argdoc
+.. automodule:: argdoc
     :members:
     :undoc-members:
     :show-inheritance:
 
+Subpackages
+-----------
+
+.. toctree::
+
+    argdoc.test
 
 Submodules
 ----------
 
- .. toctree::
+.. toctree::
 
    argdoc.ext
-
-
-Subpackages
------------
-
- .. toctree::
-
-    :maxdepth: 2
-    argdoc.test
-
 

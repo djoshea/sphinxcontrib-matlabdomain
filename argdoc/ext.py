@@ -58,7 +58,7 @@ _INDENT_SIZE = 4
 _SEPARATOR = "\n------------\n\n".split("\n")
 
 #===============================================================================
-# INDEX: helper functions 
+# INDEX: helper functions for token parsing and table formatting
 #===============================================================================
 
 def get_patterns(prefix_chars="-"):
@@ -145,8 +145,61 @@ def get_col2_text(matchdict):
         
     return tmpstr
 
+def make_rest_table(rows,title=False,indent_size=0):
+    """Make a reStructuredText table from a list of rows of items
+
+    Parameters
+    ----------
+    rows : list of tuples
+        A row of text to put in the table, each tuple item a cell
+
+    title : bool, optional
+        If `True`, the first pair is assumed to contain column headings
+        (Default: `False`)
+
+    indent_size : int, optional
+        Number of spaces prepend to each line of output (Default: `0`)
+
+    Returns
+    -------
+    list
+        List of strings, corresponding to multi-line `reStructuredText`_ table
+    """
+    columns = list(zip(*rows))
+    lengths = [1 + max([len(X) for X in Y]) for Y in columns]
+    if title == True:
+        lengths = [X+4 for X in lengths]
+
+    border   = []
+    template = []
+    for n, my_length in enumerate(lengths):
+        border.append(u"="*my_length)
+        template.append(u"{%s: <%ss}" % (n,my_length))
+
+    border   = u"    ".join(border)
+    template = u"    ".join(template)
+
+    lines = [border]
+    n = 0
+    if title == True:
+        title_row = [u"**%s**" % X for X in rows[0]]
+        lines.append(template.format(*tuple(title_row)))
+        lines.append(border.replace(u"=",u"-"))
+        n = 1
+
+    for items in rows[n:]:
+        lines.append(template.format(*items))
+
+    lines.append(border)
+    lines.append(u"\n")
+    if indent_size > 0:
+        tmp = u" "*indent_size
+        lines = [tmp+X for X in lines]
+    return lines
+
+
 #===============================================================================
-# INDEX: function decorators
+# INDEX: function decorator
 #===============================================================================
 
 def noargdoc(func):
@@ -167,7 +220,7 @@ def noargdoc(func):
     return func
 
 #===============================================================================
-# INDEX: docstring-processing functions
+# INDEX: documentation generation functions
 #===============================================================================
 
 def get_subcommand_tables(app,obj,help_lines,patterns,start_line,section_head=True,pre_args=0,header_level=1):
@@ -329,23 +382,14 @@ def format_argparser_as_docstring(app,obj,help_lines,patterns,
             if len(col1) != len(col2):
                 app.warn("[argdoc] Column mismatch in section '%s'. col1 %s, col2 %s rows." % (section_title,len(col1),len(col2)))
 
-            col1_width = 1 + max([len(X) for X in col1])
-            col2_width = max([len(X) for X in col2])
-            table_header = (u" "*(_INDENT_SIZE))+(u"="*col1_width) + u" " + (u"="*col2_width)
             out_lines.append(u"")
             out_lines.extend(section_title)
             out_lines.extend(section_desc)
             out_lines.append(u"")
-            out_lines.append(table_header)
-            out_lines.append( (u" "*(_INDENT_SIZE))+u"*Option*" + u" "*(1 + col1_width - 8) + u"*Description*")
-            out_lines.append(table_header.replace("=","-"))
-             
-            for c1, c2 in zip(col1,col2):
-                out_lines.append((u" "*(_INDENT_SIZE))+ c1 + (u" "*(1+col1_width-len(c1))) + c2)
- 
-            out_lines.append(table_header)
-            out_lines.append(u"")
-            
+
+            col1 = ["Option"] + col1
+            col2 = ["Description"] + col2
+            out_lines.extend(make_rest_table(list(zip(col1,col2)),title=True,indent_size=_INDENT_SIZE))        
             out_lines.extend(unmatched)
 
             # reset section-specific variables

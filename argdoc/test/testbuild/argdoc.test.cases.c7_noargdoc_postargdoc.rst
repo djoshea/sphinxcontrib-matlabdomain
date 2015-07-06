@@ -1,6 +1,8 @@
-This test case tests the use of the :func:`noargdoc` keyword, which
-should prevent `argdoc` from adding command-line arguments to the following
-docstring.
+Use of 'noargdoc' function decorator
+
+The :func:`~argdoc.ext.noargdoc` function decorator tells :data:`argdoc`
+to ignore a command-line script, leaving its ``:automodule:`` output
+unchanged.
 
 -----------------
 
@@ -17,19 +19,6 @@ ipsum a vestibulum placerat. Vestibulum ante ipsum primis in faucibus orci
 luctus et ultrices posuere cubilia Curae; Nullam consequat nulla quis quam
 interdum, eu auctor ante molestie.
 
-Cum sociis natoque penatibus et magnis dis parturient montes, nascetur
-ridiculus mus. Ut egestas nec leo a luctus. Suspendisse libero magna,
-ultricies vel porttitor varius, vulputate nec orci. Ut et vehicula neque.
-Quisque ut libero eget sem pretium mollis elementum vitae quam. Etiam varius
-rutrum iaculis. Mauris consectetur cursus dolor nec tincidunt. Morbi aliquam
-elit ipsum, at aliquam purus ultricies sed. Donec tortor ante, consectetur
-et faucibus non, dignissim vitae eros. Duis pharetra convallis efficitur.
-Curabitur congue in tortor luctus molestie. Donec turpis felis, sollicitudin
-volutpat tristique quis, mattis at arcu. Praesent interdum luctus sodales.
-Sed imperdiet augue vulputate hendrerit tincidunt. Curabitur pharetra, odio
-in laoreet pretium, metus turpis posuere dui, quis aliquet leo nisl
-sollicitudin ligula.
-
 Here is a table, to show that we can have rich formatting:
 
     =============  ======================================================
@@ -42,7 +31,6 @@ Here is a table, to show that we can have rich formatting:
      Another row.  Row with a link to `Python <https://www.python.org>`_
     =============  ======================================================
  
-
 See also
 --------
 A definition list

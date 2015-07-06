@@ -1,25 +1,22 @@
 argdoc.test package
 ===================
 
- .. automodule:: argdoc.test
+.. automodule:: argdoc.test
     :members:
     :undoc-members:
     :show-inheritance:
 
+Subpackages
+-----------
+
+.. toctree::
+
+    argdoc.test.cases
 
 Submodules
 ----------
 
- .. toctree::
-    :maxdepth: 1
+.. toctree::
 
    argdoc.test.test_ext
 
-
-Subpackages
------------
-
- .. toctree::
-    :maxdepth: 3
- 
-    argdoc.test.cases

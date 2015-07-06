@@ -1,6 +1,11 @@
 #!/usr/bin/env python
-"""In this test case, we test a parser that has its own arguments as well as
-multiple subcommands, for which individual help sections should be generated.
+"""Long-named subcommands, with main program arguments
+
+In this test case, we test a parser that has its own arguments as well as
+multiple subcommands, one of which has an exceedingly long name. This is 
+mostly to test column alignment.
+
+We also added a bunch of paragraphs and rich formatting to show how `reStructuredText`_ markup survives post-processing by :data:`argdoc`.
 
 ----------------
 
@@ -41,7 +46,6 @@ Here is a table, to show that we can have rich formatting:
 
      Another row.  Row with a link to `Python <https://www.python.org>`_
     =============  ======================================================
- 
 
 See also
 --------
@@ -56,25 +60,25 @@ Here is another item
 import argparse
 import sys
 
-foo_help = "Run the foo subprogram"
-foo_desc = """This is a long description of what a foo program might do.
+foo_help = "Run the ``foo`` subprogram"
+foo_desc = """This is a long description of what a ``foo`` program might do.
 It spans multiple lines, so that we can test things reasonably.
 """
 
-bar_help = "Take output from foo subprogram and run it through the bar subprogram"
-bar_desc = """This is the long description for the `bar` subprogram."""
+bar_help = "Take output from ``foo`` subprogram and run it through the ``bar`` subprogram"
+bar_desc = """This is the long description for the ``bar`` subprogram."""
 
 def main(argv=sys.argv[1:]):
     parser = argparse.ArgumentParser()
     parser.add_argument("mainarg1")
-    parser.add_argument("mainarg2",help="main positional argument #2")
+    parser.add_argument("mainarg2",help="main positional argument #2, which we wrote helptext for (there was no help for ``mainarg1``)")
     subparsers = parser.add_subparsers(title="subcommands",
                                        description="choose one of the following:",
                                        dest="program")
     fooparser = subparsers.add_parser("foo",
                                       help=foo_help,
                                       description=foo_desc)
-    barparser = subparsers.add_parser("bar",
+    barparser = subparsers.add_parser("barbarbarbarbaraaeadslfjasdlkfjljalksjflsjdfladjfklasdjkfladsjglkjdasl",
                                       help=bar_help,
                                       description=bar_desc)
     
@@ -91,7 +95,7 @@ def main(argv=sys.argv[1:]):
     bgroup = barparser.add_argument_group(title="An argument group",
                                           description="A special goup of arguments in the `bar` subparser")
     bgroup.add_argument("--b1")
-    bgroup.add_argument("--b2",help="Argument 2 has help")
+    bgroup.add_argument("--b2",help="Argument 2 has help (bar argument 1 did not)")
     bgroup.add_argument("-k",nargs=2,metavar="N",help="Some other argument")
 
     args = parser.parse_args(argv)

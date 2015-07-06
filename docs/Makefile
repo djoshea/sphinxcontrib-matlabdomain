@@ -50,7 +50,7 @@ clean:
 	rm -rf $(BUILDDIR)/*
 
 source/generated/test_cases.inc:
-	source/make_table.py argdoc.test.cases source/generated/test_cases.inc --title "Example" "Source code"
+	source/make_table.py argdoc.test.cases source/generated/test_cases.inc --title "Rendered output" "Python source code"
 
 html: source/generated/test_cases.inc
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html

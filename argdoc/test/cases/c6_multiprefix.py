@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 # coding: utf-8
-"""This test case tests the use of multiple prefix characters in the
-argparser.
+"""Multiple prefix characters
+
+:class:`~argparse.ArgumentParser` takes a `prefix_chars` option which allows
+the use of keyword arguments that begin with characters other than `'-'`.
+Here we test a :class:`~argparse.ArgumentParser` that uses both `'-'` and `'+'`.
 """
 import argparse
 import sys

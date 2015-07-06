@@ -10,14 +10,13 @@ Submodules
 ----------
 
 .. toctree::
-   :maxdepth: 1
 
-   argdoc.test.cases.argumentgroup_parser
-   argdoc.test.cases.multiprefix
-   argdoc.test.cases.noargdoc
-   argdoc.test.cases.only_subparsers
-   argdoc.test.cases.simple_parser
-   argdoc.test.cases.with_epilog
-   argdoc.test.cases.with_long_subparsers
-   argdoc.test.cases.with_subparsers
+   argdoc.test.cases.c1_argument_group
+   argdoc.test.cases.c2_only_subparsers
+   argdoc.test.cases.c3_main_plus_subparsers
+   argdoc.test.cases.c4_with_long_subparsers
+   argdoc.test.cases.c5_with_epilog
+   argdoc.test.cases.c6_multiprefix
+   argdoc.test.cases.c7_noargdoc
+   argdoc.test.cases.c8_exhaustive
 
