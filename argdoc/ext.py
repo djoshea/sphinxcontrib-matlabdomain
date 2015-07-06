@@ -58,7 +58,7 @@ _INDENT_SIZE = 4
 _SEPARATOR = "\n------------\n\n".split("\n")
 
 #===============================================================================
-# INDEX: helper functions for token parsing and table formatting
+# INDEX: helper functions for token parsing and text formatting
 #===============================================================================
 
 def get_patterns(prefix_chars="-"):
@@ -101,6 +101,24 @@ def get_patterns(prefix_chars="-"):
 
     return all_patterns
 
+def safeunicode(inp):
+    """Convert a string to unicode in a Python 2.7/3.x-safe way
+
+    Parameters
+    ----------
+    inp : str
+        Input string
+
+    Returns
+    -------
+    unicode (Python 2.7) or string (Python 3.x)
+        utf-8 encoded representation of `inp`
+    """
+    if sys.version_info[0] == 2 and isinstance(inp,str):
+        return unicode(inp,"utf-8")
+    else:
+        return inp
+
 def get_col1_text(matchdict):
     """Format argument name(s) and value(s) for column 1 of argument tables
 
@@ -121,11 +139,8 @@ def get_col1_text(matchdict):
         tmpstr = "``%s``" % matchdict["arg1"]
         if matchdict.get("arg2") is not None:
             tmpstr += (", ``%s``" % matchdict["arg2"])
-
-    if sys.version_info[0] == 2 and isinstance(tmpstr,str):
-        tmpstr = unicode(tmpstr,"utf-8")
         
-    return tmpstr
+    return safeunicode(tmpstr)
 
 def get_col2_text(matchdict):
     """Format argument descriptions, if present, for column 2 of argument tables
@@ -139,11 +154,10 @@ def get_col2_text(matchdict):
     -------
     str (unicode if Python 2.7)
     """
+    # line below looks weird- but coming out of regex matches,
+    # often 'desc' *is* defined with value `None`
     tmpstr =  matchdict.get("desc","") if matchdict.get("desc") is not None else ""
-    if sys.version_info[0] == 2 and isinstance(tmpstr,str):
-        tmpstr = unicode(tmpstr,"utf-8")
-        
-    return tmpstr
+    return safeunicode(tmpstr)
 
 def make_rest_table(rows,title=False,indent_size=0):
     """Make a reStructuredText table from a list of rows of items
@@ -195,7 +209,32 @@ def make_rest_table(rows,title=False,indent_size=0):
     if indent_size > 0:
         tmp = u" "*indent_size
         lines = [tmp+X if len(X) > 0 else X for X in lines]
+
     return lines
+
+def format_warning(topline,details):
+    """Format warning text clearly
+
+    Parameters
+    ----------
+    topline : str
+        One-line description of warning
+
+    details : str
+        Multiline, detailed description of warning (e.g. exception info)
+
+
+    Returns
+    -------
+    str
+        Multiline warning message, formatted
+    """
+    border = "-"*75 + "\n"
+    out = border
+    out += ("[argdoc] %s\n" % topline)
+    out += details
+    out += border
+    return out
 
 
 #===============================================================================
@@ -295,10 +334,9 @@ def get_subcommand_tables(app,obj,help_lines,patterns,start_line,section_head=Tr
                                                            section_name=u"``%s`` subcommand" % subcommand,
                                                            _is_subcommand=True)) 
         except subprocess.CalledProcessError as e:
-            out += "[argdoc] Could not call module %s as '%s'. Output:\n"% (obj.__name__, e.cmd)
-            out += e.output
-            out += ("-"*75) + "\n"
-            app.warn(out)
+            note = "Could not call module %s as '%s'. Output:\n"% (obj.__name__, e.cmd)
+            msg = format_warning(note,e.output)
+            app.warn(msg)
 
     return out_lines
 
@@ -484,8 +522,7 @@ def format_argparser_as_docstring(app,obj,help_lines,patterns,
             if match is None:
                 if len(line.strip()) > 0:
                     app.debug2("[argdoc] No match\n%s\n" % line.strip())
-                    if sys.version_info[0] == 2 and isinstance(line,str):
-                        line = unicode(line,"utf-8")
+                    line = safeunicode(line)
 
                     out_lines.append(line)
                 else:
@@ -550,9 +587,15 @@ def post_process_automodule(app,what,name,obj,options,lines):
     funcname     = app.config.argdoc_main_func
     prefix_chars = app.config.argdoc_prefix_chars
     patterns = get_patterns(prefix_chars)
+
+    errmsg = ""
     if not isinstance(funcname,str):
-        message = "Incorrect type for `argdoc_main_func. Expected `str`, found, `%s` with value `%s`)" % (type(funcname),funcname)
-        raise ConfigError(message)
+        errmsg += "[argdoc] Incorrect type for `argdoc_main_func. Expected `str`, found, `%s` with value `%s`)\n" % (type(funcname),funcname)
+    if len(prefix_chars) == 0:
+        errmsg += "[argdoc] Expected at least one prefix character (e.g. '-'). Found empty string.\n"
+
+    if len(errmsg) > 0:
+        raise ConfigError(errmsg)
 
     if what == "module" and obj.__dict__.get(funcname,None) is not None:
         if obj.__dict__.get(funcname).__dict__.get("noargdoc",False) == False:
@@ -561,34 +604,24 @@ def post_process_automodule(app,what,name,obj,options,lines):
                 proc = subprocess.Popen(call,stdout=subprocess.PIPE,universal_newlines=True)
                 help_lines = proc.communicate()[0].split("\n")
             except subprocess.CalledProcessError as e:
-                out  = ("-"*75) + "\n"
-                out += "[argdoc] Could not call module %s as '%s'. Output:\n"% (obj.__name__, e.cmd)
-                out += e.output
-                out += "\n" + ("-"*75) + "\n"
-                app.warn(out)
+                note = "Could not call module %s as '%s'. Output:\n"% (obj.__name__, e.cmd)
+                app.warn(format_warning(note,e.output))
             try:
                 out_lines = format_argparser_as_docstring(app,obj,help_lines,section_head=True,header_level=1,patterns=patterns)
                 out_lines += _SEPARATOR
                 lines.extend(out_lines)
                 lines.extend(_OTHER_HEADER_LINES)
             except IndexError as e:
-                out  = ("-"*75) + "\n"
-                out += "[argdoc] Error processing argparser into docstring for module %s: \n%s" % (obj.__name__,e.message)
-                out += "\n\n%s" % e.args
-                out += "\n\n%s" % e
-                out += "\n" + ("-"*75) + "\n"
-                app.warn(out)
-                raise e
+                note = "Error processing argparser into docstring for module %s: \n%s" % (obj.__name__,e.message)
+                details = "\n\n%s\n\n%s" % (e.args,e)
+                app.warn(format_warning(note,details))
 
         if app.config.argdoc_save_rst == True:
             filename = os.path.join(app.outdir,"%s_postargdoc.rst" % name)
             with codecs.open(filename,encoding="utf-8",mode="wb") as fout:
                 for n,line in enumerate(lines):
                     try:
-                        if sys.version_info[0] == "2":
-                            if isinstance(line,str):
-                                line = unicode(line,"utf-8")
-                        
+                        line = safeunicode(line)
                         fout.write(line)
                         fout.write(u"\n")
                     except Exception as e:
