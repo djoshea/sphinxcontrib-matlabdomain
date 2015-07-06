@@ -42,6 +42,8 @@ from sphinx.errors import ConfigError
 # INDEX: various constants
 #===============================================================================
 
+_PLACEHOLDER_CONSTANT = "ARGDOCPOSITIONALARGUMENT "
+
 _OTHER_HEADER_LINES = u"""Script contents
 ---------------""".split("\n")
 
@@ -262,7 +264,7 @@ def noargdoc(func):
 # INDEX: documentation generation functions
 #===============================================================================
 
-def get_subcommand_tables(app,obj,help_lines,patterns,start_line,section_head=True,pre_args=0,header_level=1):
+def get_subcommand_tables(app,obj,help_lines,patterns,start_line,command_chain="",section_head=True,header_level=1):
     """Process help output from an :py:class:`~argparse.ArgumentParser`
     that includes one or more subcommands.  Called by :func:`format_argparser_as_docstring`
     
@@ -313,26 +315,30 @@ def get_subcommand_tables(app,obj,help_lines,patterns,start_line,section_head=Tr
             break
     
     app.debug("[argdoc] %s subcommands: %s" % (obj.__name__,", ".join(subcommands)))
-    prearg_text = " ".join(["X"]*pre_args)
     for subcommand in subcommands:
-        app.debug("[argdoc] Parsing subcommand %s with %s preargs" % (subcommand,pre_args))
         try:
-            call = shlex.split("python -m %s %s %s %s%shelp" % (obj.__name__,
-                                                                prearg_text,
-                                                                subcommand,
-                                                                app.config.argdoc_prefix_chars[0],
-                                                                app.config.argdoc_prefix_chars[0]))
+            newname = command_chain.replace(_PLACEHOLDER_CONSTANT,"").replace("  "," ").split()
+            newname.append(subcommand)
+            newname ="-".join(newname)
+            callstr = "python -m %s %s %s %s%shelp" % (obj.__name__,
+                                                       command_chain,
+                                                       subcommand,
+                                                       app.config.argdoc_prefix_chars[0],
+                                                       app.config.argdoc_prefix_chars[0])
+            app.debug("[argdoc] Parsing subcommand %s with as `%s`" % (subcommand,callstr))
+            call = shlex.split(callstr)
             proc = subprocess.Popen(call,stdout=subprocess.PIPE,universal_newlines=True)
             sub_help_lines = proc.communicate()[0].split("\n")
-
+            new_command_chain = command_chain + (" %s " % subcommand)
             out_lines.extend(format_argparser_as_docstring(app,
                                                            obj,
                                                            sub_help_lines,
                                                            patterns,
                                                            section_head=section_head,
                                                            header_level=header_level+1,
-                                                           section_name=u"``%s`` subcommand" % subcommand,
-                                                           _is_subcommand=True)) 
+                                                           section_name=u"``%s`` subcommand" % newname,
+                                                           _is_subcommand=True,
+                                                           command_chain=new_command_chain)) 
         except subprocess.CalledProcessError as e:
             note = "Could not call module %s as '%s'. Output:\n"% (obj.__name__, e.cmd)
             msg = format_warning(note,e.output)
@@ -343,7 +349,8 @@ def get_subcommand_tables(app,obj,help_lines,patterns,start_line,section_head=Tr
 def format_argparser_as_docstring(app,obj,help_lines,patterns,
                                   section_head=True,section_name=u"Command-line arguments",
                                   header_level=1,
-                                  _is_subcommand=False
+                                  _is_subcommand=False,
+                                  command_chain="",
                                   ):
     """Process help output from an :py:class:`argparse.ArgumentParser`.
     Called by :func:`post_process_automodule` and :func:`get_subcommand_tables`
@@ -532,6 +539,7 @@ def format_argparser_as_docstring(app,obj,help_lines,patterns,
    
     if has_subcommands == True:
         # parse subcommand argparsers after main, and append output below
+        command_chain = command_chain + (_PLACEHOLDER_CONSTANT*positional_args)
         new_lines = get_subcommand_tables(app,
                                           obj,
                                           help_lines,
@@ -539,7 +547,7 @@ def format_argparser_as_docstring(app,obj,help_lines,patterns,
                                           subcommand_start,
                                           section_head=section_head,
                                           header_level=header_level+2,
-                                          pre_args=positional_args,
+                                          command_chain=command_chain,
                                           )
         out_lines.extend(new_lines)
 

@@ -19,4 +19,4 @@ Does :data:`argdoc` support subcommands?
     all by itself.
 
 Does :data:`argdoc` support nested subcommands?
-    Not yet. It's on our to-do list.
+    Yes. See the :doc:`examples`.

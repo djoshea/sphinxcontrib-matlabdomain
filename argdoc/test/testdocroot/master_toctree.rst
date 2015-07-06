@@ -9,3 +9,4 @@
     argdoc.test.cases.c6_multiprefix
     argdoc.test.cases.c7_noargdoc
     argdoc.test.cases.c8_exhaustive
+    argdoc.test.cases.c9_subsubparsers
