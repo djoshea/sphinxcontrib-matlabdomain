@@ -4,6 +4,14 @@ All major changes to `argdoc` will be documented here. Version numbers follow
 the conventions described in `PEP440 <https://www.python.org/dev/peps/pep-0440/>`_
 and `Semantic versioning <http://semver.org/>`_.
 
+Unreleased
+----------
+
+Added
+.....
+ - Subcommands of subcommands are now parsed
+ - Test cases now generate examples for documentation
+
 
 [0.1.0] = 2015-07-4
 -------------------

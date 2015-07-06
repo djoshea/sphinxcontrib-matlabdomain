@@ -60,7 +60,8 @@ from nose.plugins.attrib import attr
 from sphinx import main as sphinxbuild
 from argdoc.ext import get_patterns, get_col1_text, get_col2_text, noargdoc,\
                        post_process_automodule,\
-                       format_argparser_as_docstring
+                       format_argparser_as_docstring,\
+                       safeunicode
 
 
 
@@ -112,13 +113,13 @@ class TestArgdoc():
                                            ("some long string (with parentheses):",("some long string (with parentheses)",)),
                                            ]
         cls.pattern_tests["arg_only"] = [
-                                      ("  positional1",('positional1',None)),
-                                      ("  po3413134",('po3413134',None)),
-                                      ("  reallyreallyreallyreallyreallyreallyreallyreallylongpositional",("reallyreallyreallyreallyreallyreallyreallyreallylongpositional",None)),
+                                      ("  positional1",None),
+                                      ("  po3413134",None),
+                                      ("  reallyreallyreallyreallyreallyreallyreallyreallylongpositional",None),
                                       ("  --help",    ('--help', None)),
                                       ("  -h",        ('-h', None)),
                                       ("  -h, --help",('-h', '--help')),
-                                      # arg + valss + desc
+                                      # arg + vals + desc
                                       ("  -n M, --ne M            some description", None),
                                       ("  -n M M, --ne M M        some description", None),
                                       ("  -n M M M, --ne M M M    some description", None),
@@ -517,9 +518,32 @@ class TestArgdoc():
 
         yield self.check_list_equal, expected_lines[n1:], found_lines[n2:], "prefix_chars"
 
-    def test_prefix_chars_doesnot_mix(self):
-        app = FakeApp(argdoc_prefix_chars="-+")
-        assert False
+    def test_prefix_chars_does_not_match_wrong(self):
+        # make sure patterns with prefix char "+" don't match examples with prefix char "-"
+        patterns = get_patterns("+")
+        for k in patterns["+"]:
+            if k.startswith("arg"):
+                for inp, _ in self.pattern_tests[k]:
+                    msg = "pattern_does_not_match_wrong test %s: '%s' matched, should not have." % (k,inp)
+                    yield self.check_not_match, patterns["+"][k], inp , msg
+
+    @staticmethod
+    def check_not_match(pattern,inp,msg):
+        # make sure a pattern does not match inp
+        assert_true(pattern.match(inp) is None,msg)
+
+    def test_prefix_chars_does_not_mix(self):
+        # make sure pattenr dicts with multiple prefix chars have no crosstalk
+        patterns = get_patterns("-+")
+        for k in patterns["+"]:
+            if k.startswith("arg"):
+                for inp, _ in self.pattern_tests[k]:
+                    msg = "prefix_chars_does_not_mix test %s: '%s' matched, should not have." % (k,inp)
+                    yield self.check_not_match, patterns["+"][k], inp , msg
+        for name, cases in self.pattern_tests.items():
+            for inp, expected in cases:
+                yield self.check_pattern, name, patterns["-"][name], inp, expected
+
 
     def test_get_col1_text(self):
         for my_dict in self.match_dicts:
@@ -558,7 +582,7 @@ class TestArgdoc():
          
         message = ""
         if mismatched > 0:
-            message  = u"-"*75 + "\n"
+            message  = safeunicode("-"*75 + "\n")
             message += "Failed list equality for test %s\n" % test_name
             message += "%s mismatches (expected 0).\n" % mismatched
             message += "In list 1 only:\n"

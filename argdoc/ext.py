@@ -41,12 +41,6 @@ from sphinx.errors import ConfigError
 #===============================================================================
 # INDEX: various constants
 #===============================================================================
-
-_PLACEHOLDER_CONSTANT = "ARGDOCPOSITIONALARGUMENT "
-
-_OTHER_HEADER_LINES = u"""Script contents
----------------""".split("\n")
-
 _REQUIRED = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
@@ -57,7 +51,32 @@ _REQUIRED = [
 
 _HEADERS = "=-~._\"'^;"
 _INDENT_SIZE = 4
-_SEPARATOR = "\n------------\n\n".split("\n")
+
+
+def safeunicode(inp):
+    """Convert a string to unicode in a Python 2.7/3.x-safe way
+
+    Parameters
+    ----------
+    inp : str
+        Input string
+
+    Returns
+    -------
+    unicode (Python 2.7) or string (Python 3.x)
+        utf-8 encoded representation of `inp`
+    """
+    if sys.version_info[0] == 2 and isinstance(inp,str):
+        return unicode(inp,"utf-8")
+    else:
+        return inp
+
+
+_PLACEHOLDER_CONSTANT = "ARGDOCPOSITIONALARGUMENT "
+_OTHER_HEADER_LINES = safeunicode("""Script contents
+---------------""").split("\n")
+
+_SEPARATOR = safeunicode("\n------------\n\n").split("\n")
 
 #===============================================================================
 # INDEX: helper functions for token parsing and text formatting
@@ -89,9 +108,9 @@ def get_patterns(prefix_chars="-"):
             esc_char = char
         patterns = { "section_title"      : r"^(\w+.*):$",
                      "positional_arg"     : r"^  (?P<arg1>[^{}\sALL]+)(?:\s\s+(?P<desc>\w+.*))?$".replace("ALL",esc_prefix_chars),
-                     "arg_only"           : r"^  (?P<arg1>-?[^\s,]+)(?:, (?P<arg2>--[^\s]+))?$".replace("-",esc_char),
+                     "arg_only"           : r"^  (?P<arg1>-+[^\s,]+)(?:, (?P<arg2>--[^\s]+))?$".replace("-",esc_char),
                      "arg_plus_val"       : r"^  (?P<arg1>-+[^\s]+)(?P<val1>(?: [^ALL\s]+)+)(?:(?:, (?P<arg2>--[^\s]+))(?P<val2>(?: [^\s]+)+))?$".replace("-",esc_char).replace("ALL",esc_prefix_chars),
-                     "arg_plus_desc"      : r"^  (?P<arg1>-?[^\s]+)(?:,\s(?P<arg2>--[^\s]+))?\s\s+(?P<desc>.*)".replace("-",esc_char),
+                     "arg_plus_desc"      : r"^  (?P<arg1>-+[^\s]+)(?:,\s(?P<arg2>--[^\s]+))?\s\s+(?P<desc>.*)".replace("-",esc_char),
                      "arg_plus_val_desc"  : r"^  (?P<arg1>-+[^\s]+)(?P<val1>(?: [^ALL\s]+)+)(?:(?:, (?P<arg2>--[^\s]+))(?P<val2>(?: [^\s]+)+))?  +(?P<desc>\w+.*)$".replace("-",esc_char).replace("ALL",esc_prefix_chars),
                      "continue_desc"      : r"^ {12,24}(.*)",
                      "section_desc"       : r"^  ((?:[^ALL\s][^\s]*)(?:\s[^\s]+)+)$".replace("ALL",esc_prefix_chars),
@@ -102,24 +121,6 @@ def get_patterns(prefix_chars="-"):
         all_patterns[char] = { K : re.compile(V) for K,V in patterns.items() }
 
     return all_patterns
-
-def safeunicode(inp):
-    """Convert a string to unicode in a Python 2.7/3.x-safe way
-
-    Parameters
-    ----------
-    inp : str
-        Input string
-
-    Returns
-    -------
-    unicode (Python 2.7) or string (Python 3.x)
-        utf-8 encoded representation of `inp`
-    """
-    if sys.version_info[0] == 2 and isinstance(inp,str):
-        return unicode(inp,"utf-8")
-    else:
-        return inp
 
 def get_col1_text(matchdict):
     """Format argument name(s) and value(s) for column 1 of argument tables
@@ -189,27 +190,27 @@ def make_rest_table(rows,title=False,indent_size=0):
     border   = []
     template = []
     for n, my_length in enumerate(lengths):
-        border.append(u"="*my_length)
-        template.append(u"{%s: <%ss}" % (n,my_length))
+        border.append(safeunicode("="*my_length))
+        template.append(safeunicode("{%s: <%ss}" % (n,my_length)))
 
-    border   = u"    ".join(border)
-    template = u"    ".join(template)
+    border   = safeunicode("    ").join(border)
+    template = safeunicode("    ").join(template)
 
     lines = [border]
     n = 0
     if title == True:
-        title_row = [u"**%s**" % X for X in rows[0]]
+        title_row = [safeunicode("**%s**") % X for X in rows[0]]
         lines.append(template.format(*tuple(title_row)))
-        lines.append(border.replace(u"=",u"-"))
+        lines.append(border.replace("=","-"))
         n = 1
 
     for items in rows[n:]:
         lines.append(template.format(*items))
 
     lines.append(border)
-    lines.append(u"")
+    lines.append(safeunicode(""))
     if indent_size > 0:
-        tmp = u" "*indent_size
+        tmp = safeunicode(" "*indent_size)
         lines = [tmp+X if len(X) > 0 else X for X in lines]
 
     return lines
@@ -336,7 +337,7 @@ def get_subcommand_tables(app,obj,help_lines,patterns,start_line,command_chain="
                                                            patterns,
                                                            section_head=section_head,
                                                            header_level=header_level+1,
-                                                           section_name=u"``%s`` subcommand" % newname,
+                                                           section_name=safeunicode("``%s`` subcommand" % newname),
                                                            _is_subcommand=True,
                                                            command_chain=new_command_chain)) 
         except subprocess.CalledProcessError as e:
@@ -347,7 +348,7 @@ def get_subcommand_tables(app,obj,help_lines,patterns,start_line,command_chain="
     return out_lines
 
 def format_argparser_as_docstring(app,obj,help_lines,patterns,
-                                  section_head=True,section_name=u"Command-line arguments",
+                                  section_head=True,section_name=safeunicode("Command-line arguments"),
                                   header_level=1,
                                   _is_subcommand=False,
                                   command_chain="",
@@ -429,10 +430,10 @@ def format_argparser_as_docstring(app,obj,help_lines,patterns,
                 if len(col1) != len(col2):
                     app.warn("[argdoc] Column mismatch in section '%s'. col1 %s, col2 %s rows." % (section_title,len(col1),len(col2)))
 
-                out_lines.append(u"")
+                out_lines.append(safeunicode(""))
                 out_lines.extend(section_title)
                 out_lines.extend(section_desc)
-                out_lines.append(u"")
+                out_lines.append(safeunicode(""))
                 out_lines.extend(make_rest_table(list(zip(col1,col2)),title=True,indent_size=_INDENT_SIZE))        
                 out_lines.extend(unmatched)
 
@@ -472,7 +473,7 @@ def format_argparser_as_docstring(app,obj,help_lines,patterns,
                                     break
                                 elif pat == "continue_desc":
                                     try:
-                                        col2[-1] = u"%s %s" % (col2[-1],match.groups()[0].strip("\n"))
+                                        col2[-1] = safeunicode("%s %s" % (col2[-1],match.groups()[0].strip("\n")))
                                     except IndexError as e:
                                         app.warn("[argdoc] continuing description with no prior description on line %s: \n    %s" % (n,line))
                                         assert False
@@ -634,7 +635,7 @@ def post_process_automodule(app,what,name,obj,options,lines):
                     try:
                         line = safeunicode(line)
                         fout.write(line)
-                        fout.write(u"\n")
+                        fout.write(safeunicode("\n"))
                     except Exception as e:
                         app.warn("[argdoc] Could not write out line %s of file %s." % (n,name))
     
