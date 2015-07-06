@@ -402,7 +402,7 @@ def format_argparser_as_docstring(app,obj,help_lines,patterns,
     desc_end   = None
 
     # the following are wiped & re-initialized for each section
-    col1      = ["Option"]  # holder for column 1 contents: argument names
+    col1      = ["Argument"]  # holder for column 1 contents: argument names
     col2      = ["Description"]  # holder for column 2 contents: argument descriptions
     section_title = [] # title of current section
     section_desc  = [] # description of current section
@@ -432,7 +432,7 @@ def format_argparser_as_docstring(app,obj,help_lines,patterns,
                 # reset section-specific variables
                 section_title = []
                 section_desc  = []
-                col1 = ["Option"]
+                col1 = ["Argument"]
                 col2 = ["Description"]
                 unmatched = []
             else:
@@ -477,7 +477,7 @@ def format_argparser_as_docstring(app,obj,help_lines,patterns,
                                     positional_args += 1
                                     break
                                 elif pat == "subcommand_names":
-                                    has_subcommands = Tru
+                                    has_subcommands = True
                                     subcommand_start = n
                                     break
                                 elif pat == "subcommand_name":

@@ -17,7 +17,7 @@ Positional arguments
 ~~~~~~~~~~~~~~~~~~~~
 
     =================    ================================
-    **Option**           **Description**                 
+    **Argument**         **Description**                 
     -----------------    --------------------------------
     ``mainarg1``                                         
     ``mainarg2``         main positional argument #2     
@@ -28,7 +28,7 @@ Optional arguments
 ~~~~~~~~~~~~~~~~~~
 
     =======================    ====================================
-    **Option**                 **Description**                     
+    **Argument**               **Description**                     
     -----------------------    ------------------------------------
     ``-h``, ``--help``         show this help message and exit     
     =======================    ====================================
@@ -41,7 +41,7 @@ One group of arguments
   code more intelligible to others
 
     ============================================    =========================
-    **Option**                                      **Description**          
+    **Argument**                                    **Description**          
     --------------------------------------------    -------------------------
     ``fooarg1``                                     foo argument 1           
     ``fooarg2``                                     foo argument 2           
@@ -56,7 +56,7 @@ A second group of arguments
   Description of second argument group
 
     ============================================    ======================================
-    **Option**                                      **Description**                       
+    **Argument**                                    **Description**                       
     --------------------------------------------    --------------------------------------
     ``bararg``                                      bar argument                          
     ``--choice  {option1,option2,option3}``          A keyword that requries a choice     
@@ -67,7 +67,7 @@ A final group of arguments, with no description
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     ===================================    =======================
-    **Option**                             **Description**        
+    **Argument**                           **Description**        
     -----------------------------------    -----------------------
     ``bazarg``                             baz argument           
     ``--numbers  M M M``                   numerical argument     

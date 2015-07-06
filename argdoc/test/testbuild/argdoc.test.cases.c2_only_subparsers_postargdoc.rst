@@ -16,7 +16,7 @@ Optional arguments
 ~~~~~~~~~~~~~~~~~~
 
     =======================    ====================================
-    **Option**                 **Description**                     
+    **Argument**               **Description**                     
     -----------------------    ------------------------------------
     ``-h``, ``--help``         show this help message and exit     
     =======================    ====================================
@@ -26,12 +26,12 @@ Subcommands
 ~~~~~~~~~~~
   choose one of the following:
 
-    ============    ==========================================================================
-    **Option**      **Description**                                                           
-    ------------    --------------------------------------------------------------------------
-    ``foo``         Run the foo subprogram                                                    
-    ``bar``         Take output from foo subprogram and run it through the bar subprogram     
-    ============    ==========================================================================
+    =============    ==========================================================================
+    **Argument**     **Description**                                                           
+    -------------    --------------------------------------------------------------------------
+    ``foo``          Run the foo subprogram                                                    
+    ``bar``          Take output from foo subprogram and run it through the bar subprogram     
+    =============    ==========================================================================
 
 
 ------------
@@ -47,7 +47,7 @@ Positional arguments
 """"""""""""""""""""
 
     ================    ===================
-    **Option**          **Description**    
+    **Argument**        **Description**    
     ----------------    -------------------
     ``fooarg1``         foo argument 1     
     ``fooarg2``         foo argument 2     
@@ -58,7 +58,7 @@ Optional arguments
 """"""""""""""""""
 
     ============================================    ====================================
-    **Option**                                      **Description**                     
+    **Argument**                                    **Description**                     
     --------------------------------------------    ------------------------------------
     ``-h``, ``--help``                              show this help message and exit     
     ``-f  F``                                       short foo argument                  
@@ -79,7 +79,7 @@ Positional arguments
 """"""""""""""""""""
 
     ===============    =================
-    **Option**         **Description**  
+    **Argument**       **Description**  
     ---------------    -----------------
     ``bararg``         bar argument     
     ===============    =================
@@ -89,7 +89,7 @@ Optional arguments
 """"""""""""""""""
 
     ============================================    ======================================
-    **Option**                                      **Description**                       
+    **Argument**                                    **Description**                       
     --------------------------------------------    --------------------------------------
     ``-h``, ``--help``                              show this help message and exit       
     ``--choice  {option1,option2,option3}``          A keyword that requries a choice     

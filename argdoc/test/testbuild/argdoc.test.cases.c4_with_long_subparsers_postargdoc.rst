@@ -67,7 +67,7 @@ Positional arguments
 ~~~~~~~~~~~~~~~~~~~~
 
     =================    ==================================================================================================
-    **Option**           **Description**                                                                                   
+    **Argument**         **Description**                                                                                   
     -----------------    --------------------------------------------------------------------------------------------------
     ``mainarg1``                                                                                                           
     ``mainarg2``         main positional argument #2, which we wrote helptext for (there was no help for ``mainarg1``)     
@@ -78,7 +78,7 @@ Optional arguments
 ~~~~~~~~~~~~~~~~~~
 
     =======================    ====================================
-    **Option**                 **Description**                     
+    **Argument**               **Description**                     
     -----------------------    ------------------------------------
     ``-h``, ``--help``         show this help message and exit     
     =======================    ====================================
@@ -89,7 +89,7 @@ Subcommands
   choose one of the following:
 
     ===============================================================================    ===================================================================================
-    **Option**                                                                         **Description**                                                                    
+    **Argument**                                                                       **Description**                                                                    
     -------------------------------------------------------------------------------    -----------------------------------------------------------------------------------
     ``foo``                                                                            Run the ``foo`` subprogram                                                         
     ``barbarbarbarbaraaeadslfjasdlkfjljalksjflsjdfladjfklasdjkfladsjglkjdasl``          Take output from ``foo`` subprogram and run it through the ``bar`` subprogram     
@@ -109,7 +109,7 @@ Positional arguments
 """"""""""""""""""""
 
     ================    ===================
-    **Option**          **Description**    
+    **Argument**        **Description**    
     ----------------    -------------------
     ``fooarg1``         foo argument 1     
     ``fooarg2``         foo argument 2     
@@ -120,7 +120,7 @@ Optional arguments
 """"""""""""""""""
 
     ============================================    ====================================
-    **Option**                                      **Description**                     
+    **Argument**                                    **Description**                     
     --------------------------------------------    ------------------------------------
     ``-h``, ``--help``                              show this help message and exit     
     ``-f  F``                                       short foo argument                  
@@ -141,7 +141,7 @@ Positional arguments
 """"""""""""""""""""
 
     ===============    =================
-    **Option**         **Description**  
+    **Argument**       **Description**  
     ---------------    -----------------
     ``bararg``         bar argument     
     ===============    =================
@@ -151,7 +151,7 @@ Optional arguments
 """"""""""""""""""
 
     ============================================    ======================================
-    **Option**                                      **Description**                       
+    **Argument**                                    **Description**                       
     --------------------------------------------    --------------------------------------
     ``-h``, ``--help``                              show this help message and exit       
     ``--choice  {option1,option2,option3}``          A keyword that requries a choice     
@@ -163,7 +163,7 @@ An argument group
   A special goup of arguments in the `bar` subparser
 
     =================    =================================================
-    **Option**           **Description**                                  
+    **Argument**         **Description**                                  
     -----------------    -------------------------------------------------
     ``--b1  B1``                                                          
     ``--b2  B2``         Argument 2 has help (bar argument 1 did not)     
