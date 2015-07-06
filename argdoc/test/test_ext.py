@@ -55,12 +55,13 @@ import argdoc.test.cases
 
 from modulefinder import ModuleFinder
 from pkg_resources import resource_filename, cleanup_resources
-from nose.tools import assert_equal, assert_true, assert_dict_equal
+from nose.tools import assert_equal, assert_true, assert_dict_equal, assert_list_equal
 from nose.plugins.attrib import attr
 from sphinx import main as sphinxbuild
 from argdoc.ext import get_patterns, get_col1_text, get_col2_text, noargdoc,\
                        post_process_automodule,\
                        format_argparser_as_docstring,\
+                       make_rest_table,\
                        safeunicode
 
 
@@ -518,6 +519,11 @@ class TestArgdoc():
 
         yield self.check_list_equal, expected_lines[n1:], found_lines[n2:], "prefix_chars"
 
+    @staticmethod
+    def check_not_match(pattern,inp,msg):
+        # make sure a pattern does not match inp
+        assert_true(pattern.match(inp) is None,msg)
+
     def test_prefix_chars_does_not_match_wrong(self):
         # make sure patterns with prefix char "+" don't match examples with prefix char "-"
         patterns = get_patterns("+")
@@ -526,11 +532,6 @@ class TestArgdoc():
                 for inp, _ in self.pattern_tests[k]:
                     msg = "pattern_does_not_match_wrong test %s: '%s' matched, should not have." % (k,inp)
                     yield self.check_not_match, patterns["+"][k], inp , msg
-
-    @staticmethod
-    def check_not_match(pattern,inp,msg):
-        # make sure a pattern does not match inp
-        assert_true(pattern.match(inp) is None,msg)
 
     def test_prefix_chars_does_not_mix(self):
         # make sure pattenr dicts with multiple prefix chars have no crosstalk
@@ -544,7 +545,6 @@ class TestArgdoc():
             for inp, expected in cases:
                 yield self.check_pattern, name, patterns["-"][name], inp, expected
 
-
     def test_get_col1_text(self):
         for my_dict in self.match_dicts:
             yield self.check_equal, get_col1_text(my_dict), my_dict["col1"]
@@ -552,6 +552,64 @@ class TestArgdoc():
     def test_get_col2_text(self):
         for my_dict in self.match_dicts:
             yield self.check_equal, get_col2_text(my_dict), my_dict["col2"]
+
+    def test_make_rest_table_with_title(self):
+        rows = [("Column 1","Column 2"),
+                ("1","a"),
+                ("2","b"),
+                ("30000000000","something really long, or, somewhat long"),
+                ("12315132","a line with ``special characters`` and *stars*")]
+        expected = [
+            safeunicode('================    ==================================================='),
+            safeunicode('**Column 1**        **Column 2**                                       '),
+            safeunicode('----------------    ---------------------------------------------------'),
+            safeunicode('1                   a                                                  '),
+            safeunicode('2                   b                                                  '),
+            safeunicode('30000000000         something really long, or, somewhat long           '),
+            safeunicode('12315132            a line with ``special characters`` and *stars*     '),
+            safeunicode('================    ==================================================='),
+            safeunicode('')
+        ]
+        found = make_rest_table(rows,title=True,indent=0)
+        assert_list_equal(expected,found)
+
+    def test_make_rest_table_without_title(self):
+        rows = [("Column 1","Column 2"),
+                ("1","a"),
+                ("2","b"),
+                ("30000000000","something really long, or, somewhat long"),
+                ("12315132","a line with ``special characters`` and *stars*")]
+        expected = [
+            safeunicode('============    ==============================================='),
+            safeunicode('Column 1        Column 2                                       '),
+            safeunicode('1               a                                              '),
+            safeunicode('2               b                                              '),
+            safeunicode('30000000000     something really long, or, somewhat long       '),
+            safeunicode('12315132        a line with ``special characters`` and *stars* '),
+            safeunicode('============    ==============================================='),
+            safeunicode('')
+        ]
+        found = make_rest_table(rows,title=False,indent=0)
+        assert_list_equal(expected,found)
+
+    def test_make_rest_table_with_indent(self):
+        rows = [("Column 1","Column 2"),
+                ("1","a"),
+                ("2","b"),
+                ("30000000000","something really long, or, somewhat long"),
+                ("12315132","a line with ``special characters`` and *stars*")]
+        expected = [
+            safeunicode('    ============    ==============================================='),
+            safeunicode('    Column 1        Column 2                                       '),
+            safeunicode('    1               a                                              '),
+            safeunicode('    2               b                                              '),
+            safeunicode('    30000000000     something really long, or, somewhat long       '),
+            safeunicode('    12315132        a line with ``special characters`` and *stars* '),
+            safeunicode('    ============    ==============================================='),
+            safeunicode('')
+        ]
+        found = make_rest_table(rows,title=False,indent=4)
+        assert_list_equal(expected,found)
 
     def test_noargdoc_adds_attribute(self):
         def my_func():

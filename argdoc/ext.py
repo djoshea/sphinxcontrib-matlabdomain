@@ -162,7 +162,7 @@ def get_col2_text(matchdict):
     tmpstr =  matchdict.get("desc","") if matchdict.get("desc") is not None else ""
     return safeunicode(tmpstr)
 
-def make_rest_table(rows,title=False,indent_size=0):
+def make_rest_table(rows,title=False,indent=0):
     """Make a reStructuredText table from a list of rows of items
 
     Parameters
@@ -209,8 +209,8 @@ def make_rest_table(rows,title=False,indent_size=0):
 
     lines.append(border)
     lines.append(safeunicode(""))
-    if indent_size > 0:
-        tmp = safeunicode(" "*indent_size)
+    if indent > 0:
+        tmp = safeunicode(" "*indent)
         lines = [tmp+X if len(X) > 0 else X for X in lines]
 
     return lines
@@ -434,7 +434,7 @@ def format_argparser_as_docstring(app,obj,help_lines,patterns,
                 out_lines.extend(section_title)
                 out_lines.extend(section_desc)
                 out_lines.append(safeunicode(""))
-                out_lines.extend(make_rest_table(list(zip(col1,col2)),title=True,indent_size=_INDENT_SIZE))        
+                out_lines.extend(make_rest_table(list(zip(col1,col2)),title=True,indent=_INDENT_SIZE))        
                 out_lines.extend(unmatched)
 
                 # reset section-specific variables
