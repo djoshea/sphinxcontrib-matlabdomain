@@ -28,7 +28,7 @@ setup(
 
     zip_safe = True,
 
-    requires = [
+    install_requires = [
                 "sphinx>=1.3.1",
                 "autodoc>=0.3",
                 ],
