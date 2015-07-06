@@ -534,7 +534,6 @@ class TestArgdoc():
 
     @staticmethod
     def check_list_equal(l1,l2,test_name):
-        print("Checking list equality for %s" % test_name)
         mismatched = 0 
         in_l1 = []
         in_l2 = []
@@ -542,7 +541,7 @@ class TestArgdoc():
         while i < len(l1) and j < len(l2):
             line1 = l1[i]
             line2 = l2[j]
-            if line1 != line2:
+            if line1.rstrip() != line2.rstrip():
                 mismatched += 1
                 if line1 not in l2:
                     in_l1.append((i,line1))
@@ -556,6 +555,8 @@ class TestArgdoc():
         message = ""
         if mismatched > 0:
             message  = u"-"*75 + "\n"
+            message += "Failed list equality for test %s\n" % test_name
+            message += "%s mismatches (expected 0).\n" % mismatched
             message += "In list 1 only:\n"
             for l in in_l1:
                 message += ("%s: %s\n" % l)
@@ -565,13 +566,12 @@ class TestArgdoc():
                 message += ("%s: %s\n" % l)
  
             message += "-"*75 + "\n"
-            print(message)
 
         assert_equal(mismatched,0,message)
         
     def test_format_argparser_as_docstring(self):
         # look at output & test against known RST
-        app = FakeApp(outdir=self.optdict["outdir"])
+        app = FakeApp(outdir=self.optdict["outdir"],argdoc_prefix_chars="-+")
         for k in self.test_cases:
             testname = "test_format_argparser_as_docstring '%s'" % k            
             mod, expected, _ = self.test_cases[k]
@@ -592,7 +592,10 @@ class TestArgdoc():
             sys.stdout = old_out
             buf.seek(0)
             lines = buf.read().split("\n")
-            found_lines = format_argparser_as_docstring(app,mod,lines,get_patterns(prefix_chars="-+"))
+            found_lines = format_argparser_as_docstring(app,mod,lines,
+                                                        section_head=True,
+                                                        header_level=1,
+                                                        patterns=get_patterns(prefix_chars="-+"))
 
             n1 = n2 = 0
             for line in expected_lines:
