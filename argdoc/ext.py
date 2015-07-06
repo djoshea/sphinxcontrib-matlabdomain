@@ -390,145 +390,148 @@ def format_argparser_as_docstring(app,obj,help_lines,patterns,
         for program or subprogram
     """
     base = list(patterns.values())[0]
-    started = False
+    started          = False
     has_subcommands  = False
     subcommand_start = 0
 
     out_lines = []  # lines we will output
     positional_args = 0
+
+    # markers for beginning and end of subcommand docstring descriptions
+    desc_start = None
+    desc_end   = None
+
     # the following are wiped & re-initialized for each section
-    col1      = []  # holder for column 1 contents: argument names
-    col2      = []  # holder for column 2 contents: argument descriptions
+    col1      = ["Option"]  # holder for column 1 contents: argument names
+    col2      = ["Description"]  # holder for column 2 contents: argument descriptions
     section_title = [] # title of current section
     section_desc  = [] # description of current section
     unmatched = []
     
-    # markers for beginning and end of subcommand docstring descriptions
-    desc_start = None
-    desc_end   = None
-    
     for n,line in enumerate(help_lines):
-        app.debug2("[argdoc] line: '%s'" % line)
         line = line.rstrip()
         if _is_subcommand == True and desc_start is None:
+            # subcommand descriptions are not automatically added by autodoc,
+            # so we need to track them ourselves
             if line.strip() == "":
                 desc_start = n+1
+        if started == True:
+            if len(line.strip()) == 0 and len(col1) > 1 and len(col2) > 1:
+                # if current argument group is finished, format table of arguments for export
+                # and append it to `out_lines`
+                if len(col1) != len(col2):
+                    app.warn("[argdoc] Column mismatch in section '%s'. col1 %s, col2 %s rows." % (section_title,len(col1),len(col2)))
 
-        if len(line.strip()) == 0 and started == True and len(col1) > 0 and len(col2) > 0:
-            # if current argument group is finished, format table of arguments for export
-            # and append it to `out_lines`
-            if len(col1) != len(col2):
-                app.warn("[argdoc] Column mismatch in section '%s'. col1 %s, col2 %s rows." % (section_title,len(col1),len(col2)))
+                out_lines.append(u"")
+                out_lines.extend(section_title)
+                out_lines.extend(section_desc)
+                out_lines.append(u"")
+                out_lines.extend(make_rest_table(list(zip(col1,col2)),title=True,indent_size=_INDENT_SIZE))        
+                out_lines.extend(unmatched)
 
-            out_lines.append(u"")
-            out_lines.extend(section_title)
-            out_lines.extend(section_desc)
-            out_lines.append(u"")
-
-            col1 = ["Option"] + col1
-            col2 = ["Description"] + col2
-            out_lines.extend(make_rest_table(list(zip(col1,col2)),title=True,indent_size=_INDENT_SIZE))        
-            out_lines.extend(unmatched)
-
-            # reset section-specific variables
-            section_title = []
-            section_desc  = []
-            col1 = []
-            col2 = []
-            unmatched = []
-        
-        #elif patterns["section_title"].search(line) is not None and not line.endswith("usage:"):
-        #FIXME: this is a kludge to deal with __doc__ lines that have trailing colons
-        #       and will not work if the first argument section is not one of the following
-        #       "positional arguments:" or "optional arguments:"
+                # reset section-specific variables
+                section_title = []
+                section_desc  = []
+                col1 = ["Option"]
+                col2 = ["Description"]
+                unmatched = []
+            else:
+                matchdict = None
+                match = None
+                for pat in ["section_title",
+                            "section_desc",
+                            "positional_arg",
+                            "arg_only",
+                            "arg_plus_val",
+                            "continue_desc",
+                            "arg_plus_desc",
+                            "arg_plus_val_desc",
+                            "subcommand_names",
+                            "subcommand_name",
+                            ]:
+                    for char in patterns.keys():
+                        if match is None:
+                            match = patterns[char][pat].match(line)
+                            if match is not None:
+                                app.debug2("[argdoc] %s\n    %s\n" % (pat,line))
+                                if pat == "section_title":
+                                    match = base["section_title"].match(line)
+                                    section_title = [match.groups()[0].capitalize(),
+                                                     _HEADERS[header_level+1]*len(match.groups()[0]),
+                                                    ]
+                                    break
+                                elif pat == "section_desc":
+                                    section_desc.append(line)
+                                    break
+                                elif pat == "continue_desc":
+                                    try:
+                                        col2[-1] = u"%s %s" % (col2[-1],match.groups()[0].strip("\n"))
+                                    except IndexError as e:
+                                        app.warn("[argdoc] continuing description with no prior description on line %s: \n    %s" % (n,line))
+                                        assert False
+                                    break
+                                elif pat == "positional_arg":
+                                    matchdict = match.groupdict()
+                                    col1.append(get_col1_text(matchdict))
+                                    col2.append(get_col2_text(matchdict))
+                                    positional_args += 1
+                                    break
+                                elif pat == "subcommand_names":
+                                    has_subcommands = Tru
+                                    subcommand_start = n
+                                    break
+                                elif pat == "subcommand_name":
+                                    matchdict = match.groupdict()
+                                    col1.append(get_col1_text(matchdict))
+                                    col2.append(get_col2_text(matchdict))
+                                    if has_subcommands == False:
+                                        app.warn("[argdoc] found subcommand-like line but no subcommands at line %s:\n    %s" % (n,line))
+                                    break
+                                else:
+                                    matchdict = match.groupdict()
+                                    col1.append(get_col1_text(matchdict))
+                                    col2.append(get_col2_text(matchdict))
+                                    break
+                if match is None:
+                    # triggered if epilog, or if other unmatched lines
+                    if len(line.strip()) > 0:
+                        app.debug2("[argdoc] No match. Epilog?\n%s\n" % line.strip())
+                        line = safeunicode(line)
+                        out_lines.append(line)
+                    else:
+                        app.debug2("[argdoc] blank line")
+        # FIXME: 
+        # this is how we test where argument descriptions begin in ``--help`` text
+        # at present we look for an explicit 'arguments:' token, which allows argdoc
+        # to deal with lines of helptext that have trailing colons but which don't start
+        # argument sections (which a regex would fail at)
+        #
+        # BUT, if an argument parser has no line that says "arguments:" in its helptext,
+        # argdoc will fail
+        #
+        # we need a better test, which will be more portable
         elif line.endswith("arguments:"):
             # Found first argument section. Create command-line argument heading
-            if started == False:
-                started = True
-                desc_end = n
-                if section_head == True:
-                    stmp1 = section_name
-                    stmp2 = _HEADERS[header_level]*len(section_name)
-                    out_lines.extend(_SEPARATOR)
-                    out_lines.append(stmp1)
-                    out_lines.append(stmp2)
-                    # if is a subcommand, put cached description under heading
-                    if _is_subcommand == True:
-                        out_lines.extend(help_lines[desc_start:desc_end])
+            started = True
+            desc_end = n
+            if section_head == True:
+                stmp1 = section_name
+                stmp2 = _HEADERS[header_level]*len(section_name)
+                out_lines.extend(_SEPARATOR)
+                out_lines.append(safeunicode(stmp1))
+                out_lines.append(safeunicode(stmp2))
+                # if is a subcommand, put cached description under heading
+                if _is_subcommand == True:
+                    out_lines.extend(help_lines[desc_start:desc_end])
             
             # Create paragraph header for the argument section
             match = base["section_title"].match(line)
             section_title = [match.groups()[0].capitalize(),
                              _HEADERS[header_level+1]*len(match.groups()[0]),
                             ]
-        elif base["section_title"].match(line) is not None and not line.startswith("usage:"):
-            # Found section section of arguments.
-            # Create paragraph header
-            app.debug("[argdoc] Found section title: '%s'" % line)
-            match = base["section_title"].match(line)
-            section_title = [match.groups()[0].capitalize(),
-                             _HEADERS[header_level+1]*len(match.groups()[0]),
-                            ]
-        elif base["section_desc"].match(line) is not None:
-            app.debug2("[argdoc] section desc %s\n    %s\n" % (base["section_desc"].pattern,line))
-            section_desc.append(line)
-                        
-        elif started == True:
-            matchdict = None
-            match = None
-            for pat in ["positional_arg",
-                        "arg_only",
-                        "arg_plus_val",
-                        "continue_desc",
-                        "arg_plus_desc",
-                        "arg_plus_val_desc",
-                        "subcommand_names",
-                        "subcommand_name",
-                        ]:
-                for char in patterns.keys():
-                    if match is None:
-                        match = patterns[char][pat].match(line)
-                        if match is not None:
-                            app.debug2("[argdoc] %s\n    %s\n" % (pat,line))
-                            if pat == "continue_desc":
-                                try:
-                                    col2[-1] = u"%s %s" % (col2[-1],match.groups()[0].strip("\n"))
-                                except IndexError as e:
-                                    app.warn("[argdoc] continuing description with no prior description on line %s: \n    %s" % (n,line))
-                                    assert False
-                                break
-                            elif pat == "positional_arg":
-                                matchdict = match.groupdict()
-                                col1.append(get_col1_text(matchdict))
-                                col2.append(get_col2_text(matchdict))
-                                positional_args += 1
-                                break
-                            elif pat == "subcommand_names":
-                                has_subcommands = True
-                                subcommand_start = n
-                                break
-                            elif pat == "subcommand_name":
-                                matchdict = match.groupdict()
-                                col1.append(get_col1_text(matchdict))
-                                col2.append(get_col2_text(matchdict))
-                                if has_subcommands == False:
-                                    app.warn("[argdoc] found subcommand-like line but no subcommands at line %s:\n    %s" % (n,line))
-                                break
-                            else:
-                                matchdict = match.groupdict()
-                                col1.append(get_col1_text(matchdict))
-                                col2.append(get_col2_text(matchdict))
-                                break
-            if match is None:
-                if len(line.strip()) > 0:
-                    app.debug2("[argdoc] No match\n%s\n" % line.strip())
-                    line = safeunicode(line)
-
-                    out_lines.append(line)
-                else:
-                    app.debug2("[argdoc] blank line")
    
     if has_subcommands == True:
+        # parse subcommand argparsers after main, and append output below
         new_lines = get_subcommand_tables(app,
                                           obj,
                                           help_lines,
