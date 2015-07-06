@@ -535,30 +535,39 @@ class TestArgdoc():
     @staticmethod
     def check_list_equal(l1,l2,test_name):
         print("Checking list equality for %s" % test_name)
-        mismatched = []
-        for n, (line1,line2) in enumerate(zip(l1,l2)):
-            if sys.version_info[0] == 2:
-                if isinstance(line1,str):
-                    line1 = unicode(line1,"utf-8")
-                if isinstance(line2,str):
-                    line2 = unicode(line2,"utf-8")
-            if line1.strip() != line2.strip():
-                mismatched.append(n)
-        
+        mismatched = 0 
+        in_l1 = []
+        in_l2 = []
+        i = j = 0
+        while i < len(l1) and j < len(l2):
+            line1 = l1[i]
+            line2 = l2[j]
+            if line1 != line2:
+                mismatched += 1
+                if line1 not in l2:
+                    in_l1.append((i,line1))
+                    i += 1
+                if line2 not in l1:
+                    in_l2.append((j,line2))
+                    j += 1
+            i += 1
+            j += 1
+         
         message = ""
-        if len(mismatched) > 0:
-            message  = "-"*75 + "\n"
-            message  = "test '%s': Lists differ at lines %s\n" % (test_name,(", ").join([str(X) for X in mismatched]))
-            message += "List 1:\n"
-            for n in mismatched:
-                message += "%s\t%s\n" % (n,l1[n])
+        if mismatched > 0:
+            message  = u"-"*75 + "\n"
+            message += "In list 1 only:\n"
+            for l in in_l1:
+                message += ("%s: %s\n" % l)
+  
+            message += "In list 2 only:\n"
+            for l in in_l2:
+                message += ("%s: %s\n" % l)
  
-            message += "List 2:\n"
-            for n in mismatched:
-                message += "%s\t%s\n" % (n,l2[n])
+            message += "-"*75 + "\n"
+            print(message)
 
-            message = "-"*75 + "\n"
-        assert_equal(len(mismatched),0,message)
+        assert_equal(mismatched,0,message)
         
     def test_format_argparser_as_docstring(self):
         # look at output & test against known RST
