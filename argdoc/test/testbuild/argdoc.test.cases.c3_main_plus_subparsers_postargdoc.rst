@@ -19,7 +19,6 @@ Positional arguments
     ``mainarg1``                                         
     ``mainarg2``         main positional argument #2     
     =================    ================================
-    
 
 
 Optional arguments
@@ -30,7 +29,6 @@ Optional arguments
     -----------------------    ------------------------------------
     ``-h``, ``--help``         show this help message and exit     
     =======================    ====================================
-    
 
 
 Subcommands
@@ -43,7 +41,6 @@ Subcommands
     ``foo``         Run the ``foo`` subprogram                                                        
     ``bar``         Take output from ``foo`` subprogram and run it through the ``bar`` subprogram     
     ============    ==================================================================================
-    
 
 
 ------------
@@ -64,7 +61,6 @@ Positional arguments
     ``fooarg1``         foo argument 1     
     ``fooarg2``         foo argument 2     
     ================    ===================
-    
 
 
 Optional arguments
@@ -78,7 +74,6 @@ Optional arguments
     ``--fookwarg  FOOKWARG``                        foo keyword argument                
     ``-v  VERBOSE``, ``--verbose  VERBOSE``          foo verbosely                      
     ============================================    ====================================
-    
 
 
 ------------
@@ -97,7 +92,6 @@ Positional arguments
     ---------------    -----------------
     ``bararg``         bar argument     
     ===============    =================
-    
 
 
 Optional arguments
@@ -109,7 +103,6 @@ Optional arguments
     ``-h``, ``--help``                              show this help message and exit       
     ``--choice  {option1,option2,option3}``          A keyword that requries a choice     
     ============================================    ======================================
-    
 
 
 An argument group
@@ -123,7 +116,6 @@ An argument group
     ``--b2  B2``         Argument 2 has help (bar argument 1 did not have help)     
     ``-k  N N``          Some other argument                                        
     =================    ===========================================================
-    
 
 
 ------------

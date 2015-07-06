@@ -6,12 +6,6 @@ argdoc package
     :undoc-members:
     :show-inheritance:
 
-Subpackages
------------
-
-.. toctree::
-
-    argdoc.test
 
 Submodules
 ----------
@@ -19,4 +13,13 @@ Submodules
 .. toctree::
 
    argdoc.ext
+
+
+Subpackages
+-----------
+
+.. toctree::
+
+    argdoc.test
+
 

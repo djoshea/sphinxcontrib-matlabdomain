@@ -24,7 +24,6 @@ Positional arguments
     ``reallyreallyreallyreallyreallyreallyreallyreallylongpositionalargument2``          one-line help text                                                                                                                                             
     ``reallyreallyreallyreallyreallyreallyreallyreallylongpositionalargument3``          this is very, very long help text which should span multiple lines and thus require special parsing. We'll also add `special` *chars* (default: 513251324)     
     ================================================================================    ================================================================================================================================================================
-    
 
 
 Optional arguments
@@ -41,7 +40,6 @@ Optional arguments
     ``++another  ANOTHER``                                       Another argument                                                                                                                                               
     ``+y  ARG4 [ARG4 ...]``, ``++arg4  ARG4 [ARG4 ...]``          An argument beginning with '+'                                                                                                                                
     =========================================================    ===============================================================================================================================================================
-    
 
 
 ------------

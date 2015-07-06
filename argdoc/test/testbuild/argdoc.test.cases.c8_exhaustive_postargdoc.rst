@@ -60,7 +60,6 @@ Positional arguments
     ``reallyreallyreallyreallyreallyreallyreallyreallylongpositionalargument2``          one-line help text                                                                                                                                             
     ``reallyreallyreallyreallyreallyreallyreallyreallylongpositionalargument3``          this is very, very long help text which should span multiple lines and thus require special parsing. We'll also add `special` *chars* (default: 513251324)     
     ================================================================================    ================================================================================================================================================================
-    
 
 
 Optional arguments
@@ -176,7 +175,6 @@ Optional arguments
     ``-Ã  {one,two,three,four}``, ``--reallyreallyreallyreallyreallyreallylong_combo20  {one,two,three,four}``          one-line help text                                                                                                                                             
     ``-Ä  {one,two,three,four}``, ``--reallyreallyreallyreallyreallyreallylong_combo21  {one,two,three,four}``          this is very, very long help text which should span multiple lines and thus require special parsing. We'll also add `special` *chars* (default: 513251324)     
     ===============================================================================================================    ================================================================================================================================================================
-    
 
 
 ------------

@@ -191,10 +191,10 @@ def make_rest_table(rows,title=False,indent_size=0):
         lines.append(template.format(*items))
 
     lines.append(border)
-    lines.append(u"\n")
+    lines.append(u"")
     if indent_size > 0:
         tmp = u" "*indent_size
-        lines = [tmp+X for X in lines]
+        lines = [tmp+X if len(X) > 0 else X for X in lines]
     return lines
 
 

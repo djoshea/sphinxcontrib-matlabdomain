@@ -22,7 +22,6 @@ Positional arguments
     ``mainarg1``                                         
     ``mainarg2``         main positional argument #2     
     =================    ================================
-    
 
 
 Optional arguments
@@ -33,7 +32,6 @@ Optional arguments
     -----------------------    ------------------------------------
     ``-h``, ``--help``         show this help message and exit     
     =======================    ====================================
-    
 
 
 One group of arguments
@@ -51,7 +49,6 @@ One group of arguments
     ``--fookwarg  FOOKWARG``                        foo keyword argument     
     ``-v  VERBOSE``, ``--verbose  VERBOSE``          foo verbosely           
     ============================================    =========================
-    
 
 
 A second group of arguments
@@ -64,7 +61,6 @@ A second group of arguments
     ``bararg``                                      bar argument                          
     ``--choice  {option1,option2,option3}``          A keyword that requries a choice     
     ============================================    ======================================
-    
 
 
 A final group of arguments, with no description
@@ -77,7 +73,6 @@ A final group of arguments, with no description
     ``--numbers  M M M``                   numerical argument     
     ``-z  ZOOM``, ``--zoom  ZOOM``         zzzzzzzzzzzzzz         
     ===================================    =======================
-    
 
 
 ------------

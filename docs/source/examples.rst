@@ -1,10 +1,9 @@
 Examples
 ========
 The following examples illustrate :data:`argdoc` output over a variety
-of :class:`~argparse.ArgumentParser` configurations (e.g. with and 
-without subcommands; with and without argument groups; using alternate
-prefix characters, et c). 
-
+of :class:`~argparse.ArgumentParser` configurations. Links in the left-hand
+column show rendered output. Corresponding Python source code may be 
+found in the right-hand column.
 
  .. include :: generated/test_cases.inc
 
