@@ -1,8 +1,8 @@
-# Makefile for argdoc
+# Makefile for sphinxcontrib-argdoc
 date := $(shell date +%Y-%m-%d)
 
 help:
-	@echo "argdoc make help"
+	@echo "sphinxcontrib-argdoc make help"
 	@echo " "
 	@echo "Please use \`make <target>\`, choosing <target> from the following:"
 	@echo "    dist        to make HTML documentation and eggs for distribution"
@@ -17,7 +17,7 @@ help:
 
 docs/source/class_substitutions.txt :
 	mkdir -p docs/source
-	get_class_substitutions argdoc argdoc
+	get_class_substitutions sphinxcontrib-argdoc sphinxcontrib-argdoc
 	mv argdoc_substitutions.txt docs/source/class_substitutions.txt
 
 docs/build/html : docs/source/class_substitutions.txt | docs/source/generated

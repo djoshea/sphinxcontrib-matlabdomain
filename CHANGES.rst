@@ -1,15 +1,22 @@
 Change Log
 ==========
-All major changes to `argdoc` will be documented here. Version numbers follow 
-the conventions described in `PEP440 <https://www.python.org/dev/peps/pep-0440/>`_
-and `Semantic versioning <http://semver.org/>`_.
+All major changes to `sphinxcontrib-argdoc` are documented here. Version
+numbers for the project follow  the conventions described in
+`PEP440 <https://www.python.org/dev/peps/pep-0440/>`_ and
+`Semantic versioning <http://semver.org/>`_.
+
 
 Unreleased
 ----------
 
+Changed
+.......
+ - Moved from independent package `argdoc` to `sphinxcontrib` namespace.
+   New package name is `sphinxcontrib.argdoc`
+
 Added
 .....
- - Subcommands of subcommands are now parsed
+ - Subcommands of subcommands are now supported
  - Test cases now generate examples for documentation
 
 

@@ -1,1 +1,1 @@
- .. |TestArgdoc| replace:: :py:class:`~argdoc.test.TestArgdoc`
+ .. |TestArgdoc| replace:: :py:class:`~sphinxcontrib.argdoc.test.TestArgdoc`
