@@ -7,29 +7,29 @@ Install stable versions via `pip`_. For a single-user installation:
 
  .. code-block:: shell
 
-    $ pip install --user argdoc
+    $ pip install --user sphinxcontrib-argdoc
 
 
 For a system-wide installation:
 
  .. code-block:: shell
 
-    $ sudo pip install argdoc
+    $ sudo pip install sphinxcontrib-argdoc
 
 
-Using :obj:`argdoc` in your project
------------------------------------
-Setting up :obj:`argdoc` only takes a few steps:
+Using :obj:`sphinxcontrib.argdoc` in your project
+--------------------------------------------------------------
+Setting up :obj:`sphinxcontrib.argdoc` only takes a few steps:
 
  #. Find the `extensions` definition in your `Sphinx`_ configuration file,
-    ``conf.py``, and add `'argdoc.ext'` to the list. For example::
+    ``conf.py``, and add `'sphinxcontrib.argdoc'` to the list. For example::
 
         # inside conf.py
         extensions = [
             'sphinx.ext.autodoc',
             'sphinx.ext.autosummary',
             'sphinx.ext.intersphinx',
-            'argdoc.ext' # <---- ta-da!
+            'sphinxcontrib.argdoc' # <---- ta-da!
         ]
 
  #. Generate document stubs for your package. It is easiest to use
@@ -106,7 +106,7 @@ Setting up :obj:`argdoc` only takes a few steps:
     :doc:`examples`.
 
  .. warning::
-    :obj:`argdoc` generates its documentation by calling your executable
+    :obj:`sphinxcontrib.argdoc` generates its documentation by calling your executable
     scripts with the argument ``--help``. Therefore, any side effects
     caused by executing your script will take effect during the documentation
     build process.

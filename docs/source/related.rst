@@ -3,8 +3,8 @@ Related resources
 
 Projects
 --------
-If you're interested in :obj:`argdoc`, a number of other projects & resources
-might interest you, too:
+If you're interested in :obj:`sphinxcontrib.argdoc`, a number of other projects
+& resources might interest you, too:
 
     `sphinx-argparse`_
         Another automated documentation generator for executable scripts

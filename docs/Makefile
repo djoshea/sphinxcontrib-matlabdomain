@@ -49,8 +49,8 @@ help:
 clean:
 	rm -rf $(BUILDDIR)/*
 
-source/generated/test_cases.inc: ../argdoc/test/cases
-	source/make_table.py argdoc.test.cases source/generated/test_cases.inc --title "Rendered output" "Python source code"
+source/generated/test_cases.inc: 
+	source/make_table.py sphinxcontrib.argdoc.test.cases source/generated/test_cases.inc --title "Rendered output" "Python source code"
 
 html: source/generated/test_cases.inc
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# argdoc documentation build configuration file, created by
+# sphinxcontrib.argdoc documentation build configuration file, created by
 # sphinx-quickstart on Fri Dec  5 11:55:54 2014.
 #
 # This file is execfile()d with the current directory set to its
@@ -15,7 +15,7 @@
 import os
 import unittest
 import datetime
-import argdoc
+import sphinxcontrib.argdoc
 
 
 # -- General configuration ------------------------------------------------
@@ -33,13 +33,13 @@ rst_prolog = """
 master_doc = 'master_toctree'
 
 # ignore package prefix when alphabetizing index
-modindex_common_prefix = ["argdoc."]
+modindex_common_prefix = ["sphinxcontrib.argdoc."]
 
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.intersphinx',
-    'argdoc.ext',
+    'sphinxcontrib.argdoc',
     #'sphinx.ext.coverage',
     #'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
@@ -176,13 +176,13 @@ intersphinx_mapping = { "python" : ("http://docs.python.org",None),
 
 
 # General information about the project.
-project = u'argdoc'
+project = u'sphinxcontrib.argdoc'
 copyright = u'2015, Joshua G. Dunn'
 
 # Short version number, for |version|
-version = str(argdoc.__version__)
+version = str(sphinxcontrib.argdoc.__version__)
 # The full version, including alpha/beta/rc tags, for |release|
-release = "%s-r%s" % (argdoc.__version__,str(datetime.date.today()).replace("-","_"))
+release = "%s-r%s" % (sphinxcontrib.argdoc.__version__,str(datetime.date.today()).replace("-","_"))
 
 
 # Add any paths that contain templates here, relative to this directory.
@@ -307,7 +307,7 @@ html_use_smartypants = True
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'argdoc_doc'
+htmlhelp_basename = 'sphinxcontrib-argdoc_doc'
 
 
 # -- Options for LaTeX output ---------------------------------------------
@@ -327,7 +327,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  ('index', 'argdoc.tex', u'argdoc Documentation',
+  ('index', 'sphinxcontrib-argdoc.tex', u'sphinxcontrib.argdoc Documentation',
    u'Joshua G. Dunn', 'manual'),
 ]
 
@@ -357,7 +357,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'argdoc', u'argdoc Documentation',
+    ('index', 'sphinxcontrib-argdoc', u'sphinxcontrib-argdoc Documentation',
      [u'Joshua G. Dunn'], 1)
 ]
 
@@ -371,8 +371,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'argdoc', u'argdoc Documentation',
-   u'Joshua G. Dunn', 'argdoc', 'One line description of project.',
+  ('index', 'sphinxcontrib-argdoc', u'sphinxcontrib-argdoc Documentation',
+   u'Joshua G. Dunn', 'sphinxcontrib-argdoc', 'Sphinx extension that automatically documents command-line arguments',
    'Miscellaneous'),
 ]
 

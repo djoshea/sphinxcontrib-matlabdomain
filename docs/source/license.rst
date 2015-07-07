@@ -1,6 +1,6 @@
 License
 =======
-:obj:`argdoc` is published under the BSD 3-Clause license, which is as follows:
+:obj:`sphincontrib.argdoc` is published under the BSD 3-Clause license, which is as follows:
 
 
 The BSD 3-Clause License

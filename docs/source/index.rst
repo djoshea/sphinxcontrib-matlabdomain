@@ -1,9 +1,9 @@
-welcome to `argdoc`
-===================
+welcome to `sphinxcontrib-argdoc`
+=================================
 
 Introduction
 ------------
-:obj:`argdoc` is an extension for the `Sphinx`_ documentation engine.
+:obj:`sphinxcontrib.argdoc` is an extension for the `Sphinx`_ documentation engine.
 
 It automatically generates tables describing command-line arguments
 for :term:`executable scripts` written in `Python`_, and inserts
@@ -16,7 +16,7 @@ only requirements are:
  2. The ``rst`` stub files for the scripts include the ``:automodule:``
     directive (which they will, by default, if you use `sphinx-apidoc`_).
 
-To start using :obj:`argdoc`, see the :doc:`quickstart` guide.
+To start using :obj:`sphinxcontrib.argdoc`, see the :doc:`quickstart` guide.
    
 Indices and tables
 ------------------

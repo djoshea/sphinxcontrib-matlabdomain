@@ -17,7 +17,7 @@ import importlib
 import argparse
 
 from modulefinder import ModuleFinder
-from argdoc.ext import make_rest_table
+from sphinxcontrib.argdoc.ext import make_rest_table
 
 def get_submodules(package):
     """Find names of all modules in `package`
@@ -58,7 +58,6 @@ def get_link_pair(modname):
     slashname  = modname.replace(".","/")
     p1 = ":mod:`%s <%s>`" % (docsummary,modname)
     p2 = "`%s <_modules/%s.html>`_" % (modname,slashname)
-    #p2 = ":source:`%s.py`" % modname.replace(".","/")
     return p1, p2
 
 def main(argv=sys.argv[1:]):

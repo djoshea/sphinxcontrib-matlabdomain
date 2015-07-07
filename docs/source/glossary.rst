@@ -38,8 +38,8 @@ Glossary of terms
     main-like function
         A function that is called when a script is executed from a
         :term:`shell`, as opposed to inside an interactive Python session.
-        These are the functions from whose arguments :obj:`argdoc` generates
-        documentation.
+        These are the functions from whose arguments :obj:`sphinxcontrib.argdoc`
+        generates documentation.
         
         These are typically named `main`, and in idiomatically written
         Python are called by the following lines, which appear as the 
@@ -48,7 +48,7 @@ Glossary of terms
             if __name__ == "__main__":
                 main()
 
-        :obj:`argdoc` detects :term:`main-like functions <main-like function>`
+        :obj:`sphinxcontrib.argdoc` detects :term:`main-like functions <main-like function>`
         by scanning modules for functions whose names match the current 
         value of the configuration parameter `argdoc_main_func` (set
         in ``conf.py``, with default value `'main'`).

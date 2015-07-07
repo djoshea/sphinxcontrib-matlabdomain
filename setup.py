@@ -1,21 +1,22 @@
-#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """Setup file for argdoc Sphinx extension"""
 from setuptools import setup, find_packages
-import argdoc
+import sphinxcontrib.argdoc
 
 with open("README.rst") as f:
     long_description = f.read()
 
-config_info = { "version"          : argdoc.__version__,
+config_info = { "version"          : sphinxcontrib.argdoc.__version__,
                 "packages"         : find_packages(),
                 "long_description" : long_description,
               }
 
 setup(
-    name = "argdoc",
-    description  = "Sphinx extension that automatically adds tables describing command-line arguments to autodoc's `:automodule:` directive",
-    url          = "",
-    download_url = "",
+    name = "sphinxcontrib-argdoc",
+    description = 'Sphinx "argdoc" extension',
+    #description  = "Sphinx extension that automatically adds tables describing command-line arguments to autodoc's `:automodule:` directive",
+    url          = "http://bitbucket.org/birkenfeld/sphinx-contrib",
+    download_url = "http://pypi.python.org/pypi/sphinxcontrib-argdoc",
 
     author           = "Joshua Griffin Dunn",
     author_email     = "joshua.g.dunn@gmail.com",
@@ -35,10 +36,12 @@ setup(
     
     tests_require=["nose>=1.0"],
     test_suite = "nose.collector",
+    namespace_packages=['sphinxcontrib'],
     
     classifiers=[
          'Development Status :: 4 - Beta',
          'Environment :: Plugins',
+         'Environment :: Web Environment',
          'Programming Language :: Python',
          'Programming Language :: Python :: 2.7',
          'Programming Language :: Python :: 3',
@@ -47,20 +50,14 @@ setup(
 
          'Topic :: Documentation',
          'Topic :: Documentation :: Sphinx',
-         'Topic :: SOftware Development :: Documentation',
+         'Topic :: Software Development :: Documentation',
          'Topic :: Text Processing',
          'Topic :: Utilities',
 
          'Intended Audience :: Developers',
-         'Intended Audience :: End Users/Desktop',
-         'Intended Audience :: Science/Research',
          'License :: OSI Approved :: BSD License',
-
          'Natural Language :: English',
-         
-         'Operating System :: POSIX',
-         'Operating System :: MacOS :: MacOS X',
-         'Operating System :: Microsoft :: Windows',
+         'Operating System :: OS Independent',
         ],
     **config_info
 )
