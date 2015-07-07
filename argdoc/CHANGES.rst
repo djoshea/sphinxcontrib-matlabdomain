@@ -6,13 +6,15 @@ numbers for the project follow  the conventions described in
 `Semantic versioning <http://semver.org/>`_.
 
 
-Unreleased
-----------
+[0.1.1] = 2015-07-07
+--------------------
 
 Changed
 .......
  - Moved from independent package `argdoc` to `sphinxcontrib` namespace.
    New package name is `sphinxcontrib.argdoc`
+ - Numerous doc updates
+ - sphinxcontrib-argdoc.readthedocs.org added to README.rst
 
 Added
 .....
