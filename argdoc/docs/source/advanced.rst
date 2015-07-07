@@ -5,7 +5,7 @@ Preventing `sphinxcontrib-argdoc` from processing one or more, but not all scrip
 ------------------------------------------------------------------------------------------------
 To prevent :obj:`sphinxcontrib.argdoc` from processing a :term:`main-like function`,
 in one of the :term:`executable scripts` in your package, use the
-:func:`~sphinxcontrib.argdoc.noargdoc` function decorator. For example::
+:func:`~sphinxcontrib.argdoc.ext.noargdoc` function decorator. For example::
 
     #!/usr/bin/env python
     import argparse

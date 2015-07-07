@@ -14,7 +14,6 @@ config_info = { "version"          : sphinxcontrib.argdoc.__version__,
 setup(
     name = "sphinxcontrib-argdoc",
     description = 'Sphinx "argdoc" extension',
-    #description  = "Sphinx extension that automatically adds tables describing command-line arguments to autodoc's `:automodule:` directive",
     url          = "http://bitbucket.org/birkenfeld/sphinx-contrib",
     download_url = "http://pypi.python.org/pypi/sphinxcontrib-argdoc",
 
@@ -37,9 +36,15 @@ setup(
     tests_require=["nose>=1.0"],
     test_suite = "nose.collector",
     namespace_packages=['sphinxcontrib'],
+    include_package_data=True,
+    package_data={ '' : ['*py','*rst',
+                   'sphinxcontrib/argdoc/test/testbuild/*',
+                   'sphinxcontrib/argdoc/test/testdocroot/*',
+                   ],
+                  },
     
     classifiers=[
-         'Development Status :: 4 - Beta',
+         'Development Status :: 5 - Production/Stable',
          'Environment :: Plugins',
          'Environment :: Web Environment',
          'Programming Language :: Python',

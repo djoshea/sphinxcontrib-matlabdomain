@@ -10,6 +10,6 @@
     related
     contributing
     license
-    Technical documentation <generated/argdoc>
+    Technical documentation <generated/sphinxcontrib.argdoc>
 
 

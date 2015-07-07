@@ -9,7 +9,7 @@ now, we follow these conventions:
      using `nose`_ or Python's :mod:`unittest` framework. And, if
      you submit patches without adding new features, please make sure
      all tests in the current test suite still pass. See
-     :mod:`sphinxcontrib.argdoc.test` for details on how tests are
+     :mod:`sphinxcontrib.argdoc.test.test_argdoc` for details on how tests are
      structured.
     
   2. *Code formatting:* Code should be formatted as described

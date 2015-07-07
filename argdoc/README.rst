@@ -1,10 +1,10 @@
-Welcome to `argdoc`
-===================
+Welcome to `sphinxcontrib-argdoc`
+=================================
 
 Introduction
 ------------
 
-`argdoc` is an extension for the <Sphinx `https://sphinx-doc.org`>_
+`sphinxcontrib-argdoc` is an extension for the <Sphinx `https://sphinx-doc.org`>_
 documentation engine.
 
 It automatically generates tables describing command-line arguments
@@ -23,24 +23,24 @@ The only requirements are:
      if you use `sphinx-apidoc`).
 
 For more info, detailed instructions, and examples, see the
-`argdoc documentation <>`_.
+`sphinxcontrib-argdoc documentation <>`_.
 
 
 Installation and use
 --------------------
 
-`argdoc` may be installed from <PyPI `https://pypi.python.org`>_
+`sphinxcontrib-argdoc` may be installed from <PyPI `https://pypi.python.org`>_
 using <pip `https://pip.pypa.io/en/latest/installing.html`>_. Alternatively,
 you can clone the development version into your PYTHONPATH.
 
-To use `argdoc`, simply add `'argdoc.ext'` to the list of extensions
+To use `sphinxcontrib-argdoc`, simply add `'sphinxcontrib.argdoc'` to the list of extensions
 in your project's Sphinx configuration file
 <conf.py `http://sphinx-doc.org/config.html`>_:
 
  .. code-block:: python
 
     # somewhere in conf.py
-    extensions = ['argdoc.ext',
+    extensions = ['sphinxcontrib.argdoc',
                   'another_extension',
                   'some_other_extension'
                  ]
@@ -50,21 +50,21 @@ Tests
 -----
 
 Tests are written using `nose <https://nose.readthedocs.org>`_,
-and may be found in the subpackage `argdoc.test`. To run the tests,
+and may be found in the subpackage `sphinxcontrib.argdoc.test`. To run the tests,
 type from the terminal:
 
  .. code-block:: shell
 
-    $ nosetests argdoc.test
+    $ nosetests sphinxcontrib.argdoc.test
 
 
 Authors
 -------
 
-  - `Joshua Griffin Dunn <>`_
+  - `Joshua Griffin Dunn <joshua.g.dunn@gmail.com>`_
 
 
 License
 -------
-`argdoc` is licensed under the
+`sphinxcontrib-argdoc` is licensed under the
 `BSD 3-Clause License <http://opensource.org/licenses/BSD-3-Clause>`_.

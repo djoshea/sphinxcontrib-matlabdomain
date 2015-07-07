@@ -1,6 +1,6 @@
 Use of 'noargdoc' function decorator
 
-The :func:`~sphinxcontrib.argdoc.noargdoc` function decorator tells
+The :func:`~sphinxcontrib.argdoc.ext.noargdoc` function decorator tells
 :obj:`sphinxcontrib.argdoc` to ignore a command-line script, leaving
 its ``:automodule:`` output unchanged.
 

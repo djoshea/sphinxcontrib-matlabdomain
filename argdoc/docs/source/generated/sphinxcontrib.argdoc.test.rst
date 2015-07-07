@@ -6,12 +6,6 @@ sphinxcontrib.argdoc.test package
     :undoc-members:
     :show-inheritance:
 
-Subpackages
------------
-
-.. toctree::
-
-    sphinxcontrib.argdoc.test.cases
 
 Submodules
 ----------
@@ -19,4 +13,13 @@ Submodules
 .. toctree::
 
    sphinxcontrib.argdoc.test.test_argdoc
+
+
+Subpackages
+-----------
+
+.. toctree::
+
+    sphinxcontrib.argdoc.test.cases
+
 

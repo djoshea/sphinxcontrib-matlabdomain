@@ -7,7 +7,7 @@ Test implementation
   - Unit tests are provided for regular expressions used to identify different
     patterns from :obj:`argparse` output
     
-  - Unit and functional tests e.g. for :func:`format_argparser_as_docstring` are
+  - Unit and functional tests e.g. for :func:`sphinxcontrib.argdoc.ext.format_argparser_as_docstring` are
     performed as follows:
     
       1. `Sphinx`_ is run on the test cases in :obj:`sphinxcontrib.argdoc.test.cases` using
