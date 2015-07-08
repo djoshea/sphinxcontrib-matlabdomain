@@ -617,7 +617,7 @@ def post_process_automodule(app,what,name,obj,options,lines):
     if what == "module" and obj.__dict__.get(funcname,None) is not None:
         if obj.__dict__.get(funcname).__dict__.get("noargdoc",False) == False:
             app.debug2("[argdoc] Processing module '%s'" % obj.__name__)
-            call = shlex.split("python -m %s --help".replace("-",prefix_chars[0]) % obj.__name__)
+            call = shlex.split("python -m %s --help".replace("-",prefix_chars[0]) % name)
             try:
                 out = subprocess.check_output(call) 
                 if sys.version_info[0] == 2:
@@ -626,7 +626,7 @@ def post_process_automodule(app,what,name,obj,options,lines):
                     out = out.decode("utf-8")
                 help_lines = out.split("\n")
             except subprocess.CalledProcessError as e:
-                note = "Could not call module %s as '%s'. Output:\n"% (obj.__name__, e.cmd)
+                note = "Could not call module %s as '%s'. Output:\n"% (name,e.cmd)
                 app.warn(format_warning(note,e.output))
             try:
                 out_lines = format_argparser_as_docstring(app,obj,help_lines,section_head=True,header_level=1,patterns=patterns)
@@ -634,7 +634,7 @@ def post_process_automodule(app,what,name,obj,options,lines):
                 lines.extend(out_lines)
                 lines.extend(_OTHER_HEADER_LINES)
             except IndexError as e:
-                note = "Error processing argparser into docstring for module %s: \n%s" % (obj.__name__,e.message)
+                note = "Error processing argparser into docstring for module %s: \n%s" % (name,e.message)
                 details = "\n\n%s\n\n%s" % (e.args,e)
                 app.warn(format_warning(note,details))
 
@@ -653,31 +653,3 @@ def post_process_automodule(app,what,name,obj,options,lines):
                 
         app.emit("argdoc-process-docstring",what,name,obj,options,lines)
 
-
-#===============================================================================
-# INDEX: extension setup
-#===============================================================================
-
-def setup(app):
-    """Set up :data:`sphinxcontrib.argdoc` extension and register it with `Sphinx`_
-    
-    Parameters
-    ----------
-    app
-        Sphinx application instance
-    """
-    metadata = { "version" : __version__
-               }
-
-    for ext in _REQUIRED:
-        app.setup_extension(ext)
-    
-    app.connect("autodoc-process-docstring",post_process_automodule)
-    app.add_config_value("argdoc_main_func","main","env")
-    app.add_config_value("argdoc_save_rst",False,"env")
-    app.add_config_value("argdoc_prefix_chars","-","env")
-
-    app.add_event("argdoc-process-docstring")
-
-    if sphinx.version_info >= (1,3,):
-        return metadata

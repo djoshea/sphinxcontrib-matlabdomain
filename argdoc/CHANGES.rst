@@ -5,6 +5,14 @@ numbers for the project follow  the conventions described in
 `PEP440 <https://www.python.org/dev/peps/pep-0440/>`_ and
 `Semantic versioning <http://semver.org/>`_.
 
+[0.1.2] = 2015-07-07
+--------------------
+
+Changed
+.......
+ - Richer error reporting when modules cannot be executed
+ - Changes for improved compatibility with readthedocs.org
+ 
 
 [0.1.1] = 2015-07-07
 --------------------
