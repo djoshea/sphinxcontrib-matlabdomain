@@ -329,8 +329,12 @@ def get_subcommand_tables(app,obj,help_lines,patterns,start_line,command_chain="
                                                        app.config.argdoc_prefix_chars[0])
             app.debug("[argdoc] Parsing subcommand %s with as `%s`" % (subcommand,callstr))
             call = shlex.split(callstr)
-            proc = subprocess.Popen(call,stdout=subprocess.PIPE,universal_newlines=True)
-            sub_help_lines = proc.communicate()[0].split("\n")
+            out = subprocess.check_output(call)
+            if sys.version_info[0] == 2:
+                out = unicode(out,"utf-8")
+            elif sys.version_info[0] == 3:
+                out = out.decode("utf-8")
+            sub_help_lines = out.split("\n")
             new_command_chain = command_chain + (" %s " % subcommand)
             out_lines.extend(format_argparser_as_docstring(app,
                                                            obj,
@@ -615,8 +619,12 @@ def post_process_automodule(app,what,name,obj,options,lines):
             app.debug2("[argdoc] Processing module '%s'" % obj.__name__)
             call = shlex.split("python -m %s --help".replace("-",prefix_chars[0]) % obj.__name__)
             try:
-                proc = subprocess.Popen(call,stdout=subprocess.PIPE,universal_newlines=True)
-                help_lines = proc.communicate()[0].split("\n")
+                out = subprocess.check_output(call) 
+                if sys.version_info[0] == 2:
+                    out = unicode(out,"utf-8")
+                elif sys.version_info[0] == 3:
+                    out = out.decode("utf-8")
+                help_lines = out.split("\n")
             except subprocess.CalledProcessError as e:
                 note = "Could not call module %s as '%s'. Output:\n"% (obj.__name__, e.cmd)
                 app.warn(format_warning(note,e.output))
