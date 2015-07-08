@@ -41,7 +41,7 @@ List of extensions
 - actdiag: embed activity diagrams by using actdiag_
 - adadomain: an extension for Ada support (Sphinx 1.0 needed)
 - ansi: parse ANSI color sequences inside documents
-- argdoc: automatically generate documentation for command-line arguments, descriptions, and help text
+- argdoc_: automatically generate documentation for command-line arguments, descriptions, and help text
 - astah: embed diagram by using astah_
 - autoanysrc: Gather reST documentation from any source files
 - autoprogram_: documenting CLI programs
@@ -108,6 +108,8 @@ List of extensions
 - zopeext: provide an ``autointerface`` directive for using `Zope interfaces`_.
 
 .. _aafigure: https://launchpad.net/aafigure
+
+.. _argdoc: http://sphinxcontrib-argdoc.readthedocs.org
 
 .. _astah: http://astah.change-vision.com/
 
