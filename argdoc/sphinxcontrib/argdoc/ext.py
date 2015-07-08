@@ -346,7 +346,7 @@ def get_subcommand_tables(app,obj,help_lines,patterns,start_line,command_chain="
                                                            _is_subcommand=True,
                                                            command_chain=new_command_chain)) 
         except subprocess.CalledProcessError as e:
-            note = "Could not call module %s as '%s'. Output:\n"% (obj.__name__, e.cmd)
+            note = "Could not call module %s as '%s'. Output:\n"% (obj.__name__, " ".join(e.cmd))
             msg = format_warning(note,e.output)
             app.warn(msg)
 
@@ -625,14 +625,13 @@ def post_process_automodule(app,what,name,obj,options,lines):
                 elif sys.version_info[0] == 3:
                     out = out.decode("utf-8")
                 help_lines = out.split("\n")
-            except subprocess.CalledProcessError as e:
-                note = "Could not call module %s as '%s'. Output:\n"% (name,e.cmd)
-                app.warn(format_warning(note,e.output))
-            try:
                 out_lines = format_argparser_as_docstring(app,obj,help_lines,section_head=True,header_level=1,patterns=patterns)
                 out_lines += _SEPARATOR
                 lines.extend(out_lines)
                 lines.extend(_OTHER_HEADER_LINES)
+            except subprocess.CalledProcessError as e:
+                note = "Could not call module %s as '%s'. Output:\n"% (name," ".join(e.cmd))
+                app.warn(format_warning(note,e.output))
             except IndexError as e:
                 note = "Error processing argparser into docstring for module %s: \n%s" % (name,e.message)
                 details = "\n\n%s\n\n%s" % (e.args,e)
