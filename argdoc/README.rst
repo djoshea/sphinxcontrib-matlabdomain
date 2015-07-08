@@ -5,18 +5,18 @@ Introduction
 ------------
 
 `sphinxcontrib-argdoc <http://sphinxcontrib-argdoc.readthedocs.org>`_
-is an extension for the `Sphinx <https://sphinx-doc.org`>_
+is an extension for the `Sphinx <https://sphinx-doc.org>`_
 documentation engine.
 
 It automatically generates tables describing command-line arguments
 for executable scripts written in Python, and inserts those tables
 into the ``:automodule:`` documentation generated for the scripts by
-the Sphinx extension `autodoc <http://sphinx-doc.org/ext/autodoc.html`>_.
+the Sphinx extension `autodoc <http://sphinx-doc.org/ext/autodoc.html>`_.
 
 The only requirements are:
 
   1. The executable scripts use the Python
-     `argparse <https://docs.python.org/3/library/argparse.html`>_ module
+     `argparse <https://docs.python.org/3/library/argparse.html>`_ module
      for argument parsing.
 
   2. The `rst` documentation stub file for the scripts include

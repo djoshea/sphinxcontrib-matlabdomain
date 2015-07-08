@@ -2,3 +2,4 @@ sphinx
 sphinxcontrib-argdoc
 autodoc
 numpydoc
+nose>=1.0

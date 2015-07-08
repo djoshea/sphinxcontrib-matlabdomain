@@ -45,7 +45,7 @@ parameter `argdoc_main_func` to your function name in ``conf.py``::
 
 Using alternate prefix characters in your :class:`~argparse.ArgumentParser`
 ---------------------------------------------------------------------------
-If your :term:`executable script <exeutable scripts>` uses one or more 
+If your :term:`executable script <executable scripts>` uses one or more 
 alternate `prefix characters`_ (e.g. `'+'` instead of or in addition to `'-'`,
 set the configuration parameter `argdoc_prefix_chars` to a string
 containing all of the prefix characters used by all of your scripts in 
