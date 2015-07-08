@@ -322,14 +322,15 @@ def get_subcommand_tables(app,obj,help_lines,patterns,start_line,command_chain="
             newname = command_chain.replace(_PLACEHOLDER_CONSTANT,"").replace("  "," ").split()
             newname.append(subcommand)
             newname ="-".join(newname)
-            callstr = "python -m %s %s %s %s%shelp" % (obj.__name__,
-                                                       command_chain,
-                                                       subcommand,
-                                                       app.config.argdoc_prefix_chars[0],
-                                                       app.config.argdoc_prefix_chars[0])
+            callstr = "%s -m %s %s %s %s%shelp" % (sys.executable,
+                                                   obj.__name__,
+                                                   command_chain,
+                                                   subcommand,
+                                                   app.config.argdoc_prefix_chars[0],
+                                                   app.config.argdoc_prefix_chars[0])
             app.debug("[argdoc] Parsing subcommand %s with as `%s`" % (subcommand,callstr))
             call = shlex.split(callstr)
-            out = subprocess.check_output(call)
+            out = subprocess.check_output(call,env=os.environ.copy())
             if sys.version_info[0] == 2:
                 out = unicode(out,"utf-8")
             elif sys.version_info[0] == 3:
@@ -617,9 +618,9 @@ def post_process_automodule(app,what,name,obj,options,lines):
     if what == "module" and obj.__dict__.get(funcname,None) is not None:
         if obj.__dict__.get(funcname).__dict__.get("noargdoc",False) == False:
             app.debug2("[argdoc] Processing module '%s'" % obj.__name__)
-            call = shlex.split("python -m %s --help".replace("-",prefix_chars[0]) % name)
+            call = shlex.split("%s -m %s --help".replace("-",prefix_chars[0]) % (sys.executable,name))
             try:
-                out = subprocess.check_output(call) 
+                out = subprocess.check_output(call,env=os.environ.copy()) 
                 if sys.version_info[0] == 2:
                     out = unicode(out,"utf-8")
                 elif sys.version_info[0] == 3:
