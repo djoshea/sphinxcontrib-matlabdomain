@@ -18,6 +18,8 @@ only requirements are:
 
 To start using :obj:`sphinxcontrib.argdoc`, see the :doc:`quickstart` guide.
    
+To view the source code, check out `the sphinx-contrib repository on BitBucket <http://bitbucket.org/birkenfeld/sphinx-contrib>`_.
+
 Indices and tables
 ------------------
 

@@ -4,18 +4,27 @@ Contributing
 We welcome contributions! But we are new at this, so please be patient. Right
 now, we follow these conventions:
 
-  1. *Testing:* This is a pretty low-key project, but we will not accept
+Workflow
+--------
+
+  #. *Testing:* This is a pretty low-key project, but we will not accept
      feature additions without companion tests. Tests should be written
      using `nose`_ or Python's :mod:`unittest` framework. And, if
      you submit patches without adding new features, please make sure
      all tests in the current test suite still pass. See
      :mod:`sphinxcontrib.argdoc.test.test_argdoc` for details on how tests are
      structured.
-    
-  2. *Code formatting:* Code should be formatted as described
+
+  #. Our main repository is at http://bitbucket.org/birkenfeld/sphinx-contrib .
+     To submit a patch, fork the repository and submit a pull request.
+
+Formatting
+----------
+
+  #. *Code formatting:* Code should be formatted as described
      in `PEP8`_, noting that we use four spaces for indentation.
 
-  3. *Docstrings and documentation:* These should be formatted for `Sphinx`_, 
+  #. *Docstrings and documentation:* These should be formatted for `Sphinx`_, 
      as described in the `numpy documentation guide`_ with guidance from 
      `PEP257`_. This means that docstrings are formatted 
      in `reStructuredText`_.

@@ -23,14 +23,13 @@ setup(
     maintainer_email = "Joshua Griffin Dunn",
     
     license   = "BSD 3-Clause",
-    keywords  = "sphinx documentation argparse command-line autodoc",
+    keywords  = "sphinx documentation argparse command-line executable script",
     platforms = "any", 
 
     zip_safe = True,
 
     install_requires = [
                 "sphinx>=1.3.1",
-                "autodoc>=0.3",
                 ],
     
     tests_require=["nose>=1.0"],
