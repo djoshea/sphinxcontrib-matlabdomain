@@ -55,6 +55,7 @@ List of extensions
 - cmakedomain_: a domain for CMake_
 - coffeedomain: a domain for (auto)documenting CoffeeScript source code.
 - context: a builder for ConTeXt.
+- disqus_: embed Disqus comments in documents.
 - doxylink: Link to external Doxygen-generated HTML documentation
 - domaintools_: A tool for easy domain creation.
 - email: obfuscate email addresses
@@ -201,6 +202,8 @@ List of extensions
 .. _cheader: https://pypi.python.org/pypi/sphinxcontrib-cheader
 
 .. _CFEngine 3: http://cfengine.com/
+
+.. _disqus: https://github.com/Robpol86/sphinxcontrib-disqus
 
 For contributors
 ================
