@@ -73,6 +73,7 @@ List of extensions
 - googlemaps: embed maps by using `Google Maps`_
 - httpdomain_: a domain for documenting RESTful HTTP APIs.
 - hyphenator: client-side hyphenation of HTML using hyphenator_
+- imgur_: embed Imgur images, albums, and metadata in documents.
 - inlinesyntaxhighlight_: inline syntax highlighting
 - lassodomain: a domain for documenting Lasso_ source code
 - libreoffice: an extension to include any drawing supported by LibreOffice (e.g. odg, vsd...).
@@ -204,6 +205,8 @@ List of extensions
 .. _CFEngine 3: http://cfengine.com/
 
 .. _disqus: https://github.com/Robpol86/sphinxcontrib-disqus
+
+.. _imgur: https://github.com/Robpol86/sphinxcontrib-imgur
 
 For contributors
 ================
