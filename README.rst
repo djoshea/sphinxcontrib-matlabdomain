@@ -56,6 +56,7 @@ List of extensions
 - coffeedomain: a domain for (auto)documenting CoffeeScript source code.
 - context: a builder for ConTeXt.
 - disqus_: embed Disqus comments in documents.
+- documentedlist_: converts a Python list to a table in the generated documentation.
 - doxylink: Link to external Doxygen-generated HTML documentation
 - domaintools_: A tool for easy domain creation.
 - email: obfuscate email addresses
@@ -207,6 +208,8 @@ List of extensions
 .. _disqus: https://github.com/Robpol86/sphinxcontrib-disqus
 
 .. _imgur: https://github.com/Robpol86/sphinxcontrib-imgur
+
+.. _documentedlist: https://github.com/chintal/documentedlist
 
 For contributors
 ================
