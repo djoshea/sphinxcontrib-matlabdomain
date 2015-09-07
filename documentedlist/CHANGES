@@ -2,6 +2,16 @@
 Changelog for DocumentedList Sphinx Extension
 =============================================
 
+
+### v0.2
+
+07-09-2015	Chintalagiri Shashank	<shashank@chintal.in>
+
+	* Integrated changes from Maximilian Hils (mhils@github) supporting
+	configurable header and consequently column count.
+	* Updated documentation to reflect the new allowed usage.
+
+
 ### v0.1
 
 29-08-2015	Chintalagiri Shashank	<shashank@chintal.in>

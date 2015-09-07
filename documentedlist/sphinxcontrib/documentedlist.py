@@ -5,7 +5,7 @@
 # This Sphinx Extension is made available under the BSD 2-clause License. See
 # sphinxcontrib's LICENSE file for the full text.
 
-
+import shlex
 from docutils import nodes
 from docutils.parsers.rst import directives
 from docutils.parsers.rst.directives.tables import Table
@@ -13,7 +13,8 @@ from docutils.parsers.rst.directives.tables import Table
 
 class DocumentedListDirective(Table):
 
-    option_spec = {'listobject': directives.unchanged}
+    option_spec = {'listobject': directives.unchanged,
+                   'header': directives.unchanged}
 
     def run(self):
         if self.content:
@@ -49,7 +50,7 @@ class DocumentedListDirective(Table):
             )
             return [error]
 
-        table_headers = ['Item', 'Description']
+        table_headers = shlex.split(self.options.get('header', 'Item Description'))
         table_body = member
         max_cols = len(table_headers)
 
