@@ -8,7 +8,7 @@ requires = ['Sphinx>=0.6']
 
 setup(
     name='sphinxcontrib-cacoo',
-    version='0.1.1',
+    version='1.0.0',
     url='http://bitbucket.org/birkenfeld/sphinx-contrib',
     download_url='http://pypi.python.org/pypi/sphinxcontrib-cacoo',
     license='BSD',
