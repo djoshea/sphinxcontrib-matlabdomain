@@ -39,26 +39,26 @@ And set your API key to ``cacoo_apikey``::
 Directive
 =========
 
-`.. cacoo-image:: [diagramid]`
+`.. cacoo-image:: [URL]`
 
   This directive insert a diagram into the document.
   If your diagram has multiple sheets, specify sheetid after ``#``.
 
   Examples::
 
-    .. cacoo-image:: EWHRuF5Kox1AnyNL
+    .. cacoo-image:: https://cacoo.com/diagrams/EWHRuF5Kox1AnyNL
 
-    .. cacoo-image:: mb53vvmYG38QGUPf#37D74
+    .. cacoo-image:: https://cacoo.com/diagrams/mb53vvmYG38QGUPf#37D74
 
   Options are same as `image directive`_ .
 
-`.. cacoo-figure:: [diagramid]`
+`.. cacoo-figure:: [URL]`
 
   This directive insert a diagram and its caption into the document.
 
   Examples::
 
-    .. cacoo-figure:: EWHRuF5Kox1AnyNL
+    .. cacoo-figure:: https://cacoo.com/diagrams/EWHRuF5Kox1AnyNL
 
        Structure of this system
 

@@ -9,6 +9,10 @@ from docutils.parsers.rst.directives.images import Image, Figure
 from sphinx.util.osutil import ensuredir
 
 
+def cacoo_url_to_diagramid(url):
+    return re.sub('https://cacoo\.com/diagrams/', '', url)
+
+
 class Cacoo(object):
     def __init__(self, apikey):
         self.apikey = apikey
@@ -64,14 +68,13 @@ class cacoo_image(nodes.General, nodes.Element):
 class CacooImage(Image):
     def run(self):
         result = super(CacooImage, self).run()
+        diagramid = cacoo_url_to_diagramid(self.arguments[0])
         if isinstance(result[0], nodes.image):
-            image = cacoo_image(diagramid=self.arguments[0],
-                                **result[0].attributes)
+            image = cacoo_image(diagramid=diagramid, **result[0].attributes)
             result[0] = image
         else:
             for node in result[0].traverse(nodes.image):
-                image = cacoo_image(diagramid=self.arguments[0],
-                                    **node.attributes)
+                image = cacoo_image(diagramid=diagramid, **node.attributes)
                 node.replace_self(image)
 
         return result
@@ -80,9 +83,9 @@ class CacooImage(Image):
 class CacooFigure(Figure):
     def run(self):
         result = super(CacooFigure, self).run()
+        diagramid = cacoo_url_to_diagramid(self.arguments[0])
         for node in result[0].traverse(nodes.image):
-            image = cacoo_image(diagramid=self.arguments[0],
-                                **node.attributes)
+            image = cacoo_image(diagramid=diagramid, **node.attributes)
             node.replace_self(image)
 
         return result
