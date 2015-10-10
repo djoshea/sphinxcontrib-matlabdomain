@@ -1,12 +1,11 @@
-import os
 import re
 import json
 from time import mktime
 from urllib2 import urlopen
 from email.utils import parsedate
-from docutils import nodes
-from docutils.parsers.rst.directives.images import Image, Figure
-from sphinx.util.osutil import ensuredir
+from sphinxcontrib.imagehelper import (
+    ImageConverter, add_image_type, add_image_directive, add_figure_directive
+)
 
 
 def cacoo_url_to_diagramid(url):
@@ -34,73 +33,38 @@ class Cacoo(object):
         return urlopen(url)
 
 
-class cacoo_image(nodes.General, nodes.Element):
-    def to_image(self, builder):
-        if builder.format == 'html':
-            reldir = "_images"
-            outdir = os.path.join(builder.outdir, '_images')
-        else:
-            reldir = ""
-            outdir = builder.outdir
+class CacooConverter(ImageConverter):
+    @property
+    def apikey(self):
+        return self.app.config.cacoo_apikey
 
+    def get_last_modified_for(self, node):
         try:
-            cacoo = Cacoo(builder.config.cacoo_apikey)
-            last_modified = cacoo.get_last_modified(self['diagramid'])
+            diagramid = cacoo_url_to_diagramid(node['uri'])
+            return Cacoo(self.apikey).get_last_modified(diagramid)
+        except Exception:
+            self.warn('Fail to download cacoo image: %s (check your cacoo_apikey or diagramid)' % node['uri'])
+            return None
 
-            filename = "cacoo-%s.png" % self['diagramid'].replace('#', '-')
-            path = os.path.join(outdir, filename)
-            if not os.path.exists(path) or os.stat(path).st_mtime < last_modified:
-                ensuredir(outdir)
-                with open(path, 'wb') as fd:
-                    fd.write(cacoo.get_image(self['diagramid']).read())
-                os.utime(path, (last_modified, last_modified))
-        except Exception as exc:
-            builder.warn('Fail to download cacoo image: %s (check your cacoo_apikey or diagramid)' % exc)
-            return nodes.Text('')
+    def get_filename_for(self, node):
+        diagramid = cacoo_url_to_diagramid(node['uri'])
+        return "cacoo-%s.png" % diagramid.replace('#', '-')
 
-        relfn = os.path.join(reldir, filename)
-        image_node = nodes.image(candidates={'*': relfn}, **self.attributes)
-        image_node['uri'] = relfn
-
-        return image_node
-
-
-class CacooImage(Image):
-    def run(self):
-        result = super(CacooImage, self).run()
-        diagramid = cacoo_url_to_diagramid(self.arguments[0])
-        if isinstance(result[0], nodes.image):
-            image = cacoo_image(diagramid=diagramid, **result[0].attributes)
-            result[0] = image
-        else:
-            for node in result[0].traverse(nodes.image):
-                image = cacoo_image(diagramid=diagramid, **node.attributes)
-                node.replace_self(image)
-
-        return result
-
-
-class CacooFigure(Figure):
-    def run(self):
-        result = super(CacooFigure, self).run()
-        diagramid = cacoo_url_to_diagramid(self.arguments[0])
-        for node in result[0].traverse(nodes.image):
-            image = cacoo_image(diagramid=diagramid, **node.attributes)
-            node.replace_self(image)
-
-        return result
-
-
-def on_doctree_resolved(app, doctree, docname):
-    for cacoo in doctree.traverse(cacoo_image):
-        image_node = cacoo.to_image(app.builder)
-        cacoo.replace_self(image_node)
+    def convert(self, node, filename, to):
+        try:
+            cacoo = Cacoo(self.apikey)
+            with open(to, 'wb') as fd:
+                diagramid = cacoo_url_to_diagramid(node['uri'])
+                fd.write(cacoo.get_image(diagramid).read())
+                return True
+        except Exception:
+            self.warn('Fail to download cacoo image: %s (check your cacoo_apikey or diagramid)' % node['uri'])
+            return False
 
 
 def setup(app):
-    app.add_node(cacoo_image)
-    app.add_directive('cacoo-image', CacooImage)
-    app.add_directive('cacoo-figure', CacooFigure)
-    app.connect('doctree-resolved', on_doctree_resolved)
+    add_image_type(app, 'cacoo', 'https://cacoo.com/', CacooConverter)
+    add_image_directive(app, 'cacoo')
+    add_figure_directive(app, 'cacoo')
 
     app.add_config_value('cacoo_apikey', None, 'html')
