@@ -1,4 +1,4 @@
-import os, tempfile, shutil, glob
+import os, re, tempfile, shutil, glob
 from sphinx.application import Sphinx
 
 from nose.tools import *
@@ -137,7 +137,8 @@ def test_buildlatex_simple():
     """
     files = glob.glob(os.path.join(_outdir, 'plantuml-*.png'))
     assert len(files) == 1
-    assert r'\includegraphics{plantuml-' in readfile('plantuml_fixture.tex')
+    assert re.search(r'\\includegraphics\{+plantuml-',
+                     readfile('plantuml_fixture.tex'))
 
     content = readfile(files[0]).splitlines()
     assert '-pipe' in content[0]
@@ -153,7 +154,8 @@ def test_buildlatex_simple_with_eps():
     """
     files = glob.glob(os.path.join(_outdir, 'plantuml-*.eps'))
     assert len(files) == 1
-    assert r'\includegraphics{plantuml-' in readfile('plantuml_fixture.tex')
+    assert re.search(r'\\includegraphics\{+plantuml-',
+                     readfile('plantuml_fixture.tex'))
 
     content = readfile(files[0]).splitlines()
     assert '-teps' in content[0]
@@ -171,11 +173,38 @@ def test_buildlatex_simple_with_pdf():
     pdffiles = glob.glob(os.path.join(_outdir, 'plantuml-*.pdf'))
     assert len(epsfiles) == 1
     assert len(pdffiles) == 1
-    assert r'\includegraphics{plantuml-' in readfile('plantuml_fixture.tex')
+    assert re.search(r'\\includegraphics\{+plantuml-',
+                     readfile('plantuml_fixture.tex'))
 
     epscontent = readfile(epsfiles[0]).splitlines()
     assert '-teps' in epscontent[0]
     assert_equals('Hello', epscontent[1][2:])
+
+@with_runsphinx('latex')
+def test_buildlatex_with_caption():
+    """Generate LaTeX with caption
+
+    .. uml::
+       :caption: Hello UML
+
+       Hello
+    """
+    out = readfile('plantuml_fixture.tex')
+    assert re.search(r'\\caption\{\s*Hello UML\s*\}', out)
+    assert re.search(r'\\begin\{figure\}\[htbp\]', out)
+    assert not re.search(r'\\begin\{flushNone', out)  # issue #136
+
+@with_runsphinx('latex')
+def test_buildlatex_with_align():
+    """Generate LaTeX with caption
+
+    .. uml::
+       :align: right
+
+       Hello
+    """
+    out = readfile('plantuml_fixture.tex')
+    assert re.search(r'\\begin\{figure\}\[htbp\]\\begin\{flushright\}', out)
 
 @with_runsphinx('pdf')
 def test_buildpdf_simple():
