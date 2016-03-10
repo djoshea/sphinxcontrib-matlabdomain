@@ -45,6 +45,10 @@ Additional Configuration
 
    .. versionadded:: 1.4.0
 
+   .. deprecated:: 1.5.0
+        strict mode no longer warns on non-standard header prefixes.
+
+
 ``http_index_ignore_prefixes``
    Strips the leading segments from the endpoint paths by given list
    of prefixes::
@@ -536,6 +540,9 @@ Roles
    but standard domain. It refers to the HTTP request/response header field
    like :http:header:`Content-Type`.
 
+   If the HTTP header is known, the text is a hyperlink to a web reference of
+   the specified header.
+
    Known HTTP headers:
 
    - :http:header:`Accept`
@@ -591,11 +598,11 @@ Roles
    - :http:header:`WWW-Authenticate`
    - :http:header:`Warning`
 
-   If HTTP header is unknown, the build error will be raised unless header has
-   ``X-`` prefix which marks him as custom one like :http:header:`X-Foo-Bar`.
-
    .. versionadded:: 1.3.0
 
+   .. versionchanged:: 1.5.0
+
+        No longer emits warnings for unrecognized headers
 
 .. module:: sphinxcontrib.autohttp.flask
 
@@ -1032,6 +1039,8 @@ To be released.
   [:pull:`102` by Ivelin Slavov]
 - Added ``:order:`` option to :rst:dir:`autoflask` directive.
   [:pull:`103` by Justin Gruca]
+- Removed warnings for non-standard message headers
+  [:pull:`114` by Dolan Murvihill]
 
 
 Version 1.4.0
