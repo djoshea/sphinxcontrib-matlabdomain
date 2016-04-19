@@ -19,6 +19,9 @@ domain for describing RESTful HTTP APIs.
    Module :mod:`sphinxcontrib.autohttp.flask`
       Reflection for Flask_ webapps.
 
+   Module :mod:`sphinxcontrib.autohttp.flaskqref` 
+      Quick reference rendering with :mod:`sphinxcontrib.autohttp.flask`
+
    Module :mod:`sphinxcontrib.autohttp.bottle`
       Reflection for Bottle_ webapps.
 
@@ -42,6 +45,10 @@ Additional Configuration
 
    .. versionadded:: 1.4.0
 
+   .. deprecated:: 1.5.0
+        strict mode no longer warns on non-standard header prefixes.
+
+
 ``http_index_ignore_prefixes``
    Strips the leading segments from the endpoint paths by given list
    of prefixes::
@@ -51,7 +58,7 @@ Additional Configuration
    .. versionadded:: 1.3.0
 
 ``http_index_shortname``
-   Short name of the index which will appears on every page::
+   Short name of the index which will appear on every page::
 
        http_index_shortname = 'api'
 
@@ -533,6 +540,9 @@ Roles
    but standard domain. It refers to the HTTP request/response header field
    like :http:header:`Content-Type`.
 
+   If the HTTP header is known, the text is a hyperlink to a web reference of
+   the specified header.
+
    Known HTTP headers:
 
    - :http:header:`Accept`
@@ -588,11 +598,11 @@ Roles
    - :http:header:`WWW-Authenticate`
    - :http:header:`Warning`
 
-   If HTTP header is unknown, the build error will be raised unless header has
-   ``X-`` prefix which marks him as custom one like :http:header:`X-Foo-Bar`.
-
    .. versionadded:: 1.3.0
 
+   .. versionchanged:: 1.5.0
+
+        No longer emits warnings for unrecognized headers
 
 .. module:: sphinxcontrib.autohttp.flask
 
@@ -699,9 +709,45 @@ will be rendered as:
 
       .. versionadded:: 1.1.8
 
+   ``modules``
+      Only include specified view modules in generated references.
+
+      For example:
+
+      .. sourcecode:: rst
+
+         .. autoflask:: yourwebapp:app
+            :modules: yourwebapp.views.admin
+
+      will include only views in ``yourwebapp.views.admin`` module
+
+      .. versionadded:: 1.5.0
+
+   ``undoc-modules``
+      Excludes specified view modules from generated references.
+
+      .. versionadded:: 1.5.0
+
    ``undoc-static``
       Excludes a view function that serves static files, which is included
       in Flask by default.
+
+   ``order``
+      Determines the order in which endpoints are listed. Currently only
+      ``path`` is supported.
+
+      For example:
+
+      .. sourcecode:: rst
+
+         .. autoflask:: yourwebapp:app
+            :endpoints:
+            :order: path
+
+      will document all endpoints in the flask app, ordered by their route
+      paths.
+
+      .. versionadded:: 1.5.0
 
    ``include-empty-docstring``
       View functions that don't have docstring (:attr:`__doc__`) are excluded
@@ -712,6 +758,80 @@ will be rendered as:
 .. _Flask: http://flask.pocoo.org/
 
 
+.. module:: sphinxcontrib.autohttp.flaskqref
+
+:mod:`sphinxcontrib.autohttp.flaskqref` --- Quick API reference for Flask app
+------------------------------------------------------------------------------
+
+.. versionadded:: 1.5.0
+
+This generates a quick API reference table for the route documentation
+produced by :mod:`sphinxcontrib.autohttp.flask`
+
+To use it, both :mod:`sphinxcontrib.autohttp.flask` and :mod:`sphinxcontrib.autohttp.flaskqref` need to be added into the extensions 
+of your configuration (:file:`conf.py`) file::
+
+    extensions = ['sphinxcontrib.autohttp.flask',
+                  'sphinxcontrib.autohttp.flaskqref']
+
+.. rst:directive:: .. qrefflask:: module:app
+
+   .. versionadded:: 1.5.0
+
+   Generates HTTP API references from a Flask application and places these
+   in a list-table with quick reference links. The usage and options are identical
+   to that of :mod:`sphinxcontrib.autohttp.flask`
+
+Basic usage
+-----------
+
+You typically would place the quick reference table near the top of your docco
+and use *.. autoflask::* further down.
+
+Routes that are to be included in the quick reference table require 
+the following rst comment to be added to their doc string:
+
+.. sourcecode:: rst
+
+    .. :quickref: [<resource>;] <short description>
+
+<resource> is optional, if used a semi-colon separates it from <short description>
+The table is grouped and sorted by <resource>.
+
+``<resource>``
+   This is the resource name of the operation.  The name maybe the same for a number
+   of operations and enables grouping these together. 
+
+``<short description>``
+   A brief description what the operation does.
+
+For example:
+
+.. sourcecode:: python
+
+    @app.route('/<user>')
+    def user(user):
+        """User profile page.
+
+        .. :quickref: User; Get Profile Page
+     
+        my docco here   
+        """
+        return 'hi, ' + user
+
+
+The quick reference table is defined as:
+
+.. sourcecode:: rst
+
+   .. qrefflask:: autoflask_sampleapp:app
+      :undoc-static:
+
+Using the autoflask_sampleapp with *.. :quickref:* annotations,
+this is rendered as:
+
+   .. qrefflask:: autoflask_sampleapp:app
+      :undoc-static:
 
 .. module:: sphinxcontrib.autohttp.bottle
 
@@ -907,6 +1027,22 @@ __ https://bitbucket.org/birkenfeld/sphinx-contrib
 Changelog
 ---------
 
+Version 1.5.0
+`````````````
+
+To be released.
+
+- Added :mod:`sphinxcontrib.autohttp.flaskqref` for generating quick reference
+  table.  [:pull:`80`, :pull:`100` by Harry Raaymakers]
+- :rst:dir:`autoflask` now supports ``:modules:`` and ``:undoc-modules:``
+  arguments, used to filter documented flask endpoints by view module
+  [:pull:`102` by Ivelin Slavov]
+- Added ``:order:`` option to :rst:dir:`autoflask` directive.
+  [:pull:`103` by Justin Gruca]
+- Removed warnings for non-standard message headers
+  [:pull:`114` by Dolan Murvihill]
+
+
 Version 1.4.0
 `````````````
 
@@ -940,9 +1076,9 @@ Released on July 31, 2014.
   [:issue:`55`, :pull:`72` by Alexander Shorin]
 - Stabilize order of index items.
   [:issue:`55`, :pull:`72` by Alexander Shorin]
-- Added :rst:directive:`http:any` directive and :rst:role:`http:any`
+- Added :rst:dir:`http:any` directive and :rst:role:`http:any`
   role for ``ANY`` method.  [:issue:`55`, :pull:`72` by Alexander Shorin]
-- Added :rst:directive:`http:copy` directive and :rst:role:`http:copy`
+- Added :rst:dir:`http:copy` directive and :rst:role:`http:copy`
   role for ``COPY`` method.  [:issue:`55`, :pull:`72` by Alexander Shorin]
 - Added :rst:role:`http:header` role that also creates reference to the
   related specification.  [:issue:`55`, :pull:`72` by Alexander Shorin]

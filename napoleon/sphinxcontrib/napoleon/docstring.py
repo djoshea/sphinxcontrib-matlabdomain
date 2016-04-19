@@ -7,10 +7,9 @@
 import collections
 import inspect
 import re
-import sys
 
-from pockets import modify_iter
-from six import string_types
+from pockets import modify_iter, UnicodeMixin
+from six import string_types, u
 from six.moves import range
 
 
@@ -19,9 +18,14 @@ _google_section_regex = re.compile(r'^(\s|\w)+:\s*$')
 _google_typed_arg_regex = re.compile(r'\s*(.+?)\s*\(\s*(.+?)\s*\)')
 _numpy_section_regex = re.compile(r'^[=\-`:\'"~^_*+#<>]{2,}\s*$')
 _xref_regex = re.compile(r'(:\w+:\S+:`.+?`|:\S+:`.+?`|`.+?`)')
+_bullet_list_regex = re.compile(r'^(\*|\+|\-)(\s+\S|\s*$)')
+_enumerated_list_regex = re.compile(
+    r'^(?P<paren>\()?'
+    r'(\d+|#|[ivxlcdm]+|[IVXLCDM]+|[a-zA-Z])'
+    r'(?(paren)\)|\.)(\s+\S|\s*$)')
 
 
-class GoogleDocstring(object):
+class GoogleDocstring(UnicodeMixin):
     """Convert Google style docstrings to reStructuredText.
 
     Parameters
@@ -136,6 +140,7 @@ class GoogleDocstring(object):
                 'raises': self._parse_raises_section,
                 'references': self._parse_references_section,
                 'see also': self._parse_see_also_section,
+                'todo': self._parse_todo_section,
                 'warning': self._parse_warning_section,
                 'warnings': self._parse_warning_section,
                 'warns': self._parse_warns_section,
@@ -143,20 +148,6 @@ class GoogleDocstring(object):
                 'yields': self._parse_yields_section,
             }
         self._parse()
-
-    def __str__(self):
-        """Return the parsed docstring in reStructuredText format.
-
-        Returns
-        -------
-        str
-            UTF-8 encoded version of the docstring.
-
-        """
-        if sys.version_info[0] >= 3:
-            return self.__unicode__()
-        else:
-            return self.__unicode__().encode('utf8')
 
     def __unicode__(self):
         """Return the parsed docstring in reStructuredText format.
@@ -167,7 +158,7 @@ class GoogleDocstring(object):
             Unicode version of the docstring.
 
         """
-        return u'\n'.join(self.lines())
+        return u('\n').join(self.lines())
 
     def lines(self):
         """Return the parsed lines of the docstring in reStructuredText format.
@@ -217,10 +208,7 @@ class GoogleDocstring(object):
                 _name = match.group(1)
                 _type = match.group(2)
 
-        if _name[:2] == '**':
-            _name = r'\*\*'+_name[2:]
-        elif _name[:1] == '*':
-            _name = r'\*'+_name[1:]
+        _name = self._escape_args_and_kwargs(_name)
 
         if prefer_type and not _type:
             _type, _name = _name, _type
@@ -302,6 +290,14 @@ class GoogleDocstring(object):
             min_indent = self._get_min_indent(lines)
             return [line[min_indent:] for line in lines]
 
+    def _escape_args_and_kwargs(self, name):
+        if name[:2] == '**':
+            return r'\*\*' + name[2:]
+        elif name[:1] == '*':
+            return r'\*' + name[1:]
+        else:
+            return name
+
     def _format_admonition(self, admonition, lines):
         lines = self._strip_empty(lines)
         if len(lines) == 1:
@@ -349,6 +345,8 @@ class GoogleDocstring(object):
             field = ''
 
         if has_desc:
+            if self._is_list(_desc):
+                return [field, ''] + _desc
             return [field + _desc[0]] + _desc[1:]
         else:
             return [field]
@@ -407,6 +405,23 @@ class GoogleDocstring(object):
             elif not s.isspace():
                 return False
         return False
+
+    def _is_list(self, lines):
+        if not lines:
+            return False
+        if _bullet_list_regex.match(lines[0]):
+            return True
+        if _enumerated_list_regex.match(lines[0]):
+            return True
+        if len(lines) < 2 or lines[0].endswith('::'):
+            return False
+        indent = self._get_indent(lines[0])
+        next_indent = indent
+        for line in lines[1:]:
+            if line:
+                next_indent = self._get_indent(line)
+                break
+        return next_indent > indent
 
     def _is_section_header(self):
         section = self._line_iter.peek().lower()
@@ -503,7 +518,15 @@ class GoogleDocstring(object):
             return [header, '']
 
     def _parse_keyword_arguments_section(self, section):
-        return self._format_fields('Keyword Arguments', self._consume_fields())
+        fields = self._consume_fields()
+        if self._config.napoleon_use_keyword:
+            return self._generate_docutils_params(
+                fields,
+                field_role="keyword",
+                type_role="kwtype"
+            )
+        else:
+            return self._format_fields('Keyword Arguments', fields)
 
     def _parse_methods_section(self, section):
         lines = []
@@ -528,15 +551,26 @@ class GoogleDocstring(object):
     def _parse_parameters_section(self, section):
         fields = self._consume_fields()
         if self._config.napoleon_use_param:
-            lines = []
-            for _name, _type, _desc in fields:
-                field = ':param %s: ' % _name
-                lines.extend(self._format_block(field, _desc))
-                if _type:
-                    lines.append(':type %s: %s' % (_name, _type))
-            return lines + ['']
+            return self._generate_docutils_params(fields)
         else:
             return self._format_fields('Parameters', fields)
+
+    def _generate_docutils_params(self, fields, field_role='param',
+                                  type_role='type'):
+        lines = []
+        for _name, _type, _desc in fields:
+            _desc = self._strip_empty(_desc)
+            if any(_desc):
+                if self._is_list(_desc):
+                    _desc = [''] + _desc
+                field = ':%s %s: ' % (field_role, _name)
+                lines.extend(self._format_block(field, _desc))
+            else:
+                lines.append(':%s %s:' % (field_role, _name))
+
+            if _type:
+                lines.append(':%s %s: %s' % (type_role, _name, _type))
+        return lines + ['']
 
     def _parse_raises_section(self, section):
         fields = self._consume_fields(parse_type=False, prefer_type=True)
@@ -611,6 +645,10 @@ class GoogleDocstring(object):
     def _parse_see_also_section(self, section):
         lines = self._consume_to_next_section()
         return self._format_admonition('seealso', lines)
+
+    def _parse_todo_section(self, section):
+        lines = self._consume_to_next_section()
+        return self._format_admonition('todo', lines)
 
     def _parse_warning_section(self, section):
         lines = self._consume_to_next_section()
@@ -772,10 +810,12 @@ class NumpyDocstring(GoogleDocstring):
         else:
             _name, _type = line, ''
         _name, _type = _name.strip(), _type.strip()
+        _name = self._escape_args_and_kwargs(_name)
+
         if prefer_type and not _type:
             _type, _name = _name, _type
-        indent = self._get_indent(line)
-        _desc = self._dedent(self._consume_indented_block(indent + 1))
+        indent = self._get_indent(line) + 1
+        _desc = self._dedent(self._consume_indented_block(indent))
         _desc = self.__class__(_desc, self._config).lines()
         return _name, _type, _desc
 

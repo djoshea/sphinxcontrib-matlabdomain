@@ -4,11 +4,11 @@ from setuptools import setup, find_packages
 
 long_desc = open('README.rst').read()
 
-requires = ['Sphinx>=0.6']
+requires = ['Sphinx>=0.6', 'sphinxcontrib-imagehelper>=1.1.0']
 
 setup(
     name='sphinxcontrib-cacoo',
-    version='0.1.1',
+    version='1.0.0',
     url='http://bitbucket.org/birkenfeld/sphinx-contrib',
     download_url='http://pypi.python.org/pypi/sphinxcontrib-cacoo',
     license='BSD',
@@ -18,14 +18,20 @@ setup(
     long_description=long_desc,
     zip_safe=False,
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Production/Stable',
         'Environment :: Console',
         'Environment :: Web Environment',
+        'Framework :: Sphinx :: Extension',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
+        'Programming Language :: Python :: 2.6',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.2',
+        'Programming Language :: Python :: 3.3',
         'Topic :: Documentation',
+        'Topic :: Documentation :: Sphinx',
         'Topic :: Utilities',
     ],
     platforms='any',

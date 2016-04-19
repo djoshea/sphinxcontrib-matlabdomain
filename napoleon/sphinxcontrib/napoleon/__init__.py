@@ -7,7 +7,8 @@
 
 import sys
 
-from six import iteritems
+from six import PY2, iteritems
+
 from sphinxcontrib.napoleon.docstring import GoogleDocstring, NumpyDocstring
 from sphinxcontrib.napoleon._version import __version__
 assert __version__  # silence pyflakes
@@ -30,13 +31,14 @@ class Config(object):
         napoleon_google_docstring = True
         napoleon_numpy_docstring = True
         napoleon_include_private_with_doc = False
-        napoleon_include_special_with_doc = True
+        napoleon_include_special_with_doc = False
         napoleon_use_admonition_for_examples = False
         napoleon_use_admonition_for_notes = False
         napoleon_use_admonition_for_references = False
         napoleon_use_ivar = False
         napoleon_use_param = True
         napoleon_use_rtype = True
+        napoleon_use_keyword = True
 
     .. _Google style:
        http://google.github.io/styleguide/pyguide.html
@@ -67,7 +69,7 @@ class Config(object):
                 # This will NOT be included in the docs
                 pass
 
-    napoleon_include_special_with_doc : bool, defaults to True
+    napoleon_include_special_with_doc : bool, defaults to False
         True to include special members (like ``__membername__``) with
         docstrings in the documentation. False to fall back to Sphinx's
         default behavior.
@@ -180,6 +182,21 @@ class Config(object):
                          * **arg2** (*int, optional*) --
                            Description of `arg2`, defaults to 0
 
+    napoleon_use_keyword : bool, defaults to True
+        True to use a ``:keyword:`` role for each function keyword argument.
+        False to use a single ``:keyword arguments:`` role for all the
+        keywords.
+
+        This behaves similarly to  :attr:`napoleon_use_param`. Note unlike
+        docutils, ``:keyword:`` and ``:param:`` will not be treated the same
+        way - there will be a separate "Keyword Arguments" section, rendered
+        in the same fashion as "Parameters" section (type links created if
+        possible)
+
+        See Also
+        --------
+        :attr:`napoleon_use_param`
+
     napoleon_use_rtype : bool, defaults to True
         True to use the ``:rtype:`` role for the return type. False to output
         the return type inline with the description.
@@ -205,13 +222,14 @@ class Config(object):
         'napoleon_google_docstring': (True, 'env'),
         'napoleon_numpy_docstring': (True, 'env'),
         'napoleon_include_private_with_doc': (False, 'env'),
-        'napoleon_include_special_with_doc': (True, 'env'),
+        'napoleon_include_special_with_doc': (False, 'env'),
         'napoleon_use_admonition_for_examples': (False, 'env'),
         'napoleon_use_admonition_for_notes': (False, 'env'),
         'napoleon_use_admonition_for_references': (False, 'env'),
         'napoleon_use_ivar': (False, 'env'),
         'napoleon_use_param': (True, 'env'),
         'napoleon_use_rtype': (True, 'env'),
+        'napoleon_use_keyword': (True, 'env')
     }
 
     def __init__(self, **settings):
@@ -242,17 +260,36 @@ def setup(app):
 
     `The Extension API <http://sphinx-doc.org/extdev/appapi.html>`_
 
-
     """
     from sphinx.application import Sphinx
     if not isinstance(app, Sphinx):
         return  # probably called by tests
+
+    _patch_python_domain()
 
     app.connect('autodoc-process-docstring', _process_docstring)
     app.connect('autodoc-skip-member', _skip_member)
 
     for name, (default, rebuild) in iteritems(Config._config_values):
         app.add_config_value(name, default, rebuild)
+    return {'version': __version__, 'parallel_read_safe': True}
+
+
+def _patch_python_domain():
+    import sphinx.domains.python
+    from sphinx.domains.python import PyTypedField
+    import sphinx.locale
+    l_ = sphinx.locale.lazy_gettext
+    for doc_field in sphinx.domains.python.PyObject.doc_field_types:
+        if doc_field.name == 'parameter':
+            doc_field.names = ('param', 'parameter', 'arg', 'argument')
+            break
+    sphinx.domains.python.PyObject.doc_field_types.append(
+        PyTypedField('keyword', label=l_('Keyword Arguments'),
+                     names=('keyword', 'kwarg', 'kwparam'),
+                     typerolename='obj', typenames=('paramtype', 'kwtype'),
+                     can_collapse=True),
+    )
 
 
 def _process_docstring(app, what, name, obj, options, lines):
@@ -348,12 +385,12 @@ def _skip_member(app, what, name, obj, skip, options):
     if name != '__weakref__' and name != '__init__' and has_doc and is_member:
         cls_is_owner = False
         if what == 'class' or what == 'exception':
-            if sys.version_info[0] < 3:
+            if PY2:
                 cls = getattr(obj, 'im_class', getattr(obj, '__objclass__',
                               None))
                 cls_is_owner = (cls and hasattr(cls, name) and
                                 name in cls.__dict__)
-            elif sys.version_info[1] >= 3:
+            elif sys.version_info >= (3, 3):
                 qualname = getattr(obj, '__qualname__', '')
                 cls_path, _, _ = qualname.rpartition('.')
                 if cls_path:
@@ -367,7 +404,7 @@ def _skip_member(app, what, name, obj, skip, options):
                             cls = functools.reduce(getattr, mod_path, mod)
                         else:
                             cls = obj.__globals__[cls_path]
-                    except:
+                    except Exception:
                         cls_is_owner = False
                     else:
                         cls_is_owner = (cls and hasattr(cls, name) and

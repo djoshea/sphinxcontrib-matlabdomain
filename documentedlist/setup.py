@@ -1,21 +1,24 @@
 # -*- coding: utf-8 -*-
 
 from setuptools import setup, find_packages
+import os
 
-long_desc = open('README.rst').read()
 
-requires = ['Sphinx>=1.0']
+def read(fname):
+    return open(os.path.join(os.path.dirname(__file__), fname)).read()
+
+requires = ['Sphinx>=0.6']
 
 setup(
-    name='sphinxcontrib-plantuml',
-    version='0.7',
-    url='https://bitbucket.org/birkenfeld/sphinx-contrib',
-    download_url='https://pypi.python.org/pypi/sphinxcontrib-plantuml',
+    name='sphinxcontrib-documentedlist',
+    version='0.3',
+    url='http://bitbucket.org/birkenfeld/sphinx-contrib',
+    download_url='http://pypi.python.org/pypi/sphinxcontrib-documentedlist',
     license='BSD',
-    author='Yuya Nishihara',
-    author_email='yuya@tcha.org',
-    description='Sphinx "plantuml" extension',
-    long_description=long_desc,
+    author='Chintalagiri Shashank',
+    author_email='shashank@chintal.in',
+    description='Sphinx DocumentedList extension',
+    long_description=read('README.rst'),
     zip_safe=False,
     classifiers=[
         'Development Status :: 4 - Beta',
@@ -25,6 +28,7 @@ setup(
         'License :: OSI Approved :: BSD License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
+        'Framework :: Sphinx :: Extension',
         'Topic :: Documentation',
         'Topic :: Utilities',
     ],

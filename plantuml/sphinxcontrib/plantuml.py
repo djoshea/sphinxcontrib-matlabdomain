@@ -8,11 +8,7 @@
     :copyright: Copyright 2010 by Yuya Nishihara <yuya@tcha.org>.
     :license: BSD, see LICENSE for details.
 """
-import errno, os, re, shlex, subprocess
-try:
-    from hashlib import sha1
-except ImportError:  # Python<2.5
-    from sha import sha as sha1
+import errno, hashlib, os, re, shlex, subprocess
 from docutils import nodes
 from docutils.parsers.rst import directives
 from sphinx.errors import SphinxError
@@ -61,7 +57,9 @@ class UmlDirective(Directive):
         # XXX maybe this should be moved to _visit_plantuml functions. it
         # seems wrong to insert "figure" node by "plantuml" directive.
         if 'caption' in self.options or 'align' in self.options:
-            node = nodes.figure('', node, align=self.options.get('align'))
+            node = nodes.figure('', node)
+            if 'align' in self.options:
+                node['align'] = self.options['align']
         if 'caption' in self.options:
             import docutils.statemachine
             cnode = nodes.Element()  # anonymous container for parsing
@@ -74,7 +72,7 @@ class UmlDirective(Directive):
         return [node]
 
 def generate_name(self, node, fileformat):
-    key = sha1(node['uml'].encode('utf-8')).hexdigest()
+    key = hashlib.sha1(node['uml'].encode('utf-8')).hexdigest()
     fname = 'plantuml-%s.%s' % (key, fileformat)
     imgpath = getattr(self.builder, 'imgpath', None)
     if imgpath:
@@ -90,10 +88,10 @@ _ARGS_BY_FILEFORMAT = {
     }
 
 def generate_plantuml_args(self, fileformat):
-    if isinstance(self.builder.config.plantuml, basestring):
-        args = shlex.split(self.builder.config.plantuml)
-    else:
+    if isinstance(self.builder.config.plantuml, (tuple, list)):
         args = list(self.builder.config.plantuml)
+    else:
+        args = shlex.split(self.builder.config.plantuml)
     args.extend('-pipe -charset utf-8'.split())
     args.extend(_ARGS_BY_FILEFORMAT[fileformat])
     return args
@@ -109,14 +107,14 @@ def render_plantuml(self, node, fileformat):
             p = subprocess.Popen(generate_plantuml_args(self, fileformat),
                                  stdout=f, stdin=subprocess.PIPE,
                                  stderr=subprocess.PIPE)
-        except OSError, err:
+        except OSError as err:
             if err.errno != ENOENT:
                 raise
             raise PlantUmlError('plantuml command %r cannot be run'
                                 % self.builder.config.plantuml)
         serr = p.communicate(node['uml'].encode('utf-8'))[1]
         if p.returncode != 0:
-            raise PlantUmlError('error while running plantuml\n\n' + serr)
+            raise PlantUmlError('error while running plantuml\n\n%s' % serr)
         return refname, outfname
     finally:
         f.close()
@@ -225,7 +223,7 @@ def html_visit_plantuml(self, node):
         # fnames: {fileformat: (refname, outfname), ...}
         fnames = dict((e, render_plantuml(self, node, e))
                       for e in fileformats)
-    except PlantUmlError, err:
+    except PlantUmlError as err:
         self.builder.warn(str(err))
         raise nodes.SkipNode
 
@@ -235,22 +233,22 @@ def html_visit_plantuml(self, node):
     raise nodes.SkipNode
 
 def _convert_eps_to_pdf(self, refname, fname):
-    if isinstance(self.builder.config.plantuml_epstopdf, basestring):
-        args = shlex.split(self.builder.config.plantuml_epstopdf)
-    else:
+    if isinstance(self.builder.config.plantuml_epstopdf, (tuple, list)):
         args = list(self.builder.config.plantuml_epstopdf)
+    else:
+        args = shlex.split(self.builder.config.plantuml_epstopdf)
     args.append(fname)
     try:
         try:
             p = subprocess.Popen(args, stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE)
-        except OSError, err:
+        except OSError as err:
             # workaround for missing shebang of epstopdf script
             if err.errno != getattr(errno, 'ENOEXEC', 0):
                 raise
             p = subprocess.Popen(['bash'] + args, stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE)
-    except OSError, err:
+    except OSError as err:
         if err.errno != ENOENT:
             raise
         raise PlantUmlError('epstopdf command %r cannot be run'
@@ -277,7 +275,7 @@ def latex_visit_plantuml(self, node):
                 % (', '.join(map(repr, _KNOWN_LATEX_FORMATS)), format))
         refname, outfname = render_plantuml(self, node, fileformat)
         refname, outfname = postproc(self, refname, outfname)
-    except PlantUmlError, err:
+    except PlantUmlError as err:
         self.builder.warn(str(err))
         raise nodes.SkipNode
 
@@ -295,7 +293,7 @@ def pdf_visit_plantuml(self, node):
     try:
         refname, outfname = render_plantuml(self, node, 'eps')
         refname, outfname = _convert_eps_to_pdf(self, refname, outfname)
-    except PlantUmlError, err:
+    except PlantUmlError as err:
         self.builder.warn(str(err))
         raise nodes.SkipNode
     rep = nodes.image(uri=outfname, alt=node.get('alt', node['uml']))
@@ -315,3 +313,5 @@ def setup(app):
     if 'rst2pdf.pdfbuilder' in app.config.extensions:
         from rst2pdf.pdfbuilder import PDFTranslator as translator
         setattr(translator, 'visit_' + plantuml.__name__, pdf_visit_plantuml)
+
+    return {'parallel_read_safe': True}
