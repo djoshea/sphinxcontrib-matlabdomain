@@ -175,6 +175,11 @@ class MatObject(ObjectDescription):
 
         if name_prefix:
             signode += addnodes.desc_addname(name_prefix, name_prefix)
+
+        if retann:
+            retstr = retann + ' = '
+            signode += addnodes.desc_addname(retstr, retstr)
+
         # exceptions are a special case, since they are documented in the
         # 'exceptions' module.
         elif add_module and self.env.config.add_module_names:
@@ -191,15 +196,15 @@ class MatObject(ObjectDescription):
             if self.needs_arglist():
                 # for callables, add an empty parameter list
                 signode += addnodes.desc_parameterlist()
-            if retann:
-                signode += addnodes.desc_returns(retann, retann)
+            # if retann:
+            #     signode += addnodes.desc_returns(retann, retann)
             if anno:
                 signode += addnodes.desc_annotation(' ' + anno, ' ' + anno)
             return fullname, name_prefix
 
         _pseudo_parse_arglist(signode, arglist)
-        if retann:
-            signode += addnodes.desc_returns(retann, retann)
+        # if retann:
+        #     signode += addnodes.desc_returns(retann, retann)
         if anno:
             signode += addnodes.desc_annotation(' ' + anno, ' ' + anno)
         return fullname, name_prefix

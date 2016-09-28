@@ -449,6 +449,15 @@ class MatFunction(MatObject):
                 tks.append(wht)  # if not whitespace, put it back in list
         elif retv[0] is Token.Name.Function:  # @UndefinedVariable
             tks.append(retv)
+
+        # create return value string
+        if self.retv is None:
+            self.retann = None
+        elif len(self.retv) > 1:
+            self.retann = '[' + ', '.join(self.retv) + ']'
+        else:
+            self.retann = ''.join(self.retv)
+
         # =====================================================================
         # function name
         func_name = tks.pop()

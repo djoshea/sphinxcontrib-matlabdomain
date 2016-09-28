@@ -453,6 +453,10 @@ class MatlabDocumenter(PyDocumenter):
         # document members, if possible
         self.document_members(all_members)
 
+    def format_signature(self):
+        if isinstance(self.object, MatFunction):
+            self.retann = self.object.retann
+        return PyDocumenter.format_signature(self)
 
 class MatModuleDocumenter(MatlabDocumenter, PyModuleDocumenter):
 
@@ -520,6 +524,8 @@ class MatModuleLevelDocumenter(MatlabDocumenter):
                     modname = self.env.temp_data.get('mat:module')
                 # ... else, it stays None, which means invalid
         return modname, parents + [base]
+
+
 
 
 class MatClassLevelDocumenter(MatlabDocumenter):
