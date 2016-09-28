@@ -64,6 +64,8 @@ def _pseudo_parse_arglist(signode, arglist):
                 ends_open += 1
                 argument = argument[:-1].strip()
             if argument:
+                if argument == 'varargin':
+                    argument = '...'
                 stack[-1] += addnodes.desc_parameter(argument, argument)
             while ends_open:
                 stack.append(addnodes.desc_optional())
@@ -173,12 +175,12 @@ class MatObject(ObjectDescription):
         if sig_prefix:
             signode += addnodes.desc_annotation(sig_prefix, sig_prefix)
 
-        if name_prefix:
-            signode += addnodes.desc_addname(name_prefix, name_prefix)
-
         if retann:
             retstr = retann + ' = '
             signode += addnodes.desc_addname(retstr, retstr)
+
+        if name_prefix:
+            signode += addnodes.desc_addname(name_prefix, name_prefix)
 
         # exceptions are a special case, since they are documented in the
         # 'exceptions' module.

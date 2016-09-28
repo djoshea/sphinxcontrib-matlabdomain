@@ -450,7 +450,7 @@ class MatFunction(MatObject):
         elif retv[0] is Token.Name.Function:  # @UndefinedVariable
             tks.append(retv)
 
-        # create return value string
+        # create return value string for later inclusion in signature
         if self.retv is None:
             self.retann = None
         elif len(self.retv) > 1:
@@ -993,6 +993,10 @@ class MatMethod(MatFunction):
         super(MatMethod, self).__init__(None, modname, tks)
         self.cls = cls
         self.attrs = attrs
+
+        # skip first argument for class method
+        if self.cls is not None and self.args is not None:
+            self.args = self.args[1:]
 
     def reset_tokens(self):
         num_rem_tks = len(self.rem_tks)

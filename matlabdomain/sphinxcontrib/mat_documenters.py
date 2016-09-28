@@ -454,7 +454,9 @@ class MatlabDocumenter(PyDocumenter):
         self.document_members(all_members)
 
     def format_signature(self):
-        if isinstance(self.object, MatFunction):
+        # if no return value found from docstring, replace with the formatted string
+        # obtained from the signature in the code from mat_types.py
+        if isinstance(self.object, MatFunction) and self.retann is None:
             self.retann = self.object.retann
         return PyDocumenter.format_signature(self)
 
