@@ -19,7 +19,8 @@ from docutils.statemachine import ViewList
 from sphinx import addnodes
 from sphinx.roles import XRefRole
 from sphinx.locale import l_, _
-from sphinx.domains import Domain, ObjType, StandardDomain
+from sphinx.domains import Domain, ObjType
+from sphinx.domains.std import StandardDomain
 from sphinx.directives import ObjectDescription
 from sphinx.util import ws_re
 from sphinx.util.nodes import clean_astext, make_refnode
