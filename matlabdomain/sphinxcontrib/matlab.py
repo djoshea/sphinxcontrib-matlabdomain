@@ -26,7 +26,23 @@ from sphinx.util.nodes import make_refnode
 from sphinx.util.compat import Directive
 from sphinx.util.docfields import Field, GroupedField, TypedField
 
+class desc_returns_matlab(addnodes.desc_returns):
+    """Node for returns annnotation for matlab ([out] = )"""
+    def astext(self):
+        return '[' + nodes.TextElement.astext(self) + '] = '
 
+def visit_desc_returns_matlab(self, node):
+    self.body.append('[<em>')
+    # self.visit_desc_returns(node)
+
+def depart_desc_returns_matlab(self, node):
+    self.body.append('</em>] = ')
+    # self.depart_desc_returns(node)
+
+# REs for MATLAB signatures
+# from mat_documenters import mat_ext_sig_re_python_style, mat_ext_sig_re
+
+# original python style docstring signature
 # REs for MATLAB signatures
 mat_sig_re = re.compile(
     r'''^ ([+@]?[+@\w.]*\.)?            # class name(s)
@@ -35,7 +51,6 @@ mat_sig_re = re.compile(
            (?:\s* -> \s* (.*))?         #           return annotation
           )? $                          # and nothing more
           ''', re.VERBOSE)
-
 
 def _pseudo_parse_arglist(signode, arglist):
     """"Parse" a list of arguments separated by commas.
@@ -85,6 +100,25 @@ def _pseudo_parse_arglist(signode, arglist):
     else:
         signode += paramlist
 
+def _pseudo_parse_retlist(signode, arglist):
+    """"Parse" a list of return arguments separated by commas.
+
+    Currently, this will split at any comma, even if it's inside a
+    string literal (e.g. default argument value).
+    """
+    # paramlist = addnodes.desc_parameterlist()
+    # stack = []
+    # paramlist = addnodes.desc_parameterlist()
+    try:
+        for argument in arglist.split(','):
+            argument = argument.strip()
+            if argument:
+                if argument == 'varargout':
+                    argument = '...'
+                signode += addnodes.desc_parameter(argument, argument)
+        # signode += paramlist
+    except:
+        pass
 
 class MatObject(ObjectDescription):
     """
@@ -176,8 +210,12 @@ class MatObject(ObjectDescription):
             signode += addnodes.desc_annotation(sig_prefix, sig_prefix)
 
         if retann:
-            retstr = retann + ' = '
-            signode += addnodes.desc_addname(retstr, retstr)
+            # retstr = retann + ' = '
+            # signode += addnodes.desc_addname(retstr, retstr)
+            # add each outpu
+            retstr_no_brackets = retann.lstrip('[').rstrip(']')
+            # _pseudo_parse_retlist(signode, retstr_no_brackets)
+            signode += desc_returns_matlab(retstr_no_brackets, retstr_no_brackets)
 
         if name_prefix:
             signode += addnodes.desc_addname(name_prefix, name_prefix)
@@ -237,8 +275,9 @@ class MatObject(ObjectDescription):
 
         indextext = self.get_index_text(modname, name_cls)
         if indextext:
+            # updating for 5 column index
             self.indexnode['entries'].append(('single', indextext,
-                                              fullname, ''))
+                                              fullname, '', ''))
 
     def before_content(self):
         # needed for automatic qualification of members (reset in subclasses)
@@ -733,3 +772,9 @@ def setup(app):
     app.add_autodocumenter(doc.MatMethodDocumenter)
     app.add_autodocumenter(doc.MatAttributeDocumenter)
     app.add_autodocumenter(doc.MatInstanceAttributeDocumenter)
+
+    # add nodes for matlab return values
+    app.add_node(desc_returns_matlab,
+                 html=(visit_desc_returns_matlab, depart_desc_returns_matlab),
+                 latex=(visit_desc_returns_matlab, depart_desc_returns_matlab),
+                 text=(visit_desc_returns_matlab, depart_desc_returns_matlab))
