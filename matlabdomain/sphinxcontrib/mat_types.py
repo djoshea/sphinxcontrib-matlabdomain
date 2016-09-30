@@ -13,6 +13,7 @@ import os
 import re
 import sys
 from copy import copy
+from collections import OrderedDict
 
 # Pygments MatlabLexer is in pygments.lexers.math, but recommended way to load
 # is from lexers, which has LEXERS dictionary, which PyDev doesn't see.
@@ -594,9 +595,9 @@ class MatClass(MatMixin, MatObject):
         #: docstring
         self.docstring = ''
         #: dictionary of class properties
-        self.properties = {}
+        self.properties = OrderedDict()
         #: dictionary of class methods
-        self.methods = {}
+        self.methods = OrderedDict()
         #: remaining tokens after main class definition is parsed
         self.rem_tks = None
         # =====================================================================
@@ -966,7 +967,7 @@ class MatClass(MatMixin, MatObject):
         elif name in self.methods:
             return self.methods[name]
         elif name == '__dict__':
-            objdict = dict([(pn, self.getter(pn)) for pn in
+            objdict = OrderedDict([(pn, self.getter(pn)) for pn in
                             self.properties.iterkeys()])
             objdict.update(self.methods)
             return objdict

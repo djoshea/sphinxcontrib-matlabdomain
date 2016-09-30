@@ -379,7 +379,8 @@ class MatlabDocumenter(PyDocumenter):
             # sort by source order, by virtue of the module analyzer
             tagorder = self.analyzer.tagorder
             def keyfunc(entry):
-                fullname = entry[0].name.split('::')[1]
+                # module::class.method --> method
+                fullname = entry[0].name.split('::')[-1].split('.')[-1]
                 return tagorder.get(fullname, len(tagorder))
             memberdocumenters.sort(key=keyfunc)
 
