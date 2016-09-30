@@ -996,7 +996,7 @@ class MatMethod(MatFunction):
         self.attrs = attrs
 
         # skip first argument for class method
-        if self.cls is not None and self.args is not None:
+        if self.cls is not None and self.args is not None and not self.attrs.has_key('Static'):
             self.args = self.args[1:]
 
     def reset_tokens(self):
