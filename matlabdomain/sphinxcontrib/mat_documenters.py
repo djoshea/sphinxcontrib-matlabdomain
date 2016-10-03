@@ -147,6 +147,7 @@ class MatlabDocumenter(PyDocumenter):
                 self.object_name = part
             self.parent = parent
             self.object = obj
+
             return True
         # this used to only catch SyntaxError, ImportError and AttributeError,
         # but importing modules with side effects can raise all kinds of errors
@@ -297,7 +298,7 @@ class MatlabDocumenter(PyDocumenter):
             keep = False
             if want_all and membername.startswith('__') and \
                    membername.endswith('__') and len(membername) > 4:
-                # special __methods__
+                # special __methods_
                 if self.options.special_members is ALL and \
                         membername != '__doc__':
                     keep = has_doc or self.options.undoc_members
@@ -313,6 +314,8 @@ class MatlabDocumenter(PyDocumenter):
                 # keep documented attributes
                 keep = True
                 isattr = True
+            elif member.attrs.has_key('Hidden') and member.attrs['Hidden']:
+                keep = False
             else:
                 # ignore undocumented members if :undoc-members: is not given
                 keep = has_doc or self.options.undoc_members
@@ -338,6 +341,7 @@ class MatlabDocumenter(PyDocumenter):
         If *all_members* is True, do all members, else those given by
         *self.options.members*.
         """
+
         # set current namespace for finding members
         self.env.temp_data['autodoc:module'] = self.modname
         if self.objpath:
@@ -676,6 +680,15 @@ class MatClassDocumenter(MatModuleLevelDocumenter):
                 self.doc_as_attr = (self.objpath[-1] != self.object.__name__)
             else:
                 self.doc_as_attr = True
+
+        if not self.env.temp_data.has_key('mat_objects'):
+            self.env.temp_data['mat_objects'] = {}
+
+        # create key that will match directive key later
+        # like AutoAxis.AutoAxis([axh]) -> obj
+        # self.name.split('::')[-1] + '(' + self.args.
+        self.env.temp_data['mat_objects'][self.fullname] = self.object
+
         return ret
 
     def format_args(self):
@@ -817,6 +830,15 @@ class MatMethodDocumenter(MatDocstringSignatureMixin, MatClassLevelDocumenter):
             self.member_order = self.member_order - 1
         else:
             self.directivetype = 'method'
+
+        if not self.env.temp_data.has_key('mat_objects'):
+            self.env.temp_data['mat_objects'] = {}
+
+        # create key that will match directive key later
+        # like AutoAxis.AutoAxis([axh]) -> obj
+        # self.name.split('::')[-1] + '(' + self.args.
+
+        self.env.temp_data['mat_objects'][self.fullname] = self.object
         return ret
 
     def format_args(self):
@@ -862,6 +884,16 @@ class MatAttributeDocumenter(MatClassLevelDocumenter):
         else:
             # if it's not a data descriptor
             self._datadescriptor = False
+
+        if not self.env.temp_data.has_key('mat_objects'):
+            self.env.temp_data['mat_objects'] = {}
+
+        # create key that will match directive key later
+        # like AutoAxis.AutoAxis([axh]) -> obj
+        # self.name.split('::')[-1] + '(' + self.args.
+
+        self.env.temp_data['mat_objects'][self.fullname] = self.object
+
         return ret
 
     def get_real_modname(self):

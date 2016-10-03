@@ -124,6 +124,13 @@ class MatObject(ObjectDescription):
     """
     Description of a general MATLAB object.
     """
+
+    def __init__(self, *args, **kwargs):
+        # self.module = args[2]['module']
+        # self.sig = args[3][3].split(':: ')[-1]
+
+        super(ObjectDescription, self).__init__(*args, **kwargs)
+
     option_spec = {
         'noindex': directives.flag,
         'module': directives.unchanged,
@@ -204,6 +211,12 @@ class MatObject(ObjectDescription):
         signode['module'] = modname
         signode['class'] = classname
         signode['fullname'] = fullname
+
+        key = '.'.join((modname, fullname))
+        if self.env.temp_data['mat_objects'].has_key(key):
+            self.object = self.env.temp_data['mat_objects'][key]
+        else:
+            self.object = None
 
         sig_prefix = self.get_signature_prefix(sig)
         if sig_prefix:
@@ -315,7 +328,19 @@ class MatClasslike(MatObject):
     """
 
     def get_signature_prefix(self, sig):
-        return self.objtype + ' '
+        pre = [self.objtype]
+
+        attr_list = ['Abstract', 'ConstructOnLoad', 'HandleCompatible', 'Sealed', 'AbortSet', 'Abstract', 'Constant',
+                     'Dependent', 'GetObservable', 'SetObservable', 'Transient']
+
+        # add property and method attributes before signature
+        if self.object is not None:
+            attr = self.object.attrs
+            if attr is not None and len(attr) > 0:
+                for key in attr_list:
+                    if attr.has_key(key) and attr[key]:
+                        pre.append(key)
+        return ' '.join(pre)
 
     def get_index_text(self, modname, name_cls):
         if self.objtype == 'class':
@@ -342,12 +367,61 @@ class MatClassmember(MatObject):
     def needs_arglist(self):
         return self.objtype.endswith('method')
 
+    # cls_attr_types = {'Abstract': bool, 'AllowedSubclasses': list,
+    #                   'ConstructOnLoad': bool, 'HandleCompatible': bool,
+    #                   'Hidden': bool, 'InferiorClasses': list, 'Sealed': bool}
+    # prop_attr_types = {'AbortSet': bool, 'Abstract': bool, 'Access': list,
+    #                    'Constant': bool, 'Dependent': bool, 'GetAccess': list,
+    #                    'GetObservable': bool, 'Hidden': bool,
+    #                    'SetAccess': list, 'SetObservable': bool,
+    #                    'Transient': bool, 'ClassSetupParameter': bool,
+    #                    'MethodSetupParameter': bool, 'TestParameter': bool}
+    # meth_attr_types = {'Abstract': bool, 'Access': list, 'Hidden': bool,
+    #                    'Sealed': list, 'Static': bool, 'Test': bool,
+    #                    'TestClassSetup': bool, 'TestMethodSetup': bool,
+    #                    'TestClassTeardown': bool, 'TestMethodTeardown': bool,
+    #                    'ParameterCombination': bool}
+
     def get_signature_prefix(self, sig):
+        pre = []
         if self.objtype == 'staticmethod':
-            return 'static '
+            pre.append('static')
         elif self.objtype == 'classmethod':
-            return 'classmethod '
-        return ''
+            pre.append('classmethod')
+
+        attr_list = ['Abstract', 'ConstructOnLoad', 'HandleCompatible', 'Sealed', 'AbortSet', 'Abstract', 'Constant',
+                     'Dependent', 'GetObservable', 'SetObservable', 'Transient']
+
+        # add property and method attributes before signature
+        if self.object is not None:
+            attr = self.object.attrs
+            if attr is not None and len(attr) > 0:
+                for key in attr_list:
+                    if attr.has_key(key) and attr[key]:
+                        pre.append(key)
+
+                # add access indication (private methods are already excluded)
+                if attr.has_key('GetAccess') and attr['GetAccess'] != 'public':
+                    get_access = False
+                else:
+                    get_access = True
+                if attr.has_key('SetAccess') and attr['SetAccess'] != 'public':
+                    set_access = False
+                else:
+                    set_access = True
+
+                if get_access and not set_access:
+                    pre.append('Read-only')
+                elif set_access and not get_access:
+                    pre.append('Write-only')
+                elif not get_access and not set_access:
+                    pre.append('Protected')
+
+                # for methods
+                if attr.has_key('Access') and attr['Access'] != 'public':
+                    pre.append('Protected')
+
+        return ' '.join(pre)
 
     def get_index_text(self, modname, name_cls):
         name, cls = name_cls
