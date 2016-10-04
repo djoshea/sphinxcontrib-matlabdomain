@@ -124,6 +124,9 @@ class MatlabDocumenter(PyDocumenter):
 
         Returns True if successful, False if an error occurred.
         """
+
+        self.parse_name()
+
         # get config_value with absolute path to MATLAB source files
         basedir = self.env.config.matlab_src_dir
         dbg = self.env.app.debug
@@ -373,7 +376,13 @@ class MatlabDocumenter(PyDocumenter):
             full_mname = self.modname + '::' + \
                               '.'.join(self.objpath + [mname])
             documenter = classes[-1](self.directive, full_mname, self.indent)
-            memberdocumenters.append((documenter, isattr))
+
+            # moving documenter import_object to here to update the member_order
+            if documenter.import_object():
+                memberdocumenters.append((documenter, isattr))
+            else:
+                self.env.app.debug('[autodoc] import_object failed on %s', self.fullname)
+
         member_order = self.options.member_order or \
                        self.env.config.autodoc_member_order
         if member_order == 'groupwise':
@@ -406,7 +415,7 @@ class MatlabDocumenter(PyDocumenter):
         If *more_content* is given, include that content. If *real_modname* is
         given, use that module name to find attribute docs. If *check_module* is
         True, only generate if the object is defined in the module name it is
-        imported from. If *all_members* is True, document all members.
+        imported from. If *all_members*m is True, document all members.
         """
         if not self.parse_name():
             # need a module to import
@@ -417,9 +426,14 @@ class MatlabDocumenter(PyDocumenter):
                 % self.name)
             return
 
-        # now, import the module and get object to document
-        if not self.import_object():
-            return
+        # now, import the module and get object to document...
+        # moving import object to document_members call by parent, since
+        # we need the member_order value to be updated correctly for sorting
+        # only if self.object is empty to we try again
+
+        if self.object is None:
+            if not self.import_object():
+                return
 
         # If there is no real module defined, figure out which to use.
         # The real module is used in the module analyzer to look up the module
@@ -454,6 +468,8 @@ class MatlabDocumenter(PyDocumenter):
         # reST and no starting newline is present
         self.add_line(u'', '<autodoc>')
 
+        self.indicate_begin_group()
+
         # format the object's signature, if any
         sig = self.format_signature()
 
@@ -476,6 +492,9 @@ class MatlabDocumenter(PyDocumenter):
         if isinstance(self.object, MatFunction) and self.retann is None:
             self.retann = self.object.retann
         return PyDocumenter.format_signature(self)
+
+    def indicate_begin_group(self):
+        pass
 
 class MatModuleDocumenter(MatlabDocumenter, PyModuleDocumenter):
 
@@ -578,6 +597,31 @@ class MatClassLevelDocumenter(MatlabDocumenter):
             # ... else, it stays None, which means invalid
         return modname, parents + [base]
 
+    def indicate_begin_group(self):
+        """Detect when a member being currently documented belongs to a different
+        group than the previous member, where a group is something like 'property', 'method' etc."""
+
+        if self.env.temp_data.has_key('mat:current_group'):
+            current_group = self.env.temp_data['mat:current_group']
+        else:
+            current_group = None
+
+        if self.group_name is not None and (current_group is None or self.group_name != current_group):
+            self.add_line(u'', '<autodoc>')
+            self.add_line(u'.. rubric:: %s' % (self.group_name), '<autodoc>')
+            self.add_line(u'   :class: note', '<autodoc>')
+            self.add_line(u'   :name: %s_%s' %(self.fullname, self.group_name), '<autodoc>')
+            # ident = self.indent
+            # self.indent = u''
+            # self.add_line(u'%s' % (self.group_name), '<autodoc>')
+            # self.add_line(u'----------------------------------------------', '<autodoc>')
+            # self.add_line(u'', '<autodoc>')
+            self.env.temp_data['mat:current_group'] = self.group_name
+            # self.indent = ident
+
+    def add_directive_header(self, sig):
+        MatlabDocumenter.add_directive_header(self, sig)
+        self.indicate_begin_group()
 
 class MatDocstringSignatureMixin(object):
     """
@@ -816,7 +860,7 @@ class MatMethodDocumenter(MatDocstringSignatureMixin, MatClassLevelDocumenter):
     Specialized Documenter subclass for methods (normal, static and class).
     """
     objtype = 'method'
-    member_order = 50
+    member_order = 60
     priority = 1  # must be more than FunctionDocumenter
 
     @classmethod
@@ -829,8 +873,10 @@ class MatMethodDocumenter(MatDocstringSignatureMixin, MatClassLevelDocumenter):
             self.directivetype = 'staticmethod'
             # document class and static members before ordinary ones
             self.member_order = self.member_order - 1
+            self.group_name = 'Static Methods'
         else:
             self.directivetype = 'method'
+            self.group_name = 'Methods'
 
         if not self.env.temp_data.has_key('mat_objects'):
             self.env.temp_data['mat_objects'] = {}
@@ -860,7 +906,7 @@ class MatAttributeDocumenter(MatClassLevelDocumenter):
     Specialized Documenter subclass for attributes.
     """
     objtype = 'attribute'
-    member_order = 60
+    member_order = 50
     option_spec = dict(MatModuleLevelDocumenter.option_spec)
     option_spec["annotation"] = annotation_option
 
@@ -895,6 +941,34 @@ class MatAttributeDocumenter(MatClassLevelDocumenter):
 
         self.env.temp_data['mat_objects'][self.fullname] = self.object
 
+        # add access indication (private methods are already excluded)
+        attr = self.object.attrs
+        if attr.has_key('GetAccess') and attr['GetAccess'] != 'public':
+            get_access = False
+        else:
+            get_access = True
+        if attr.has_key('SetAccess') and attr['SetAccess'] != 'public':
+            set_access = False
+        else:
+            set_access = True
+        dependent = attr.has_key('Dependent') and attr['Dependent']
+
+        if get_access and not set_access:
+            self.group_name = 'Read-only Properties'
+            self.member_order = self.member_order - 4
+        elif set_access and not get_access:
+            self.group_name = 'Write-only Properties'
+            self.member_order = self.member_order - 2
+        else:
+            self.group_name = 'Properties'
+
+        if dependent:
+            self.group_name = 'Dependent ' + self.group_name
+        else:
+            self.member_order = self.member_order - 1
+
+        print '%s (%d)' % (self.group_name, self.member_order)
+
         return ret
 
     def get_real_modname(self):
@@ -903,8 +977,6 @@ class MatAttributeDocumenter(MatClassLevelDocumenter):
 
     def add_directive_header(self, sig):
         MatClassLevelDocumenter.add_directive_header(self, sig)
-
-
 
         if not self.options.annotation:
             if not self._datadescriptor:
@@ -940,7 +1012,7 @@ class MatInstanceAttributeDocumenter(MatAttributeDocumenter):
     """
     objtype = 'instanceattribute'
     directivetype = 'attribute'
-    member_order = 60
+    member_order = 50
 
     # must be higher than AttributeDocumenter
     priority = 11

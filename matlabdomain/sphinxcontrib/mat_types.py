@@ -974,7 +974,6 @@ class MatClass(MatMixin, MatObject):
         else:
             super(MatClass, self).getter(name, *defargs)
 
-
 class MatProperty(MatObject):
     def __init__(self, name, cls, attrs):
         super(MatProperty, self).__init__(name)
