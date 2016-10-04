@@ -27,6 +27,8 @@ from sphinx.util.nodes import nested_parse_with_titles
 from sphinx.util.compat import Directive
 from sphinx.util.inspect import getargspec, isdescriptor, safe_getmembers, \
      safe_getattr, is_builtin_class_method
+import six
+
 try:
     # Sphinx >= 1.3.0
     from sphinx.util.inspect import object_description
@@ -72,7 +74,6 @@ from mat_types import *
 # MatScript, MatException, MatModuleAnalyzer
 
 # TODO: check MRO's for all classes, attributes and methods!!!
-
 
 class MatlabDocumenter(PyDocumenter):
     """
@@ -902,10 +903,18 @@ class MatAttributeDocumenter(MatClassLevelDocumenter):
 
     def add_directive_header(self, sig):
         MatClassLevelDocumenter.add_directive_header(self, sig)
+
+
+
         if not self.options.annotation:
             if not self._datadescriptor:
                 try:
-                    objrepr = object_description(self.object.default)  # display default
+                    # display default
+                    if isinstance(self.object.default, six.string_types):
+                        objrepr = self.object.default
+                    else:
+                        objrepr = object_description(self.object.default)
+
                 except ValueError:
                     pass
                 else:
