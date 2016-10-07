@@ -71,7 +71,7 @@ r'''^(?:(\[?[\w\s,]+\]?)\s*=\s*)?   # return annotation
 
 from mat_types import *
 # import MatObject, MatModule, MatFunction, MatClass, MatProperty, MatMethod,
-# MatScript, MatException, MatModuleAnalyzer
+# MatScript, MatException, MatModuleAnalyzer, MatClassMemberGroup
 
 # TODO: check MRO's for all classes, attributes and methods!!!
 
@@ -80,6 +80,8 @@ class MatlabDocumenter(PyDocumenter):
     Base class for documenters of MATLAB objects.
     """
     domain = 'mat'
+
+    parent_documenter = None
 
     def parse_name(self):
         """Determine what module to import and what attribute to document.
@@ -137,37 +139,41 @@ class MatlabDocumenter(PyDocumenter):
         if self.objpath:
             dbg('[autodoc] from %s import %s',
                 self.modname, '.'.join(self.objpath))
-        try:
-            dbg('[autodoc] import %s', self.modname)
-            MatObject.matlabify(self.modname)
-            parent = None
-            obj = self.module = sys.modules[self.modname]
+        # try:
+        dbg('[autodoc] import %s', self.modname)
+        MatObject.matlabify(self.modname)
+        parent = None
+        obj = self.module = sys.modules[self.modname]
+        dbg('[autodoc] => %r', obj)
+        for part in self.objpath:
+            parent = obj
+            dbg('[autodoc] getattr(_, %r)', part)
+            obj = self.get_attr(obj, part)
             dbg('[autodoc] => %r', obj)
-            for part in self.objpath:
-                parent = obj
-                dbg('[autodoc] getattr(_, %r)', part)
-                obj = self.get_attr(obj, part)
-                dbg('[autodoc] => %r', obj)
-                self.object_name = part
-            self.parent = parent
-            self.object = obj
+            self.object_name = part
+        self.parent = parent
+        self.object = obj
 
-            return True
+        if isinstance(obj, MatMethod):
+            self.args = obj.args
+            self.retann = obj.retann
+
+        return True
         # this used to only catch SyntaxError, ImportError and AttributeError,
         # but importing modules with side effects can raise all kinds of errors
-        except Exception:
-            if self.objpath:
-                errmsg = 'autodoc: failed to import %s %r from module %r' % \
-                         (self.objtype, '.'.join(self.objpath), self.modname)
-            else:
-                errmsg = 'autodoc: failed to import %s %r' % \
-                         (self.objtype, self.fullname)
-            errmsg += '; the following exception was raised:\n%s' % \
-                      traceback.format_exc()
-            dbg(errmsg)
-            self.directive.warn(errmsg)
-            self.env.note_reread()
-            return False
+        # except Exception:
+        #     if self.objpath:
+        #         errmsg = 'autodoc: failed to import %s %r from module %r' % \
+        #                  (self.objtype, '.'.join(self.objpath), self.modname)
+        #     else:
+        #         errmsg = 'autodoc: failed to import %s %r' % \
+        #                  (self.objtype, self.fullname)
+        #     errmsg += '; the following exception was raised:\n%s' % \
+        #               traceback.format_exc()
+        #     dbg(errmsg)
+        #     self.directive.warn(errmsg)
+        #     self.env.note_reread()
+        #     return False
 
     def add_content(self, more_content, no_docstring=False):
         """Add content from docstrings, attribute documentation and user."""
@@ -320,9 +326,13 @@ class MatlabDocumenter(PyDocumenter):
                 isattr = True
             elif member.attrs.has_key('Hidden') and member.attrs['Hidden']:
                 keep = False
+            elif isinstance(member, MatMethod) and member.is_getset and not self.env.config.matlab_doc_getset:
+                keep = False
             else:
+                # dont ignore undocumented members
+                keep = True
                 # ignore undocumented members if :undoc-members: is not given
-                keep = has_doc or self.options.undoc_members
+                # keep = has_doc or self.options.undoc_members
 
             # give the user a chance to decide whether this member
             # should be skipped
@@ -361,9 +371,13 @@ class MatlabDocumenter(PyDocumenter):
             members = [(membername, member) for (membername, member) in members
                        if membername not in self.options.exclude_members]
 
+        filtered_members = self.filter_members(members, want_all)
+        self.document_specified_members(filtered_members, members_check_module)
+
+    def document_specified_members(self, filtered_members, members_check_module):
         # document non-skipped members
         memberdocumenters = []
-        for (mname, member, isattr) in self.filter_members(members, want_all):
+        for (mname, member, isattr) in filtered_members:
             classes = [cls for cls in AutoDirective._registry.itervalues()
                        if cls.can_document_member(member, mname, isattr, self)]
             if not classes:
@@ -491,6 +505,8 @@ class MatlabDocumenter(PyDocumenter):
         # obtained from the signature in the code from mat_types.py
         if isinstance(self.object, MatFunction) and self.retann is None:
             self.retann = self.object.retann
+        if self.args is None:
+            self.args = ''
         return PyDocumenter.format_signature(self)
 
     def indicate_begin_group(self):
@@ -563,9 +579,6 @@ class MatModuleLevelDocumenter(MatlabDocumenter):
                 # ... else, it stays None, which means invalid
         return modname, parents + [base]
 
-
-
-
 class MatClassLevelDocumenter(MatlabDocumenter):
     """
     Specialized Documenter subclass for objects on class level (methods,
@@ -601,27 +614,28 @@ class MatClassLevelDocumenter(MatlabDocumenter):
         """Detect when a member being currently documented belongs to a different
         group than the previous member, where a group is something like 'property', 'method' etc."""
 
-        if self.env.temp_data.has_key('mat:current_group'):
-            current_group = self.env.temp_data['mat:current_group']
-        else:
-            current_group = None
+        member_order = self.options.member_order or \
+                       self.env.config.autodoc_member_order
+        # if bysource, the MatClassMemberGroupDocumenter will take care of this
+        if member_order == 'groupwise':
+            if self.env.temp_data.has_key('mat:current_group'):
+                current_group = self.env.temp_data['mat:current_group']
+            else:
+                current_group = None
 
-        if self.group_name is not None and (current_group is None or self.group_name != current_group):
-            self.add_line(u'', '<autodoc>')
-            self.add_line(u'.. rubric:: %s' % (self.group_name), '<autodoc>')
-            self.add_line(u'   :class: note', '<autodoc>')
-            self.add_line(u'   :name: %s_%s' %(self.fullname, self.group_name), '<autodoc>')
-            # ident = self.indent
-            # self.indent = u''
-            # self.add_line(u'%s' % (self.group_name), '<autodoc>')
-            # self.add_line(u'----------------------------------------------', '<autodoc>')
-            # self.add_line(u'', '<autodoc>')
-            self.env.temp_data['mat:current_group'] = self.group_name
-            # self.indent = ident
-
-    def add_directive_header(self, sig):
-        MatlabDocumenter.add_directive_header(self, sig)
-        self.indicate_begin_group()
+            if self.group_name is not None and (current_group is None or self.group_name != current_group):
+                self.add_line(u'', '<autodoc>')
+                self.add_line(u'.. rubric:: %s' % (self.group_name), '<autodoc>')
+                self.add_line(u'   :class: note', '<autodoc>')
+                self.add_line(u'   :name: %s_%s' %(self.fullname, self.group_name), '<autodoc>')
+                self.add_line(u'', '<autodoc>')
+                # ident = self.indent
+                # self.indent = u''
+                # self.add_line(u'%s' % (self.group_name), '<autodoc>')
+                # self.add_line(u'----------------------------------------------', '<autodoc>')
+                # self.add_line(u'', '<autodoc>')
+                self.env.temp_data['mat:current_group'] = self.group_name
+                # self.indent = ident
 
 class MatDocstringSignatureMixin(object):
     """
@@ -835,11 +849,151 @@ class MatClassDocumenter(MatModuleLevelDocumenter):
         else:
             MatModuleLevelDocumenter.add_content(self, more_content)
 
+    def filter_member_groups(self, members, want_all):
+        """Filter the member_groups list
+
+        Members groups are skipped if
+
+        - they are private (except if given explicitly or the private-members
+          option is set)
+        - they are special methods (except if given explicitly or the
+          special-members option is set)
+        - they are undocumented (except if the undoc-members option is set)
+
+        The user can override the skipping decision by connecting to the
+        ``autodoc-skip-member`` event.
+        """
+        ret = []
+
+        # search for members in source code too
+        namespace = '.'.join(self.objpath)  # will be empty for modules
+
+        if self.analyzer:
+            attr_docs = self.analyzer.find_attr_docs()
+        else:
+            attr_docs = {}
+
+        # process members and determine which to skip
+        for (membername, member) in members:
+            # if isattr is True, the member is documented as an attribute
+            isattr = False
+
+            doc = self.get_attr(member, '__doc__', None)
+            # if the member __doc__ is the same as self's __doc__, it's just
+            # inherited and therefore not the member's doc
+            cls = self.get_attr(member, '__class__', None)
+            if cls:
+                cls_doc = self.get_attr(cls, '__doc__', None)
+                if cls_doc == doc:
+                    doc = None
+            has_doc = bool(doc)
+
+            keep = False
+            if want_all and membername.startswith('__') and \
+                    membername.endswith('__') and len(membername) > 4:
+                # special __methods_
+                if self.options.special_members is ALL and \
+                                membername != '__doc__':
+                    keep = has_doc or self.options.undoc_members
+                elif self.options.special_members and \
+                                self.options.special_members is not ALL and \
+                                membername in self.options.special_members:
+                    keep = has_doc or self.options.undoc_members
+            elif want_all and membername.startswith('_'):
+                # ignore members whose name starts with _ by default
+                keep = self.options.private_members and \
+                       (has_doc or self.options.undoc_members)
+            elif (namespace, membername) in attr_docs:
+                # keep documented attributes
+                keep = True
+                isattr = True
+            elif member.attrs.has_key('Hidden') and member.attrs['Hidden']:
+                keep = False
+            elif member.attrs.has_key('Access') and member['Access'] != 'public':
+                keep = False
+            else:
+                # don't ignore if not skipped
+                keep = True
+
+            # give the user a chance to decide whether this member
+            # should be skipped
+            if self.env.app:
+                # let extensions preprocess docstrings
+                skip_user = self.env.app.emit_firstresult(
+                    'autodoc-skip-member', self.objtype, membername, member,
+                    not keep, self.options)
+                if skip_user is not None:
+                    keep = not skip_user
+
+            if keep:
+                ret.append((membername, member, isattr))
+
+        return ret
+
     def document_members(self, all_members=False):
+        """Generate reST for member documentation. Here we differ from the implementation in MatlabDocumenter
+        because we will defer to the member_groups to document their members if source order
+        is bysource, or do it directly if not
+
+        If *all_members* is True, do all members, else those given by
+        *self.options.members*.
+        """
+
         if self.doc_as_attr:
             return
-        MatModuleLevelDocumenter.document_members(self, all_members)
 
+        # set current namespace for finding members
+        self.env.temp_data['autodoc:module'] = self.modname
+        if self.objpath:
+            self.env.temp_data['autodoc:class'] = self.objpath[0]
+
+        want_all = all_members or self.options.inherited_members or \
+                   self.options.members is ALL
+
+        # bysource or groupwise member_order
+        member_order = self.options.member_order or \
+                       self.env.config.autodoc_member_order
+
+        # for groupwise, we loop over the class's properties and methods lists
+        # directly, sorted by their member_order property
+        if member_order == 'groupwise':
+            MatModuleLevelDocumenter.document_members(self, all_members)
+
+        elif member_order == 'bysource':
+            # defer to the member_orders
+            # find out which members are documentable
+            members = [(x.name, x) for x in self.object.member_groups]
+            members_check_module = False
+
+            # document non-skipped members, noe special filter_member_groups function instead of filter_members
+            memberdocumenters = []
+            for (mname, member, isattr) in self.filter_member_groups(members, want_all):
+                classes = [cls for cls in AutoDirective._registry.itervalues()
+                           if cls.can_document_member(member, mname, isattr, self)]
+                if not classes:
+                    # don't know how to document this member
+                    continue
+                # prefer the documenter with the highest priority
+                classes.sort(key=lambda cls: cls.priority)
+                # give explicitly separated module name, so that members
+                # of inner classes can be documented
+                full_mname = self.modname + '::' + \
+                             '.'.join(self.objpath + [mname])
+                documenter = classes[-1](self.directive, full_mname, self.indent)
+
+                # moving documenter import_object to here to update the member_order
+                documenter.object = member
+                documenter.parent_documenter = self
+                memberdocumenters.append((documenter, isattr))
+
+            for documenter, isattr in memberdocumenters:
+                documenter.generate(
+                    all_members=True, real_modname=self.real_modname,
+                    check_module=members_check_module and not isattr)
+
+        # reset current objects
+        self.env.temp_data['autodoc:module'] = None
+        self.env.temp_data['autodoc:class'] = None
 
 class MatExceptionDocumenter(MatlabDocumenter, PyExceptionDocumenter):
 
@@ -854,6 +1008,132 @@ class MatDataDocumenter(MatModuleLevelDocumenter, PyDataDocumenter):
     def can_document_member(cls, member, membername, isattr, parent):
         return isinstance(member, MatScript)
 
+class MatClassMemberGroupDocumenter(MatDocstringSignatureMixin, MatClassLevelDocumenter):
+    """
+    Specialized Documenter subclass for methods (normal, static and class).
+    """
+    member_order = 40
+    priority = 1
+
+    @classmethod
+    def can_document_member(cls, member, membername, isattr, parent):
+        return isinstance(member, MatClassMemberGroup)
+
+    def import_object(self):
+        ret = MatClassLevelDocumenter.import_object(self)
+
+        # create key that will match directive key later
+        # like AutoAxis.AutoAxis([axh]) -> obj
+        # self.name.split('::')[-1] + '(' + self.args.
+
+        self.env.temp_data['mat_objects'][self.fullname] = self.object
+        return ret
+
+    def format_args(self):
+        return None
+
+    def add_directive_header(self, sig):
+        pass
+
+    def get_object_members(self, want_all):
+        if self.object.group_type == 'properties':
+            members = self.object.properties
+        elif self.object.group_type == 'methods':
+            members = self.object.methods
+
+        member_tuple = [(k,v) for (k,v) in members.iteritems()]
+        return (False, member_tuple)
+
+    def document_members(self, all_members=False):
+        """Generate reST for member documentation.
+
+        If *all_members* is True, do all members, else those given by
+        *self.options.members*.
+        """
+
+        # set current namespace for finding members
+        self.env.temp_data['autodoc:module'] = self.modname
+        if self.objpath:
+            self.env.temp_data['autodoc:class'] = self.objpath[0]
+
+        want_all = all_members or self.options.inherited_members or \
+                   self.options.members is ALL
+        # find out which members are documentable
+        members_check_module, members = self.get_object_members(want_all)
+
+        # remove members given by exclude-members
+        if self.options.exclude_members:
+            members = [(membername, member) for (membername, member) in members
+                       if membername not in self.options.exclude_members]
+
+        filtered_members = self.filter_members(members, want_all)
+
+        # defer to class to document the members
+        self.parent_documenter.document_specified_members(filtered_members, members_check_module)
+
+    def indicate_begin_group(self):
+        # skip if I don't have any members to document
+        want_all = self.options.inherited_members or \
+                   self.options.members is ALL
+        # find out which members are documentable
+        members_check_module, members = self.get_object_members(want_all)
+
+        # remove members given by exclude-members
+        if self.options.exclude_members:
+            members = [(membername, member) for (membername, member) in members
+                       if membername not in self.options.exclude_members]
+
+        filtered_members = self.filter_members(members, want_all)
+
+        if len(filtered_members) == 0:
+            return
+
+        """Display the header for the group"""
+        has_docstring = not(self.object.docstring is None or self.object.docstring == '')
+        has_title = not(self.object.group_title is None or self.object.group_title == '')
+
+        # if there is both title and docstring, then include the title in the note header
+        # otherwise put the title in the note body instead
+        if has_title and has_docstring:
+            note_title = u'%s: %s' % (self.object.group_desc, self.object.group_title)
+            title_in_content = False
+        else:
+            note_title = self.object.group_desc
+            title_in_content = True
+
+        self.add_line(u'', '<autodoc>')
+        self.add_line(u'.. admonition:: %s' % (note_title), '<autodoc>')
+        self.add_line(u'   :class: note', '<autodoc>')
+        self.add_line(u'   :name: %s_%s' % (self.fullname, self.name), '<autodoc>')
+        self.add_line(u'', '<autodoc>')
+
+        if title_in_content:
+            self.add_line(u'   %s' % (self.object.group_title), '<autodoc>')
+
+        if has_docstring:
+            current_indent = self.indent
+            self.indent = u'   ' + self.indent
+
+            # write docstring
+            encoding = self.analyzer and self.analyzer.encoding
+            docstrings = self.get_doc(encoding)
+            if not docstrings:
+                # append at least a dummy docstring, so that the event
+                # autodoc-process-docstring is fired and can add some
+                # content if desired
+                docstrings.append([])
+            for i, line in enumerate(self.process_doc(docstrings)):
+                self.add_line(line, '<autodoc>')
+
+            self.indent = current_indent
+
+        if not has_title and not has_docstring:
+            # ensure that something gets written as the admonition cannot be empty
+            self.add_line(u'   --', '<autodoc>')
+        self.add_line(u'', '<autodoc>')
+
+    def add_content(self, more_content, no_docstring=False):
+        pass
 
 class MatMethodDocumenter(MatDocstringSignatureMixin, MatClassLevelDocumenter):
     """
@@ -875,8 +1155,13 @@ class MatMethodDocumenter(MatDocstringSignatureMixin, MatClassLevelDocumenter):
             self.member_order = self.member_order - 1
             self.group_name = 'Static Methods'
         else:
+            if self.object.name == self.object.cls.name:
+                # constructor, show before properties
+                self.member_order = 40
+                self.group_name = 'Constructor'
+            else:
+                self.group_name = 'Methods'
             self.directivetype = 'method'
-            self.group_name = 'Methods'
 
         if not self.env.temp_data.has_key('mat_objects'):
             self.env.temp_data['mat_objects'] = {}
@@ -900,6 +1185,10 @@ class MatMethodDocumenter(MatDocstringSignatureMixin, MatClassLevelDocumenter):
     def document_members(self, all_members=False):
         pass
 
+    def add_directive_header(self, sig):
+        MatlabDocumenter.add_directive_header(self, sig)
+        # indicate whether a new group has begun when in groupwise mode
+        self.indicate_begin_group()
 
 class MatAttributeDocumenter(MatClassLevelDocumenter):
     """
@@ -967,7 +1256,7 @@ class MatAttributeDocumenter(MatClassLevelDocumenter):
         else:
             self.member_order = self.member_order - 1
 
-        print '%s (%d)' % (self.group_name, self.member_order)
+        # print '%s (%d)' % (self.group_name, self.member_order)
 
         return ret
 
@@ -1004,6 +1293,10 @@ class MatAttributeDocumenter(MatClassLevelDocumenter):
         #     no_docstring = True
         MatClassLevelDocumenter.add_content(self, more_content, no_docstring)
 
+    def add_directive_header(self, sig):
+        MatlabDocumenter.add_directive_header(self, sig)
+        # indicate whether a new group has begun when in groupwise mode
+        self.indicate_begin_group()
 
 class MatInstanceAttributeDocumenter(MatAttributeDocumenter):
     """

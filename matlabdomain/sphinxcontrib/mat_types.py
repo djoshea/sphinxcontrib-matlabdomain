@@ -23,6 +23,7 @@ from pygments.token import Token
 
 MAT_DOM = 'MATLAB-domain'
 __all__ = ['MatObject', 'MatModule', 'MatFunction', 'MatClass',  \
+           'MatClassMemberGroup', \
            'MatProperty', 'MatMethod', 'MatScript', 'MatException', \
            'MatModuleAnalyzer', 'MAT_DOM']
 
@@ -598,6 +599,9 @@ class MatClass(MatMixin, MatObject):
         self.properties = OrderedDict()
         #: dictionary of class methods
         self.methods = OrderedDict()
+        # list of MatClassMemberGroups which themselves contain methods and properties
+        self.member_groups = []
+
         #: remaining tokens after main class definition is parsed
         self.rem_tks = None
         # =====================================================================
@@ -689,6 +693,15 @@ class MatClass(MatMixin, MatObject):
                 idx += 1
                 # property "attributes"
                 attr_dict, idx = self.attributes(idx, MatClass.prop_attr_types)
+
+                # parse property group
+                group_name, group_docstr, idx = self.parse_group_header_comment(idx)
+
+                # create group to encompass methods
+                uniq_name = self.name + '_member_group_%d' % (len(self.member_groups))
+                member_group = MatClassMemberGroup(uniq_name, self, attr_dict,
+                                                   'properties', group_name, group_docstr)
+
                 # Token.Keyword: "end" terminates properties & methods block
                 while self._tk_ne(idx, (Token.Keyword, 'end')):
                     # skip comments and whitespace
@@ -703,7 +716,7 @@ class MatClass(MatMixin, MatObject):
                     # with "%:" directive trumps docstring after property
                     if self.tokens[idx][0] is Token.Name:
                         prop_name = self.tokens[idx][1]
-                        self.properties[prop_name] = {'attrs': attr_dict}
+                        # self.properties[prop_name] = {'attrs': attr_dict}
                         idx += 1
                     # subtype of Name EG Name.Builtin used as Name
                     elif self.tokens[idx][0] in Token.Name.subtypes:  # @UndefinedVariable
@@ -712,7 +725,8 @@ class MatClass(MatMixin, MatObject):
                                              'a Builtin Name'])
                         MatObject.sphinx_dbg(warn_msg, MAT_DOM, self.module,
                                              self.name, prop_name)
-                        self.properties[prop_name] = {'attrs': attr_dict}
+
+                        # self.properties[prop_name] = {'attrs': attr_dict}
                         idx += 1
                     elif self._tk_eq(idx, (Token.Keyword, 'end')):
                         idx += 1
@@ -726,7 +740,7 @@ class MatClass(MatMixin, MatObject):
                     idx += self._blanks(idx)  # skip blanks
                     # =========================================================
                     # defaults
-                    default = {'default': None}
+                    default = None
                     if self._tk_eq(idx, (Token.Punctuation, '=')):
                         idx += 1
                         idx += self._blanks(idx)  # skip blanks
@@ -768,26 +782,50 @@ class MatClass(MatMixin, MatObject):
                         if self.tokens[idx][0] is not Token.Comment:
                             idx += 1
                         if default:
-                            default = {'default': default.rstrip('; ')}
-                    self.properties[prop_name].update(default)
+                            default = default.rstrip('; ')
+                    # self.properties[prop_name].update(default)
                     # =========================================================
                     # docstring
-                    docstring = {'docstring': None}
+                    docstring = None
                     if self.tokens[idx][0] is Token.Comment:
-                        docstring['docstring'] = \
-                            self.tokens[idx][1].lstrip('%')
+                        docstring = self.tokens[idx][1].lstrip('%')
                         idx += 1
-                    self.properties[prop_name].update(docstring)
+
+                    prop = MatProperty(prop_name, self, attr_dict, default, docstring)
+
+                    # add to member_group
+                    prop.member_group = member_group
+                    member_group.properties[prop_name] = prop
+
+                    # and directly to class
+                    self.properties[prop_name] = prop
+
                     idx += self._whitespace(idx)
                 idx += 1
+
+                member_group.group_index = len(self.member_groups)
+                self.member_groups.append(member_group)
+
             # =================================================================
             # method blocks
             if self._tk_eq(idx, (Token.Keyword, 'methods')):
                 idx += 1
+
                 # method "attributes"
                 attr_dict, idx = self.attributes(idx, MatClass.meth_attr_types)
+
+                # parse methods group comment
+                group_name, group_docstr, idx = self.parse_group_header_comment(idx)
+
+                # create group to encompass methods
+                uniq_name = self.name + '_member_group_%d' % (len(self.member_groups))
+                member_group = MatClassMemberGroup(uniq_name, self, attr_dict,
+                                                   'methods', group_name, group_docstr)
+
                 # Token.Keyword: "end" terminates properties & methods block
                 while self._tk_ne(idx, (Token.Keyword, 'end')):
+                    group_name, group_docstring, idx = self.parse_group_header_comment(idx)
+
                     # skip comments and whitespace
                     while (self._whitespace(idx) or
                            self.tokens[idx][0] is Token.Comment):
@@ -823,10 +861,22 @@ class MatClass(MatMixin, MatObject):
                         # replace dot in get/set methods with underscore
                         if meth.name.split('.')[0] in ['get', 'set']:
                             meth.name = meth.name.replace('.', '_')
+                            meth.is_getset = True
+                        else:
+                            meth.is_getset = False
                         idx += meth.reset_tokens()  # reset method tokens and index
-                        self.methods[meth.name] = meth  # update methods
+
+                        # add to member group
+                        meth.member_group = member_group
+                        member_group.methods[meth.name] = meth
+
+                        self.methods[meth.name] = meth  # and directly to class methods
                         idx += self._whitespace(idx)
                 idx += 1
+
+                member_group.group_index = len(self.member_groups)
+                self.member_groups.append(member_group)
+
         self.rem_tks = idx  # index of last token
 
     def attributes(self, idx, attr_types):
@@ -904,6 +954,33 @@ class MatClass(MatMixin, MatObject):
             idx += 1  # end of class attributes
         return attr_dict, idx
 
+    def parse_group_header_comment(self, idx):
+        group_name = ''
+        group_docstr = ''
+        # =====================================================================
+        # docstring
+
+        whitespace = self._whitespace(idx)
+        idx += whitespace
+
+        line = self.tokens[idx]
+
+        if line[0] is Token.Comment:
+            group_name = line[1].lstrip('%')
+            idx += 1
+            idx += self._whitespace(idx)
+            line = self.tokens[idx]
+            while line and line[0] is Token.Comment:
+                group_docstr += line[1].lstrip('%') + '\n'  # concatenate
+                try:
+                    idx += 1
+                    idx += self._whitespace(idx)
+                    line = self.tokens[idx]
+                except IndexError:
+                    break
+
+        return (group_name, group_docstr, idx)
+
     @property
     def __module__(self):
         return self.module
@@ -963,7 +1040,7 @@ class MatClass(MatMixin, MatObject):
         elif name == '__bases__':
             return self.__bases__
         elif name in self.properties:
-            return MatProperty(name, self, self.properties[name])
+            return self.properties[name]
         elif name in self.methods:
             return self.methods[name]
         elif name == '__dict__':
@@ -974,13 +1051,115 @@ class MatClass(MatMixin, MatObject):
         else:
             super(MatClass, self).getter(name, *defargs)
 
+class MatClassMemberGroup(MatObject):
+    """Describes a properties or methods block in the code for the purposes of
+    generating a header.
+    """
+    group_type = None
+    group_title = None
+    group_desc = None
+    group_index = None
+
+    # for properties
+    dependent = False
+    get_access = False
+    set_access = False
+
+    # for methods
+    access = False
+    static = False
+
+    member_groups = None
+    properties = None
+    methods = None
+
+    def __init__(self, name, cls, attrs, group_type, group_title, docstr):
+        self.name = name
+        self.cls = cls
+        self.attrs = attrs
+        self.docstring = docstr
+        self.group_type = group_type
+        self.group_title = group_title
+        self.group_desc = ''
+
+        self.methods = OrderedDict()
+        self.properties = OrderedDict()
+        self.member_groups = []
+
+        # construct group description
+        attr = self.attrs
+        if group_type == 'properties':
+            if attr.has_key('GetAccess') and attr['GetAccess'] != 'public':
+                self.get_access = False
+            else:
+                self.get_access = True
+            if attr.has_key('SetAccess') and attr['SetAccess'] != 'public':
+                self.set_access = False
+            else:
+                self.set_access = True
+            self.dependent = attr.has_key('Dependent') and attr['Dependent']
+
+            if self.get_access and not self.set_access:
+                self.group_desc = 'Read-only Properties'
+            elif self.set_access and not self.get_access:
+                self.group_desc = 'Write-only Properties'
+            else:
+                self.group_desc = 'Properties'
+
+            if self.dependent:
+                self.group_desc = 'Dependent ' + self.group_desc
+
+        elif group_type == 'methods':
+            if attr.has_key('Access') and attr['Access'] != 'public':
+                self.access = False
+            else:
+                self.access = True
+            if attr.has_key('Static') and attr['Static']:
+                self.static = True
+            else:
+                self.static = False
+
+            self.group_desc = 'Methods'
+            if self.static:
+                self.group_desc = 'Static ' + self.group_desc
+
+    @property
+    def __doc__(self):
+        return unicode(self.docstring)
+
+    def getter(self, name, *defargs):
+        """
+        :class:`MatClassMemberGroup` ``getter`` method to get attributes.
+        """
+        if name == '__name__':
+            return self.__name__
+        elif name == '__doc__':
+            return self.__doc__
+        elif name == '__module__':
+            return self.__module__
+        elif name == '__class__':
+            return self.cls
+        elif name in self.member_groups:
+            return self.member_groups[name]
+        elif name in self.properties:
+            return self.properties[name]
+        elif name in self.methods:
+            return self.methods[name]
+        elif name == '__dict__':
+            objdict = OrderedDict([(pn, self.getter(pn)) for pn in
+                                   self.properties.iterkeys()])
+            objdict.update(self.methods)
+            return objdict
+        else:
+            return None
+
 class MatProperty(MatObject):
-    def __init__(self, name, cls, attrs):
+    def __init__(self, name, cls, attrs, default, docstring):
         super(MatProperty, self).__init__(name)
         self.cls = cls
-        self.attrs = attrs['attrs']
-        self.default = attrs['default']
-        self.docstring = attrs['docstring']
+        self.attrs = attrs
+        self.default = default
+        self.docstring = docstring
 
     @property
     def __doc__(self):
@@ -993,9 +1172,11 @@ class MatMethod(MatFunction):
         super(MatMethod, self).__init__(None, modname, tks)
         self.cls = cls
         self.attrs = attrs
+        self.is_getset = False
 
         # skip first argument for class method
-        if self.cls is not None and self.args is not None and not self.attrs.has_key('Static'):
+        if self.cls is not None and self.args is not None and not self.attrs.has_key('Static') and \
+            self.cls.name != self.name: # constructor
             self.args = self.args[1:]
 
     def reset_tokens(self):
