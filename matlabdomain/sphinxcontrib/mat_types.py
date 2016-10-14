@@ -174,19 +174,33 @@ class MatObject(object):
         msg = '[%s] replaced ellipsis & appended parentheses in function signatures'
         MatObject.sphinx_dbg(msg, MAT_DOM)
         tks = list(MatlabLexer().get_tokens(code))  # tokenenize code
+
+        # tag with line numbers
+        lineno = 1
+        linenum_by_token = []
+        for tktype, token in tks:
+            linenum_by_token.append(lineno)
+            lineno += token.count('\n')
+
         modname = path.replace(os.sep, '.')  # module name
         # assume that functions and classes always start with a keyword
         if tks[0] == (Token.Keyword, 'function'):
             MatObject.sphinx_dbg('[%s] parsing function %s from %s.', MAT_DOM,
                                  name, modname)
-            return MatFunction(name, modname, tks)
+            obj = MatFunction(name, modname, tks, linenum_by_token)
+            obj.code = code
+            return obj
         elif tks[0] == (Token.Keyword, 'classdef'):
             MatObject.sphinx_dbg('[%s] parsing classdef %s from %s.', MAT_DOM,
                                  name, modname)
-            return MatClass(name, modname, tks)
+            obj = MatClass(name, modname, tks, linenum_by_token)
+            obj.code = code
+            return obj
         else:
             # it's a script file
-            return MatScript(name, modname, tks)
+            obj = MatScript(name, modname, tks, linenum_by_token)
+            obj.code = code
+            return obj
         return None
 
 
@@ -383,7 +397,7 @@ class MatFunction(MatObject):
     mat_kws = zip((Token.Keyword,) * 5,
                   ('if', 'while', 'for', 'switch', 'try'))
 
-    def __init__(self, name, modname, tokens):
+    def __init__(self, name, modname, tokens, source_linestart):
         super(MatFunction, self).__init__(name)
         #: Path of folder containing :class:`MatObject`.
         self.module = modname
@@ -397,6 +411,9 @@ class MatFunction(MatObject):
         self.args = None
         #: remaining tokens after main function is parsed
         self.rem_tks = None
+
+        self.source_linestart = source_linestart
+
         # =====================================================================
         # parse tokens
         # XXX: Pygments always reads MATLAB function signature as:
@@ -583,7 +600,7 @@ class MatClass(MatMixin, MatObject):
                        'TestClassTeardown': bool, 'TestMethodTeardown': bool,
                        'ParameterCombination': bool}
 
-    def __init__(self, name, modname, tokens):
+    def __init__(self, name, modname, tokens, linenum_by_token):
         super(MatClass, self).__init__(name)
         #: Path of folder containing :class:`MatObject`.
         self.module = modname
@@ -601,6 +618,9 @@ class MatClass(MatMixin, MatObject):
         self.methods = OrderedDict()
         # list of MatClassMemberGroups which themselves contain methods and properties
         self.member_groups = []
+
+        self.linenum_by_token = linenum_by_token
+        self.source_linestart = linenum_by_token[0]
 
         #: remaining tokens after main class definition is parsed
         self.rem_tks = None
@@ -690,6 +710,8 @@ class MatClass(MatMixin, MatObject):
             # =================================================================
             # properties blocks
             if self._tk_eq(idx, (Token.Keyword, 'properties')):
+                source_linestart = self.linenum_by_token[idx]
+
                 idx += 1
                 # property "attributes"
                 attr_dict, idx = self.attributes(idx, MatClass.prop_attr_types)
@@ -700,7 +722,8 @@ class MatClass(MatMixin, MatObject):
                 # create group to encompass methods
                 uniq_name = self.name + '_member_group_%d' % (len(self.member_groups))
                 member_group = MatClassMemberGroup(uniq_name, self, attr_dict,
-                                                   'properties', group_name, group_docstr)
+                                                   'properties', group_name, group_docstr,
+                                                   source_linestart)
 
                 # Token.Keyword: "end" terminates properties & methods block
                 while self._tk_ne(idx, (Token.Keyword, 'end')):
@@ -716,11 +739,13 @@ class MatClass(MatMixin, MatObject):
                     # with "%:" directive trumps docstring after property
                     if self.tokens[idx][0] is Token.Name:
                         prop_name = self.tokens[idx][1]
+                        source_linestart = self.linenum_by_token[idx]
                         # self.properties[prop_name] = {'attrs': attr_dict}
                         idx += 1
                     # subtype of Name EG Name.Builtin used as Name
                     elif self.tokens[idx][0] in Token.Name.subtypes:  # @UndefinedVariable
                         prop_name = self.tokens[idx][1]
+                        source_linestart = self.linenum_by_token[idx]
                         warn_msg = ' '.join(['[%s] WARNING %s.%s.%s is',
                                              'a Builtin Name'])
                         MatObject.sphinx_dbg(warn_msg, MAT_DOM, self.module,
@@ -791,7 +816,7 @@ class MatClass(MatMixin, MatObject):
                         docstring = self.tokens[idx][1].lstrip('%')
                         idx += 1
 
-                    prop = MatProperty(prop_name, self, attr_dict, default, docstring)
+                    prop = MatProperty(prop_name, self, attr_dict, default, docstring, source_linestart)
 
                     # add to member_group
                     prop.member_group = member_group
@@ -810,6 +835,7 @@ class MatClass(MatMixin, MatObject):
             # method blocks
             if self._tk_eq(idx, (Token.Keyword, 'methods')):
                 idx += 1
+                source_linestart = self.linenum_by_token[idx]
 
                 # method "attributes"
                 attr_dict, idx = self.attributes(idx, MatClass.meth_attr_types)
@@ -820,7 +846,7 @@ class MatClass(MatMixin, MatObject):
                 # create group to encompass methods
                 uniq_name = self.name + '_member_group_%d' % (len(self.member_groups))
                 member_group = MatClassMemberGroup(uniq_name, self, attr_dict,
-                                                   'methods', group_name, group_docstr)
+                                                   'methods', group_name, group_docstr, source_linestart)
 
                 # Token.Keyword: "end" terminates properties & methods block
                 while self._tk_ne(idx, (Token.Keyword, 'end')):
@@ -836,6 +862,7 @@ class MatClass(MatMixin, MatObject):
                             idx += 1
                     # skip methods defined in other files
                     meth_tk = self.tokens[idx]
+                    source_linestart = self.linenum_by_token[idx]
                     if (meth_tk[0] is Token.Name or
                         meth_tk[0] is Token.Name.Function or
                         (meth_tk[0] is Token.Keyword and
@@ -857,7 +884,7 @@ class MatClass(MatMixin, MatObject):
                     else:
                         # find methods
                         meth = MatMethod(self.module, self.tokens[idx:],
-                                         self, attr_dict)
+                                         self, attr_dict, source_linestart)
                         # replace dot in get/set methods with underscore
                         if meth.name.split('.')[0] in ['get', 'set']:
                             meth.name = meth.name.replace('.', '_')
@@ -1073,7 +1100,7 @@ class MatClassMemberGroup(MatObject):
     properties = None
     methods = None
 
-    def __init__(self, name, cls, attrs, group_type, group_title, docstr):
+    def __init__(self, name, cls, attrs, group_type, group_title, docstr, source_linestart):
         self.name = name
         self.cls = cls
         self.attrs = attrs
@@ -1085,6 +1112,8 @@ class MatClassMemberGroup(MatObject):
         self.methods = OrderedDict()
         self.properties = OrderedDict()
         self.member_groups = []
+
+        self.source_linestart = source_linestart
 
         # construct group description
         attr = self.attrs
@@ -1154,12 +1183,14 @@ class MatClassMemberGroup(MatObject):
             return None
 
 class MatProperty(MatObject):
-    def __init__(self, name, cls, attrs, default, docstring):
+    def __init__(self, name, cls, attrs, default, docstring, source_linestart):
         super(MatProperty, self).__init__(name)
         self.cls = cls
         self.attrs = attrs
         self.default = default
         self.docstring = docstring
+
+        self.source_linestart = source_linestart
 
     @property
     def __doc__(self):
@@ -1167,12 +1198,14 @@ class MatProperty(MatObject):
 
 
 class MatMethod(MatFunction):
-    def __init__(self, modname, tks, cls, attrs):
+    def __init__(self, modname, tks, cls, attrs, linestart):
         # set name to None
-        super(MatMethod, self).__init__(None, modname, tks)
+        super(MatMethod, self).__init__(None, modname, tks, linestart)
         self.cls = cls
         self.attrs = attrs
         self.is_getset = False
+
+        self.source_linestart = linestart
 
         # skip first argument for class method
         if self.cls is not None and self.args is not None and not self.attrs.has_key('Static') and \
@@ -1196,11 +1229,12 @@ class MatMethod(MatFunction):
 
 
 class MatScript(MatObject):
-    def __init__(self, name, path, tks):
+    def __init__(self, name, path, tks, linenum_by_token):
         super(MatScript, self).__init__(name)
         self.path = path
         self.tks = tks
         self.docstring = ''
+        self.linenum_by_token
 
     @property
     def __doc__(self):

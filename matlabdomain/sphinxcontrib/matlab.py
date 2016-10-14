@@ -26,6 +26,8 @@ from sphinx.util.nodes import make_refnode
 from sphinx.util.compat import Directive
 from sphinx.util.docfields import Field, GroupedField, TypedField
 
+from viewcode import *
+
 class desc_returns_matlab(addnodes.desc_returns):
     """Node for returns annnotation for matlab ([out] = )"""
     def astext(self):
@@ -855,3 +857,14 @@ def setup(app):
                  html=(visit_desc_returns_matlab, depart_desc_returns_matlab),
                  latex=(visit_desc_returns_matlab, depart_desc_returns_matlab),
                  text=(visit_desc_returns_matlab, depart_desc_returns_matlab))
+
+    # from viewcode
+    app.add_config_value('viewcode_import', True, False)
+    app.add_config_value('viewcode_enable_epub', False, False)
+    app.connect('doctree-read', doctree_read)
+    app.connect('env-merge-info', env_merge_info)
+    app.connect('html-collect-pages', collect_pages)
+    app.connect('missing-reference', missing_reference)
+    # app.add_config_value('viewcode_include_modules', [], 'env')
+    # app.add_config_value('viewcode_exclude_modules', [], 'env')
+    return {'version': sphinx.__display_version__, 'parallel_read_safe': True}

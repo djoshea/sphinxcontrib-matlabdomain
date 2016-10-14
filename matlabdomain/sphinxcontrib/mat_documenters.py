@@ -449,6 +449,9 @@ class MatlabDocumenter(PyDocumenter):
             if not self.import_object():
                 return
 
+        # cache the docname into which this entry was inserted for use in viewcode
+        self.object.docname = self.directive.env.docname
+
         # If there is no real module defined, figure out which to use.
         # The real module is used in the module analyzer to look up the module
         # where the attribute documentation would actually be found in.
