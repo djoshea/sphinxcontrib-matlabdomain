@@ -153,6 +153,9 @@ class MatObject(object):
         """
         # use Pygments to parse mfile to determine type: function/classdef
         # read mfile code
+
+        print 'Reading mfile %s' % (mfile)
+
         with open(mfile, 'r') as code_f:
             code = code_f.read().replace('\r\n', '\n')  # repl crlf with lf
         # functions must be contained in one line, no ellipsis, classdef is OK
@@ -187,7 +190,7 @@ class MatObject(object):
         if tks[0] == (Token.Keyword, 'function'):
             MatObject.sphinx_dbg('[%s] parsing function %s from %s.', MAT_DOM,
                                  name, modname)
-            obj = MatFunction(name, modname, tks, linenum_by_token)
+            obj = MatFunction(name, modname, tks, linenum_by_token[0])
             obj.code = code
             return obj
         elif tks[0] == (Token.Keyword, 'classdef'):
@@ -397,7 +400,7 @@ class MatFunction(MatObject):
     mat_kws = zip((Token.Keyword,) * 5,
                   ('if', 'while', 'for', 'switch', 'try'))
 
-    def __init__(self, name, modname, tokens, source_linestart):
+    def __init__(self, name, modname, tokens, linestart):
         super(MatFunction, self).__init__(name)
         #: Path of folder containing :class:`MatObject`.
         self.module = modname
@@ -412,7 +415,7 @@ class MatFunction(MatObject):
         #: remaining tokens after main function is parsed
         self.rem_tks = None
 
-        self.source_linestart = source_linestart
+        self.source_linestart = linestart
 
         # =====================================================================
         # parse tokens
@@ -622,8 +625,12 @@ class MatClass(MatMixin, MatObject):
         self.linenum_by_token = linenum_by_token
         self.source_linestart = linenum_by_token[0]
 
+        # will be set to true if an enumeration block is found within
+        self.is_enum = False
+
         #: remaining tokens after main class definition is parsed
         self.rem_tks = None
+
         # =====================================================================
         # parse tokens
         # TODO: use generator and next() instead of stepping index!
@@ -708,7 +715,7 @@ class MatClass(MatMixin, MatObject):
                 else:
                     idx += 1
             # =================================================================
-            # properties blocks
+            # properties or enumeration blocks
             if self._tk_eq(idx, (Token.Keyword, 'properties')):
                 source_linestart = self.linenum_by_token[idx]
 
@@ -832,8 +839,137 @@ class MatClass(MatMixin, MatObject):
                 self.member_groups.append(member_group)
 
             # =================================================================
+            # enumeration block
+            elif self._tk_eq(idx, (Token.Name, 'enumeration')):
+                self.is_enum = True # mark this class as an enumeration block
+
+                source_linestart = self.linenum_by_token[idx]
+
+                idx += 1
+                # property "attributes"
+                attr_dict, idx = self.attributes(idx, MatClass.prop_attr_types)
+                attr_dict['Enumeration'] = True
+
+                # parse property group
+                group_name, group_docstr, idx = self.parse_group_header_comment(idx)
+
+                # create group to encompass methods
+                uniq_name = self.name + '_member_group_%d' % (len(self.member_groups))
+                member_group = MatClassMemberGroup(uniq_name, self, attr_dict,
+                                                   'enumeration', group_name, group_docstr,
+                                                   source_linestart)
+
+                # Token.Keyword: "end" terminates properties & methods block
+                while self._tk_ne(idx, (Token.Keyword, 'end')):
+                    # skip comments and whitespace
+                    while (self._whitespace(idx) or
+                                   self.tokens[idx][0] is Token.Comment):
+                        whitespace = self._whitespace(idx)
+                        if whitespace:
+                            idx += whitespace
+                        else:
+                            idx += 1
+                    # TODO: alternate multiline docstring before property
+                    # with "%:" directive trumps docstring after property
+                    if self.tokens[idx][0] is Token.Name:
+                        prop_name = self.tokens[idx][1]
+                        source_linestart = self.linenum_by_token[idx]
+                        # self.properties[prop_name] = {'attrs': attr_dict}
+                        idx += 1
+                    # subtype of Name EG Name.Builtin used as Name
+                    elif self.tokens[idx][0] in Token.Name.subtypes:  # @UndefinedVariable
+                        prop_name = self.tokens[idx][1]
+                        source_linestart = self.linenum_by_token[idx]
+                        warn_msg = ' '.join(['[%s] WARNING %s.%s.%s is',
+                                             'a Builtin Name'])
+                        MatObject.sphinx_dbg(warn_msg, MAT_DOM, self.module,
+                                             self.name, prop_name)
+
+                        # self.properties[prop_name] = {'attrs': attr_dict}
+                        idx += 1
+                    elif self._tk_eq(idx, (Token.Keyword, 'end')):
+                        idx += 1
+                        break
+                    # skip semicolon after property name, but no default
+                    elif self._tk_eq(idx, (Token.Punctuation, ';')):
+                        idx += 1
+                        continue
+                    else:
+                        raise TypeError('Expected property.')
+                    idx += self._blanks(idx)  # skip blanks
+                    # =========================================================
+                    # defaults
+                    default = None
+                    if self._tk_eq(idx, (Token.Punctuation, '(')):
+                        idx += 1
+                        idx += self._blanks(idx)  # skip blanks
+                        # concatenate default value until newline or comment
+                        default = ''
+                        punc_ctr = 1  # punctuation placeholder (start with one comment)
+                        # keep reading until newline or comment
+                        # only if all punctuation pairs are closed
+                        # and comment is **not** continuation ellipsis
+                        while ((self._tk_ne(idx, (Token.Text, '\n')) and
+                                        self.tokens[idx][0] is not Token.Comment) or
+                                       punc_ctr > 0 or
+                                   (self.tokens[idx][0] is Token.Comment and
+                                        self.tokens[idx][1].startswith('...'))):
+                            token = self.tokens[idx]
+                            # default has an array spanning multiple lines
+                            if (token in zip((Token.Punctuation,) * 3,
+                                             ('(', '{', '['))):
+                                punc_ctr += 1  # increment punctuation counter
+                            # look for end of array
+                            elif (token in zip((Token.Punctuation,) * 3,
+                                               (')', '}', ']'))):
+                                punc_ctr -= 1  # decrement punctuation counter
+                            # Pygments treats continuation ellipsis as comments
+                            # text from ellipsis until newline is in token
+                            elif (token[0] is Token.Comment and
+                                      token[1].startswith('...')):
+                                idx += 1  # skip ellipsis comments
+                                # include newline which should follow comment
+                                if self._tk_eq(idx, (Token.Text, '\n')):
+                                    default += '\n'
+                                    idx += 1
+                                continue
+                            elif self._tk_eq(idx - 1, (Token.Text, '\n')):
+                                idx += self._blanks(idx)
+                                continue
+
+                            if punc_ctr > 0 or token[1] != ')': # don't include last )
+                                default += token[1]
+                            idx += 1
+                        if self.tokens[idx][0] is not Token.Comment:
+                            idx += 1
+                        if default:
+                            default = default.rstrip('; ')
+                    # self.properties[prop_name].update(default)
+                    # =========================================================
+                    # docstring
+                    docstring = None
+                    if self.tokens[idx][0] is Token.Comment:
+                        docstring = self.tokens[idx][1].lstrip('%')
+                        idx += 1
+
+                    prop = MatProperty(prop_name, self, attr_dict, default, docstring, source_linestart)
+
+                    # add to member_group
+                    prop.member_group = member_group
+                    member_group.properties[prop_name] = prop
+
+                    # and directly to class
+                    self.properties[prop_name] = prop
+
+                    idx += self._whitespace(idx)
+                idx += 1
+
+                member_group.group_index = len(self.member_groups)
+                self.member_groups.append(member_group)
+
+            # =================================================================
             # method blocks
-            if self._tk_eq(idx, (Token.Keyword, 'methods')):
+            elif self._tk_eq(idx, (Token.Keyword, 'methods')):
                 idx += 1
                 source_linestart = self.linenum_by_token[idx]
 
@@ -903,6 +1039,11 @@ class MatClass(MatMixin, MatObject):
 
                 member_group.group_index = len(self.member_groups)
                 self.member_groups.append(member_group)
+
+            elif self._tk_eq(idx, (Token.Keyword, 'end')):
+                continue
+            else:
+                raise Exception('Unknown token %s' % (self.tokens[idx][1]))
 
         self.rem_tks = idx  # index of last token
 
@@ -1151,6 +1292,12 @@ class MatClassMemberGroup(MatObject):
             self.group_desc = 'Methods'
             if self.static:
                 self.group_desc = 'Static ' + self.group_desc
+
+        elif group_type == 'enumeration':
+            self.group_desc = 'Enumeration'
+
+        else:
+            raise Exception('Unknown group type')
 
     @property
     def __doc__(self):

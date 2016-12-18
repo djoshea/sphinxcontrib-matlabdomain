@@ -120,6 +120,26 @@ class MatlabDocumenter(PyDocumenter):
                         (self.objpath and '.' + '.'.join(self.objpath) or '')
         return True
 
+    def get_matlab_module(self):
+        """Format self.modname into the format Matlab would use
+        which ignores any paths not prefixed with +
+        """
+
+        return '.'.join([x[1:] for x in self.modname.split('.') if x.startswith('+')])
+
+    def format_name(self):
+        """Format the name of *self.object*.
+
+        This normally should be something that can be parsed by the generated
+        directive, but doesn't need to be (Sphinx will display it unparsed
+        then).
+        """
+        # normally the name doesn't contain the module (except for module
+        # directives of course)
+
+        #return self.get_matlab_module()
+        return '.'.join(self.objpath) or self.modname
+
     def import_object(self):
         """Import the object given by *self.modname* and *self.objpath* and set
         it as *self.object*.
@@ -202,6 +222,8 @@ class MatlabDocumenter(PyDocumenter):
         if not no_docstring:
             encoding = self.analyzer and self.analyzer.encoding
             docstrings = self.get_doc(encoding)
+            if docstrings == [[u'None', '']]: #
+                docstrings = []
             if not docstrings:
                 # append at least a dummy docstring, so that the event
                 # autodoc-process-docstring is fired and can add some
@@ -450,7 +472,8 @@ class MatlabDocumenter(PyDocumenter):
                 return
 
         # cache the docname into which this entry was inserted for use in viewcode
-        self.object.docname = self.directive.env.docname
+        if not self.object is None:
+            self.object.docname = self.directive.env.docname
 
         # If there is no real module defined, figure out which to use.
         # The real module is used in the module analyzer to look up the module
@@ -1039,10 +1062,12 @@ class MatClassMemberGroupDocumenter(MatDocstringSignatureMixin, MatClassLevelDoc
         pass
 
     def get_object_members(self, want_all):
-        if self.object.group_type == 'properties':
+        if self.object.group_type == 'properties' or self.object.group_type == 'enumeration':
             members = self.object.properties
         elif self.object.group_type == 'methods':
             members = self.object.methods
+        else:
+            raise Exception('Unknown group type %s' % self.object.group_type)
 
         member_tuple = [(k,v) for (k,v) in members.iteritems()]
         return (False, member_tuple)
@@ -1296,10 +1321,10 @@ class MatAttributeDocumenter(MatClassLevelDocumenter):
         #     no_docstring = True
         MatClassLevelDocumenter.add_content(self, more_content, no_docstring)
 
-    def add_directive_header(self, sig):
-        MatlabDocumenter.add_directive_header(self, sig)
-        # indicate whether a new group has begun when in groupwise mode
-        self.indicate_begin_group()
+    # def add_directive_header(self, sig):
+    #     MatlabDocumenter.add_directive_header(self, sig)
+    #     # indicate whether a new group has begun when in groupwise mode
+    #     self.indicate_begin_group()
 
 class MatInstanceAttributeDocumenter(MatAttributeDocumenter):
     """

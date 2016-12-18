@@ -41,6 +41,9 @@ def depart_desc_returns_matlab(self, node):
     self.body.append('</em>] = ')
     # self.depart_desc_returns(node)
 
+def convert_modname_to_matlab_prefix(modname):
+    return '.'.join([x[1:] for x in modname.split('.') if x.startswith('+')])
+
 # REs for MATLAB signatures
 # from mat_documenters import mat_ext_sig_re_python_style, mat_ext_sig_re
 
@@ -240,6 +243,7 @@ class MatObject(ObjectDescription):
         elif add_module and self.env.config.add_module_names:
             modname = self.options.get(
                 'module', self.env.temp_data.get('mat:module'))
+            modname = convert_modname_to_matlab_prefix(modname)
             if modname and modname != 'exceptions':
                 nodetext = modname + '.'
                 signode += addnodes.desc_addname(nodetext, nodetext)
@@ -342,6 +346,8 @@ class MatClasslike(MatObject):
                 for key in attr_list:
                     if attr.has_key(key) and attr[key]:
                         pre.append(key)
+            if self.object.is_enum:
+                pre.append('Enumeration')
         return ' '.join(pre)
 
     def get_index_text(self, modname, name_cls):
@@ -539,7 +545,7 @@ class MatModule(Directive):
 
     def run(self):
         env = self.state.document.settings.env
-        modname = self.arguments[0].strip()
+        modname = self.arguments[0].replace('()', '').strip()
         noindex = 'noindex' in self.options
         env.temp_data['mat:module'] = modname
         ret = []
