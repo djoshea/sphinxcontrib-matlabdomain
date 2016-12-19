@@ -935,7 +935,7 @@ class MatClassDocumenter(MatModuleLevelDocumenter):
                 isattr = True
             elif member.attrs.has_key('Hidden') and member.attrs['Hidden']:
                 keep = False
-            elif member.attrs.has_key('Access') and member['Access'] != 'public':
+            elif member.attrs.has_key('Access') and member.attrs['Access'] != 'public':
                 keep = False
             else:
                 # don't ignore if not skipped
@@ -1177,19 +1177,30 @@ class MatMethodDocumenter(MatDocstringSignatureMixin, MatClassLevelDocumenter):
 
     def import_object(self):
         ret = MatClassLevelDocumenter.import_object(self)
-        if self.object.attrs.get('Static'):
-            self.directivetype = 'staticmethod'
-            # document class and static members before ordinary ones
-            self.member_order = self.member_order - 1
-            self.group_name = 'Static Methods'
-        else:
-            if self.object.name == self.object.cls.name:
-                # constructor, show before properties
-                self.member_order = 40
-                self.group_name = 'Constructor'
+        if self.object.abstract:
+            if self.object.attrs.get('Static'):
+                self.directivetype = 'staticmethod'
+                # document class and static members before ordinary ones
+                self.member_order = self.member_order - 3
+                self.group_name = 'Abstract Static Methods'
             else:
-                self.group_name = 'Methods'
-            self.directivetype = 'method'
+                self.member_order = self.member_order - 2
+                self.group_name = 'Abstract Methods'
+                self.directivetype = 'method'
+        else:
+            if self.object.attrs.get('Static'):
+                self.directivetype = 'staticmethod'
+                # document class and static members before ordinary ones
+                self.member_order = self.member_order - 1
+                self.group_name = 'Static Methods'
+            else:
+                if self.object.name == self.object.cls.name:
+                    # constructor, show before properties
+                    self.member_order = 40
+                    self.group_name = 'Constructor'
+                else:
+                    self.group_name = 'Methods'
+                self.directivetype = 'method'
 
         if not self.env.temp_data.has_key('mat_objects'):
             self.env.temp_data['mat_objects'] = {}

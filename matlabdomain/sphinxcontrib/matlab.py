@@ -397,7 +397,7 @@ class MatClassmember(MatObject):
         elif self.objtype == 'classmethod':
             pre.append('classmethod')
 
-        attr_list = ['Abstract', 'ConstructOnLoad', 'HandleCompatible', 'Sealed', 'AbortSet', 'Abstract', 'Constant',
+        attr_list = ['Abstract', 'ConstructOnLoad', 'HandleCompatible', 'Sealed', 'AbortSet', 'Constant',
                      'Dependent', 'GetObservable', 'SetObservable', 'Transient']
 
         # add property and method attributes before signature
@@ -563,8 +563,9 @@ class MatModule(Directive):
             # used in the modindex currently
             ret.append(targetnode)
             indextext = _('%s (module)') % modname
+            # updating for 5 column index
             inode = addnodes.index(entries=[('single', indextext,
-                                             'module-' + modname, '')])
+                                             'module-' + modname, '', '')])
             ret.append(inode)
         return ret
 

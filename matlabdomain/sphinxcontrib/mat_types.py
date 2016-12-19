@@ -400,7 +400,7 @@ class MatFunction(MatObject):
     mat_kws = zip((Token.Keyword,) * 5,
                   ('if', 'while', 'for', 'switch', 'try'))
 
-    def __init__(self, name, modname, tokens, linestart):
+    def __init__(self, name, modname, tokens, linestart, abstract=False):
         super(MatFunction, self).__init__(name)
         #: Path of folder containing :class:`MatObject`.
         self.module = modname
@@ -414,6 +414,8 @@ class MatFunction(MatObject):
         self.args = None
         #: remaining tokens after main function is parsed
         self.rem_tks = None
+
+        self.abstract = abstract
 
         self.source_linestart = linestart
 
@@ -442,35 +444,89 @@ class MatFunction(MatObject):
         # =====================================================================
         # check function keyword
         func_kw = tks.pop()  # function keyword
-        if func_kw[0] is not Token.Keyword or func_kw[1].strip() != 'function':
-            raise TypeError('Object is not a function. Expected a function.')
-            # TODO: what is a better error here?
-        # skip blanks and tabs
-        if tks.pop()[0] is not Token.Text.Whitespace:  # @UndefinedVariable
-            raise TypeError('Expected a whitespace after function keyword.')
-            # TODO: what is a better error here?
+        if not self.abstract:
+            if func_kw[0] is not Token.Keyword or func_kw[1].strip() != 'function':
+                raise TypeError('Object is not a function. Expected a function. (%s : %d)' % (name, linestart))
+                # TODO: what is a better error here?
+            # skip blanks and tabs
+            if tks.pop()[0] is not Token.Text.Whitespace:  # @UndefinedVariable
+                raise TypeError('Expected a whitespace after function keyword.')
+                # TODO: what is a better error here?
+        else:
+            # put it back, this is the function name for abstract methods
+            tks.append(func_kw)
+
         # =====================================================================
         # output args
-        retv = tks.pop()  # return values
-        if retv[0] is Token.Text:
-            self.retv = [rv.strip() for rv in retv[1].strip('[ ]').split(',')]
-            if len(self.retv) == 1:
-                # check if return is empty
-                if not self.retv[0]:
+        retv = tks.pop()
+
+        if self.abstract: # need to handle this differently since the lexer isn't quite up to the task
+            if retv[0] is Token.Text or retv[0] is Token.Name:
+                self.retv = [rv.strip() for rv in retv[1].strip('[ ]').split(',')]
+                if len(self.retv) == 1:
+                    # check if return is empty
+                    if not self.retv[0]:
+                        self.retv = None
+                    # check if return delimited by whitespace
+                    elif ' ' in self.retv[0] or '\t' in self.retv[0]:
+                        self.retv = [rv for rv_tab in self.retv[0].split('\t')
+                                     for rv in rv_tab.split(' ')]
+
+                # check for whitespace before equal sign
+                wht = tks.pop()
+                if wht[0] is not Token.Text.Whitespace and not wht[1].isspace():  # @UndefinedVariable
+                    tks.append(wht)  # if not whitespace, put it back in list
+                next = tks.pop()
+                if next != (Token.Punctuation, '='):
+                    # then this must be the function name, push everything back on to the token stack
+                    tks.append(next)
+                    tks.append(retv)
                     self.retv = None
-                # check if return delimited by whitespace
-                elif ' ' in self.retv[0] or '\t' in self.retv[0]:
-                    self.retv = [rv for rv_tab in self.retv[0].split('\t')
-                                 for rv in rv_tab.split(' ')]
-            if tks.pop() != (Token.Punctuation, '='):
-                raise TypeError('Token after outputs should be Punctuation.')
-                # TODO: raise an matlab token error or what?
-            # check for whitespace after equal sign
-            wht = tks.pop()
-            if wht[0] is not Token.Text.Whitespace:  # @UndefinedVariable
-                tks.append(wht)  # if not whitespace, put it back in list
-        elif retv[0] is Token.Name.Function:  # @UndefinedVariable
-            tks.append(retv)
+                else:
+                    # check for whitespace after equal sign
+                    wht = tks.pop()
+                    if wht[0] is not Token.Text.Whitespace and not wht[1].isspace():  # @UndefinedVariable
+                        tks.append(wht)  # if not whitespace, put it back in list
+            elif retv[1] == '[':
+                # handle the multiple ret vals case
+                retv = tks.pop()
+                self.retv = []
+                while retv[1] != ']':
+                    if retv[0] is Token.Text or retv[0] is Token.Name:
+                        self.retv += [rv.strip() for rv in retv[1].strip('[ ]').split(',')]
+                    retv = tks.pop()
+                    while retv[1].isspace() or retv[1] == ',':
+                        retv = tks.pop()
+
+                next = tks.pop()
+                while next[1].isspace():
+                    next = tks.pop()
+
+                if next != (Token.Punctuation, '='):
+                    raise Exception('Expecting = after output argument list for abstract method')
+
+            elif retv[0] is Token.Name.Function or self.abstract:  # @UndefinedVariable
+                tks.append(retv)
+        else:
+            if retv[0] is Token.Text:
+                self.retv = [rv.strip() for rv in retv[1].strip('[ ]').split(',')]
+                if len(self.retv) == 1:
+                    # check if return is empty
+                    if not self.retv[0]:
+                        self.retv = None
+                    # check if return delimited by whitespace
+                    elif ' ' in self.retv[0] or '\t' in self.retv[0]:
+                        self.retv = [rv for rv_tab in self.retv[0].split('\t')
+                                     for rv in rv_tab.split(' ')]
+                if tks.pop() != (Token.Punctuation, '='):
+                    raise TypeError('Token after outputs should be Punctuation.')
+                    # TODO: raise an matlab token error or what?
+                # check for whitespace after equal sign
+                wht = tks.pop()
+                if wht[0] is not Token.Text.Whitespace:  # @UndefinedVariable
+                    tks.append(wht)  # if not whitespace, put it back in list
+            elif retv[0] is Token.Name.Function:  # @UndefinedVariable
+                tks.append(retv)
 
         # create return value string for later inclusion in signature
         if self.retv is None:
@@ -480,9 +536,15 @@ class MatFunction(MatObject):
         else:
             self.retann = ''.join(self.retv)
 
+
         # =====================================================================
         # function name
-        func_name = tks.pop()
+        # strip intervening whitespace
+        next = tks.pop()
+        while next[1].isspace():
+            next = tks.pop()
+        func_name = next
+
         if func_name != (Token.Name.Function, self.name):  # @UndefinedVariable
             if isinstance(self, MatMethod):
                 self.name = func_name[1]
@@ -492,20 +554,36 @@ class MatFunction(MatObject):
                 # TODO: create mat_types or tokens exceptions!
         # =====================================================================
         # input args
-        if tks.pop() == (Token.Punctuation, '('):
+        next = tks.pop()
+        if next == (Token.Punctuation, '('):
             args = tks.pop()
-            if args[0] is Token.Text:
+            if args[0] is Token.Text or (self.abstract and args[0] is Token.Name):
                 self.args = [arg.strip() for arg in args[1].split(',')]\
             # no arguments given
             elif args == (Token.Punctuation, ')'):
                 tks.append(args)  # put closing parenthesis back in stack
+
             # check if function args parsed correctly
-            if tks.pop() != (Token.Punctuation, ')'):
-                raise TypeError('Token after outputs should be Punctuation.')
+            next = tks.pop()
+            while self.abstract and next[0] is Token.Punctuation and next[1].strip() == ',':
+                # extra args due to lexer not working for Abstract methods
+                next = tks.pop()
+                while next[1].isspace():
+                    next = tks.pop()
+                if next[0] is Token.Text or next[0] is Token.Name:
+                    self.args += [arg.strip() for arg in next[1].split(',')]
+                    next = tks.pop()
+                    while next[1].isspace():
+                        next = tks.pop()
+
+            if next != (Token.Punctuation, ')'):
+                raise TypeError('Token after outputs should be Punctuation. (%s : after %d)' % (name, linestart))
                 # TODO: raise an matlab token error or what?
         # skip blanks and tabs
-        if tks.pop()[0] is not Token.Text.Whitespace:  # @UndefinedVariable
-            raise TypeError('Expected a whitespace after input args.')
+        next = tks.pop()
+        if next[0] is not Token.Text.Whitespace and not next[1].isspace() and \
+                not (self.abstract and next[0] is Token.Punctuation and next[1] == ';'):  # @UndefinedVariable
+            raise TypeError('Expected a whitespace after input args. (%s : after %d)' % (name, linestart))
             # TODO: what is a better error here?
         # =====================================================================
         # docstring
@@ -525,36 +603,40 @@ class MatFunction(MatObject):
                 except IndexError:
                     break
             docstring = wht  # check if Token is Comment
-        # =====================================================================
-        # main body
-        # find Keywords - "end" pairs
-        kw = docstring  # last token
-        lastkw = 0  # set last keyword placeholder
-        kw_end = 1  # count function keyword
-        while kw_end > 0:
-            # increment keyword-end pairs count
-            if kw in MatFunction.mat_kws:
-                kw_end += 1
-            # nested function definition
-            elif kw[0] is Token.Keyword and kw[1].strip() == 'function':
-                kw_end += 1
-            # decrement keyword-end pairs count but
-            # don't decrement `end` if used as index
-            elif kw == (Token.Keyword, 'end') and not lastkw:
-                kw_end -= 1
-            # save last punctuation
-            elif kw in zip((Token.Punctuation,) * 2, ('(', '{')):
-                lastkw += 1
-            elif kw in zip((Token.Punctuation,) * 2, (')', '}')):
-                lastkw -= 1
-            try:
-                kw = tks.pop()
-            except IndexError:
-                break
-        tks.append(kw)  # put last token back in list
-        # if there are any tokens left save them
-        if len(tks) > 0:
-            self.rem_tks = tks  # save extra tokens
+
+        if not self.abstract:
+            # =====================================================================
+            # main body
+            # find Keywords - "end" pairs
+            kw = docstring  # last token
+            lastkw = 0  # set last keyword placeholder
+            kw_end = 1  # count function keyword
+            while kw_end > 0:
+                # increment keyword-end pairs count
+                if kw in MatFunction.mat_kws:
+                    kw_end += 1
+                # nested function definition
+                elif kw[0] is Token.Keyword and kw[1].strip() == 'function':
+                    kw_end += 1
+                # decrement keyword-end pairs count but
+                # don't decrement `end` if used as index
+                elif kw == (Token.Keyword, 'end') and not lastkw:
+                    kw_end -= 1
+                # save last punctuation
+                elif kw in zip((Token.Punctuation,) * 2, ('(', '{')):
+                    lastkw += 1
+                elif kw in zip((Token.Punctuation,) * 2, (')', '}')):
+                    lastkw -= 1
+                try:
+                    kw = tks.pop()
+                except IndexError:
+                    break
+            tks.append(kw)  # put last token back in list
+            # if there are any tokens left save them
+            if len(tks) > 0:
+                self.rem_tks = tks  # save extra tokens
+        else:
+            self.rem_tks = tks
 
     @property
     def __doc__(self):
@@ -700,7 +782,7 @@ class MatClass(MatMixin, MatObject):
                 if indent:
                     idx += indent
         elif self.tokens[idx][0] is Token.Comment:
-            raise Exception('Comments must be indented.')
+            raise Exception('Comments must be indented. (%s : %d)' % (name, linenum_by_token[idx]))
             # TODO: add to matlab domain exceptions
         # =====================================================================
         # properties & methods blocks
@@ -996,29 +1078,51 @@ class MatClass(MatMixin, MatObject):
                             idx += whitespace
                         else:
                             idx += 1
-                    # skip methods defined in other files
-                    meth_tk = self.tokens[idx]
-                    source_linestart = self.linenum_by_token[idx]
-                    if (meth_tk[0] is Token.Name or
-                        meth_tk[0] is Token.Name.Function or
-                        (meth_tk[0] is Token.Keyword and
-                         meth_tk[1].strip() == 'function'
-                         and self.tokens[idx+1][0] is Token.Name.Function) or
-                        self._tk_eq(idx, (Token.Punctuation, '[')) or
-                        self._tk_eq(idx, (Token.Punctuation, ']')) or
-                        self._tk_eq(idx, (Token.Punctuation, '=')) or
-                        self._tk_eq(idx, (Token.Punctuation, '(')) or
-                        self._tk_eq(idx, (Token.Punctuation, ')')) or
-                        self._tk_eq(idx, (Token.Punctuation, ','))):
-                        msg = ['[%s] Skipping tokens for methods defined in separate files.',
-                               'token #%d: %r']
-                        MatClass.sphinx_dbg('\n'.join(msg), MAT_DOM, idx, self.tokens[idx])
-                        idx += 1 + self._whitespace(idx + 1)
-                    elif self._tk_eq(idx, (Token.Keyword, 'end')):
-                        idx += 1
-                        break 
+
+                    # handle normal non-abstract methods
+                    if not member_group.abstract:
+                        # skip methods defined in other files
+                        meth_tk = self.tokens[idx]
+                        source_linestart = self.linenum_by_token[idx]
+                        if (meth_tk[0] is Token.Name or
+                            meth_tk[0] is Token.Name.Function or
+                            (meth_tk[0] is Token.Keyword and
+                             meth_tk[1].strip() == 'function'
+                             and self.tokens[idx+1][0] is Token.Name.Function) or
+                            self._tk_eq(idx, (Token.Punctuation, '[')) or
+                            self._tk_eq(idx, (Token.Punctuation, ']')) or
+                            self._tk_eq(idx, (Token.Punctuation, '=')) or
+                            self._tk_eq(idx, (Token.Punctuation, '(')) or
+                            self._tk_eq(idx, (Token.Punctuation, ')')) or
+                            self._tk_eq(idx, (Token.Punctuation, ','))):
+                            msg = ['[%s] Skipping tokens for methods defined in separate files.',
+                                   'token #%d: %r']
+                            MatClass.sphinx_dbg('\n'.join(msg), MAT_DOM, idx, self.tokens[idx])
+                            idx += 1 + self._whitespace(idx + 1)
+                        elif self._tk_eq(idx, (Token.Keyword, 'end')):
+                            idx += 1
+                            break
+                        else:
+                            # find methods
+                            meth = MatMethod(self.module, self.tokens[idx:],
+                                             self, attr_dict, source_linestart)
+                            # replace dot in get/set methods with underscore
+                            if meth.name.split('.')[0] in ['get', 'set']:
+                                meth.name = meth.name.replace('.', '_')
+                                meth.is_getset = True
+                            else:
+                                meth.is_getset = False
+                            idx += meth.reset_tokens()  # reset method tokens and index
+
+                            # add to member group
+                            meth.member_group = member_group
+                            member_group.methods[meth.name] = meth
+
+                            self.methods[meth.name] = meth  # and directly to class methods
+                            idx += self._whitespace(idx)
                     else:
                         # find methods
+                        source_linestart = self.linenum_by_token[idx]
                         meth = MatMethod(self.module, self.tokens[idx:],
                                          self, attr_dict, source_linestart)
                         # replace dot in get/set methods with underscore
@@ -1288,10 +1392,16 @@ class MatClassMemberGroup(MatObject):
                 self.static = True
             else:
                 self.static = False
+            if attr.has_key('Abstract') and attr['Abstract']:
+                self.abstract = True
+            else:
+                self.abstract = False
 
             self.group_desc = 'Methods'
             if self.static:
                 self.group_desc = 'Static ' + self.group_desc
+            if self.abstract:
+                self.group_desc = 'Abstract ' + self.group_desc
 
         elif group_type == 'enumeration':
             self.group_desc = 'Enumeration'
@@ -1347,7 +1457,12 @@ class MatProperty(MatObject):
 class MatMethod(MatFunction):
     def __init__(self, modname, tks, cls, attrs, linestart):
         # set name to None
-        super(MatMethod, self).__init__(None, modname, tks, linestart)
+        if attrs.has_key('Abstract') and attrs['Abstract']:
+            abstract = True
+        else:
+            abstract = False
+
+        super(MatMethod, self).__init__(None, modname, tks, linestart, abstract)
         self.cls = cls
         self.attrs = attrs
         self.is_getset = False
@@ -1381,7 +1496,7 @@ class MatScript(MatObject):
         self.path = path
         self.tks = tks
         self.docstring = ''
-        self.linenum_by_token
+        self.linenum_by_token = linenum_by_token
 
     @property
     def __doc__(self):
