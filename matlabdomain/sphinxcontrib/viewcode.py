@@ -69,10 +69,10 @@ def get_object(app, modname, entry):
 
 def doctree_read(app, doctree):
     env = app.builder.env
-    # if not hasattr(env, '_viewcode_mat_code'):
-    env._viewcode_mat_code= {}
-    # if not hasattr(env, '_viewcode_mat_lineref'):
-    env._viewcode_mat_lineref = {}
+    if not hasattr(env, '_viewcode_mat_code'):
+        env._viewcode_mat_code= {}
+    if not hasattr(env, '_viewcode_mat_lineref'):
+        env._viewcode_mat_lineref = {}
 
     if app.builder.name == "singlehtml":
         return
@@ -134,7 +134,7 @@ def doctree_read(app, doctree):
             if not env._viewcode_mat_lineref.has_key(classkey):
                 env._viewcode_mat_lineref[classkey] = {}
 
-            print "%s :: %s : %s at line %d, from %s" % (modname, clsname, fullname, matobj.source_linestart, matobj.docname)
+            print "Code for %s :: %s : %s at line %d, from %s\n" % (modname, clsname, fullname, matobj.source_linestart, matobj.docname)
             env._viewcode_mat_lineref[classkey][matobj.source_linestart] = (modname, clsname, fullname, matobj.docname)
 
 def env_merge_info(app, env, docnames, other):
