@@ -38,7 +38,6 @@ __all__ = ['MatObject', 'MatModule', 'MatFunction', 'MatClass',  \
 # TODO: subfunctions (not nested) and private folders/functions/classes
 # TODO: script files
 
-
 class MatObject(object):
     """
     Base MATLAB object to which all others are subclassed.
@@ -206,7 +205,6 @@ class MatObject(object):
             return obj
         return None
 
-
 # TODO: get docstring and __all__ from contents.m if exists
 class MatModule(MatObject):
     """
@@ -366,10 +364,14 @@ class MatMixin(object):
         :type idx: int
         """
         idx0 = idx  # original index
-        while (self.tokens[idx][0] is Token.Text and
-               self.tokens[idx][1] in [' ', '\n', '\t']):
+        while self.tokens[idx][1].isspace():
             idx += 1
         return idx - idx0  # whitespace
+
+    def _skip_whitespace(self, idx):
+        while self.tokens[idx][1].isspace():
+            idx += 1
+        return idx
 
     def _indent(self, idx):
         """
@@ -383,6 +385,17 @@ class MatMixin(object):
                self.tokens[idx][1] in [' ', '\t']):
             idx += 1
         return idx - idx0  # indentation
+
+    def gather_docstring(self, idx):
+        idx = self._skip_whitespace(idx)
+        docstring = []
+        while self.tokens[idx][0] is Token.Comment:
+            docstring += self.tokens[idx][1].lstrip('%') + '\n'  # concatenate
+            idx += 1
+            idx = self._skip_whitespace(idx)
+
+        docstring = ''.join(docstring)
+        return (docstring, idx)
 
 
 class MatFunction(MatObject):
@@ -587,28 +600,40 @@ class MatFunction(MatObject):
             # TODO: what is a better error here?
         # =====================================================================
         # docstring
-        try:
-            docstring = tks.pop()
-        except IndexError:
-            docstring = None
-        while docstring and docstring[0] is Token.Comment:
-            self.docstring += docstring[1].lstrip('%') + '\n'  # concatenate
-            try:
-                wht = tks.pop()  # skip whitespace
-            except IndexError:
-                break
-            while wht in zip((Token.Text,) * 3, (' ', '\t', '\n')):
-                try:
-                    wht = tks.pop()
-                except IndexError:
-                    break
-            docstring = wht  # check if Token is Comment
+        docstring = []
+        next = tks.pop()
+        while next[1].isspace():
+            next = tks.pop()
+        while next[0] is Token.Comment:
+            docstring += next[1].lstrip('%') + '\n'  # concatenate
+            next = tks.pop()
+            while next[1].isspace():
+                next = tks.pop()
+
+        self.docstring = ''.join(docstring)
+        tks.append(next)
+        # try:x
+        #     docstring = tks.pop()
+        # except IndexError:
+        #     docstring = None
+        # while docstring and docstring[0] is Token.Comment:
+        #     self.docstring += docstring[1].lstrip('%') + '\n'  # concatenate
+        #     try:
+        #         wht = tks.pop()  # skip whitespace
+        #     except IndexError:
+        #         break
+        #     while wht in zip((Token.Text,) * 3, (' ', '\t', '\n')):
+        #         try:
+        #             wht = tks.pop()
+        #         except IndexError:
+        #             break
+        #     docstring = wht  # check if Token is Comment
 
         if not self.abstract:
             # =====================================================================
             # main body
             # find Keywords - "end" pairs
-            kw = docstring  # last token
+            kw = tks.pop()  # last token
             lastkw = 0  # set last keyword placeholder
             kw_end = 1  # count function keyword
             while kw_end > 0:
@@ -899,11 +924,7 @@ class MatClass(MatMixin, MatObject):
                             default = default.rstrip('; ')
                     # self.properties[prop_name].update(default)
                     # =========================================================
-                    # docstring
-                    docstring = None
-                    if self.tokens[idx][0] is Token.Comment:
-                        docstring = self.tokens[idx][1].lstrip('%')
-                        idx += 1
+                    docstring, idx = self.gather_docstring(idx)
 
                     prop = MatProperty(prop_name, self, attr_dict, default, docstring, source_linestart)
 
@@ -1029,12 +1050,13 @@ class MatClass(MatMixin, MatObject):
                     # self.properties[prop_name].update(default)
                     # =========================================================
                     # docstring
-                    docstring = None
-                    if self.tokens[idx][0] is Token.Comment:
-                        docstring = self.tokens[idx][1].lstrip('%')
-                        idx += 1
+                    # docstring = None
+                    # if self.tokens[idx][0] is Token.Comment:
+                    #     docstring = self.tokens[idx][1].lstrip('%')
+                    #     idx += 1
 
-                    prop = MatProperty(prop_name, self, attr_dict, default, docstring, source_linestart)
+                    docstring, idx = self.gather_docstring(idx)
+                    prop = MatProperty(prop_name, self, attr_dict, default, source_linestart)
 
                     # add to member_group
                     prop.member_group = member_group
@@ -1078,6 +1100,10 @@ class MatClass(MatMixin, MatObject):
                             idx += whitespace
                         else:
                             idx += 1
+
+                    if self._tk_eq(idx, (Token.Keyword, 'end')):
+                        # in case end comes after whitespace
+                        break
 
                     # handle normal non-abstract methods
                     if not member_group.abstract:
@@ -1238,7 +1264,8 @@ class MatClass(MatMixin, MatObject):
         line = self.tokens[idx]
 
         if line[0] is Token.Comment:
-            group_name = line[1].lstrip('%')
+            # group_name = line[1].lstrip('%')
+            group_docstr = line[1].lstrip('%') + '\n'
             idx += 1
             idx += self._whitespace(idx)
             line = self.tokens[idx]

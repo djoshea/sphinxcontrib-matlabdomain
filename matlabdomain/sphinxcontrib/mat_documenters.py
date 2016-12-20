@@ -163,6 +163,8 @@ class MatlabDocumenter(PyDocumenter):
         dbg('[autodoc] import %s', self.modname)
         MatObject.matlabify(self.modname)
         parent = None
+        if self.modname is None:
+            a = 1
         obj = self.module = sys.modules[self.modname]
         dbg('[autodoc] => %r', obj)
         for part in self.objpath:
@@ -654,7 +656,9 @@ class MatClassLevelDocumenter(MatlabDocumenter):
                 self.add_line(u'.. rubric:: %s' % (self.group_name), '<autodoc>')
                 self.add_line(u'   :class: note', '<autodoc>')
                 self.add_line(u'   :name: %s_%s' %(self.fullname, self.group_name), '<autodoc>')
+
                 self.add_line(u'', '<autodoc>')
+
                 # ident = self.indent
                 # self.indent = u''
                 # self.add_line(u'%s' % (self.group_name), '<autodoc>')
@@ -1120,45 +1124,94 @@ class MatClassMemberGroupDocumenter(MatDocstringSignatureMixin, MatClassLevelDoc
         has_docstring = not(self.object.docstring is None or self.object.docstring == '')
         has_title = not(self.object.group_title is None or self.object.group_title == '')
 
-        # if there is both title and docstring, then include the title in the note header
-        # otherwise put the title in the note body instead
-        if has_title and has_docstring:
-            note_title = u'%s: %s' % (self.object.group_desc, self.object.group_title)
-            title_in_content = False
+        # # if there is both title and docstring, then include the title in the note header
+        # # otherwise put the title in the note body instead
+        # if has_title and has_docstring:
+        #     note_title = u'%s: %s' % (self.object.group_desc, self.object.group_title)
+        #     title_in_content = False
+        # else:
+        #     note_title = self.object.group_desc
+        #     title_in_content = True
+        #
+        # self.add_line(u'', '<autodoc>')
+        # self.add_line(u'.. admonition:: %s' % (note_title), '<autodoc>')
+        # self.add_line(u'   :class: note', '<autodoc>')
+        # self.add_line(u'   :name: %s_%s' % (self.fullname, self.name), '<autodoc>')
+        # self.add_line(u'', '<autodoc>')
+        #
+        # if title_in_content:
+        #     self.add_line(u'   %s' % (self.object.group_title), '<autodoc>')
+        #
+        # if has_docstring:
+        #     current_indent = self.indent
+        #     self.indent = u'   ' + self.indent
+        #
+        #     # write docstring
+        #     encoding = self.analyzer and self.analyzer.encoding
+        #     docstrings = self.get_doc(encoding)
+        #     if not docstrings:
+        #         # append at least a dummy docstring, so that the event
+        #         # autodoc-process-docstring is fired and can add some
+        #         # content if desired
+        #         docstrings.append([])
+        #     for i, line in enumerate(self.process_doc(docstrings)):
+        #         self.add_line(line, '<autodoc>')
+        #
+        #     self.indent = current_indent
+        #
+        # if not has_title and not has_docstring:
+        #     # ensure that something gets written as the admonition cannot be empty
+        #     self.add_line(u'   --', '<autodoc>')
+        # self.add_line(u'', '<autodoc>')
+
+        # raw html approach
+        note_title = self.object.group_desc
+
+        if self.object.group_type == 'properties':
+            top_color = '6ab0de'  # blue
+            note_style = 'note'
+        elif self.object.group_type == 'methods':
+            top_color = '1abc9c'  # green
+            note_style = 'tip'
         else:
-            note_title = self.object.group_desc
-            title_in_content = True
+            top_color = 'f0b37e' # orange
+            note_style = 'warning'
 
         self.add_line(u'', '<autodoc>')
-        self.add_line(u'.. admonition:: %s' % (note_title), '<autodoc>')
-        self.add_line(u'   :class: note', '<autodoc>')
-        self.add_line(u'   :name: %s_%s' % (self.fullname, self.name), '<autodoc>')
+        self.add_line(u'.. raw :: html', '<autodoc>')
         self.add_line(u'', '<autodoc>')
-
-        if title_in_content:
-            self.add_line(u'   %s' % (self.object.group_title), '<autodoc>')
+        self.add_line(u'   <div class="%s admonition" id="%s_%s">' % (note_style, self.fullname, self.name), '<autodoc>')
+        self.add_line(u'   <p class="first" style="background-color: #%s; font-weight:bold; display:block; margin:-12px; padding:6px 12px; color:white;">%s</p>' %  (top_color, note_title), '<autodoc>')
 
         if has_docstring:
+            self.add_line(u'   <p class="last">', '<autodoc>')
+            self.add_line(u'', '<autodoc>')
             current_indent = self.indent
             self.indent = u'   ' + self.indent
 
-            # write docstring
-            encoding = self.analyzer and self.analyzer.encoding
-            docstrings = self.get_doc(encoding)
-            if not docstrings:
-                # append at least a dummy docstring, so that the event
-                # autodoc-process-docstring is fired and can add some
-                # content if desired
-                docstrings.append([])
-            for i, line in enumerate(self.process_doc(docstrings)):
-                self.add_line(line, '<autodoc>')
+            # self.add_line(u'   %s' % (self.object.group_title), '<autodoc>')
+
+            if has_docstring:
+                # write docstring
+                encoding = self.analyzer and self.analyzer.encoding
+                docstrings = self.get_doc(encoding)
+                if not docstrings:
+                    # append at least a dummy docstring, so that the event
+                    # autodoc-process-docstring is fired and can add some
+                    # content if desired
+                    docstrings.append([])
+                for i, line in enumerate(self.process_doc(docstrings)):
+                    self.add_line(line, '<autodoc>')
 
             self.indent = current_indent
 
-        if not has_title and not has_docstring:
-            # ensure that something gets written as the admonition cannot be empty
-            self.add_line(u'   --', '<autodoc>')
-        self.add_line(u'', '<autodoc>')
+            self.add_line(u'.. raw :: html', '<autodoc>')
+            self.add_line(u'', '<autodoc>')
+            self.add_line(u'   </p></div>', '<autodoc>')
+            self.add_line(u'', '<autodoc>')
+        else:
+            self.add_line(u'   </div>', '<autodoc>')
+            self.add_line(u'', '<autodoc>')
 
     def add_content(self, more_content, no_docstring=False):
         pass
