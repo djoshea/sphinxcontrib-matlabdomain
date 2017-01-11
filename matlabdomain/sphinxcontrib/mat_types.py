@@ -877,8 +877,16 @@ class MatClass(MatMixin, MatObject):
                     else:
                         raise TypeError('Expected property.')
                     idx += self._blanks(idx)  # skip blanks
+
+                    # Restricted property class
+                    prop_restriction_class = ''
+                    while self.tokens[idx][0] is Token.Name or self._tk_eq(idx, (Token.Punctuation, '.')):
+                        prop_restriction_class += self.tokens[idx][1]
+                        idx += 1
+                    idx += self._blanks(idx)
+
                     # =========================================================
-                    # defaults
+                    # default values
                     default = None
                     if self._tk_eq(idx, (Token.Punctuation, '=')):
                         idx += 1
@@ -927,6 +935,7 @@ class MatClass(MatMixin, MatObject):
                     docstring, idx = self.gather_docstring(idx)
 
                     prop = MatProperty(prop_name, self, attr_dict, default, docstring, source_linestart)
+                    prop.restriction_class = prop_restriction_class
 
                     # add to member_group
                     prop.member_group = member_group
@@ -1475,6 +1484,7 @@ class MatProperty(MatObject):
         self.docstring = docstring
 
         self.source_linestart = source_linestart
+        self.restriction_class = '' # proprety restricted to specific classes
 
     @property
     def __doc__(self):

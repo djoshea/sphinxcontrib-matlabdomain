@@ -1361,6 +1361,8 @@ class MatAttributeDocumenter(MatClassLevelDocumenter):
 
         if not self.options.annotation:
             if not self._datadescriptor:
+                # display type
+                restriction_class = self.object.restriction_class
                 try:
                     # display default
                     if isinstance(self.object.default, six.string_types):
@@ -1371,7 +1373,10 @@ class MatAttributeDocumenter(MatClassLevelDocumenter):
                 except ValueError:
                     pass
                 else:
-                    self.add_line(u'   :annotation: = ' + objrepr, '<autodoc>')
+                    if restriction_class == '':
+                        self.add_line(u'   :annotation: = ' + objrepr, '<autodoc>')
+                    else:
+                        self.add_line(u'   :annotation:  (' + restriction_class + u') = ' + objrepr, '<autodoc>')
         elif self.options.annotation is SUPPRESS:
             pass
         else:
